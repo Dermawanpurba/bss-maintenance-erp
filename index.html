@@ -1028,29 +1028,38 @@
     // =========================================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
 
-    // Fungsi Fetch pengganti google.script.run
+    // Fungsi Fetch yang dimodifikasi untuk menembus CORS & membaca Error
     async function fetchGAS(actionName, payloadData = {}) {
       try {
         const response = await fetch(GAS_API_URL, {
           method: "POST",
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8" 
-          },
-          body: JSON.stringify({ action: actionName, data: payloadData }),
-          redirect: "follow" // Sangat penting untuk Google Apps Script
+          // Hapus 'headers' agar browser tidak mengirim preflight (OPTIONS) yang sering diblokir
+          body: JSON.stringify({ action: actionName, data: payloadData })
         });
         
-        // Cek jika response bukan JSON (misal kena blokir Google)
         const textRes = await response.text();
+        
         try {
             return JSON.parse(textRes);
         } catch (e) {
-            console.error("Bukan JSON, Response Server:", textRes);
-            throw new Error("Server GAS tidak mengembalikan format yang benar.");
+            // Jika Google membalas dengan halaman HTML (bukan data), munculkan popup ini
+            console.error("Isi penolakan Google:", textRes);
+            Swal.fire({
+               title: 'Akses Ditolak Google', 
+               text: 'Google Apps Script meminta login atau URL salah. Pastikan akses diset ke "Anyone / Siapa Saja".', 
+               icon: 'error'
+            });
+            throw new Error("Google memblokir format JSON");
         }
       } catch (error) {
-        console.error("API Error:", error);
-        throw new Error("Gagal terhubung ke server backend");
+        // Jika koneksi terputus total / CORS error
+        console.error("Fetch Error Detail:", error);
+        Swal.fire({
+            title: 'Koneksi Terputus', 
+            text: 'Gagal menghubungi server GAS. Pastikan URL sudah yang paling baru dan berakhiran /exec', 
+            icon: 'error'
+        });
+        throw error;
       }
     }
     // =========================================================
