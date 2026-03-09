@@ -1,1 +1,1865 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WOSys ERP - PT. Benamakmur Selaras Sejahtera</title>
+  <!-- Modern UI dependencies -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --theme-main: #0f172a; 
+      --theme-accent: #3b82f6; 
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; scroll-behavior: smooth; background-color: #f1f5f9; }
+    
+    .bg-theme-main { background-color: var(--theme-main) !important; }
+    .text-theme-main { color: var(--theme-main) !important; }
+    .border-theme-main { border-color: var(--theme-main) !important; }
 
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .nav-btn.active { 
+        background-color: rgba(255, 255, 255, 0.15); 
+        color: #ffffff !important; 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(12px);
+        border-left: 4px solid var(--theme-accent); 
+    }
+    
+    .loader { border-top-color: var(--theme-accent); animation: spinner 1s linear infinite; }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    
+    .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; position: fixed; height: 100%; }
+      #sidebar.open { transform: translateX(0); }
+      #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 90; }
+      #sidebarOverlay.active { display: block; animation: fadeIn 0.3s ease; }
+    }
+
+    /* PRINT OPTIMIZATION - STRICT 1 PAGE A4 */
+    @media print {
+      @page { size: A4; margin: 0.2cm; }
+      html, body { height: 99%; overflow: hidden; background: white !important; }
+      #appContainer, #authContainer, #loadingOverlay, #mekanikModal, .no-print, nav, aside { display: none !important; }
+      #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; font-family: Arial, sans-serif !important; background: #fff !important; font-size: 10pt !important; line-height: 1.1; }
+      .border-black { border: 1.2pt solid #000 !important; }
+      .bg-gray-pdf { background-color: #eee !important; -webkit-print-color-adjust: exact; }
+      #printArea * { color: #000 !important; font-weight: 800 !important; }
+      .print-label { font-size: 8.5pt !important; }
+      .print-value { font-size: 10.5pt !important; }
+      .h-sign { height: 75pt !important; }
+    }
+    
+    .kpi-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .kpi-card:hover { transform: translateY(-8px); box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: var(--theme-accent); }
+    
+    /* Board Styles */
+    .board-cell { border: 1px solid #cbd5e1; padding: 0.4rem; }
+    .bd-badge { background-color: #dc2626; color: white; border-radius: 4px; padding: 2px 6px; display: inline-block; font-size: 9px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .rfu-badge { background-color: #10b981; color: white; border-radius: 4px; padding: 2px 6px; display: inline-block; font-size: 9px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 z-[9999] hidden flex flex-col items-center justify-center backdrop-blur-md transition-all">
+    <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-14 w-14 mb-4"></div>
+    <p id="loadingText" class="text-white font-black tracking-[0.2em] text-[10px] uppercase">Processing...</p>
+  </div>
+
+  <!-- PREMIUM AUTH CONTAINER -->
+  <div id="authContainer" class="flex-grow flex items-center justify-center p-6 relative overflow-hidden bg-slate-900">
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float" style="animation-delay: 2s;"></div>
+    
+    <div class="glass-card p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-10">
+      <div class="text-center mb-8">
+        <div class="bg-theme-main text-white w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl transform transition-transform hover:rotate-6 hover:scale-105"><i class="fas fa-industry text-3xl" id="loginLogo"></i></div>
+        <h1 class="text-3xl font-black text-slate-900 leading-tight tracking-tight company-display-name">Loading...</h1>
+        <p class="text-theme-accent font-black mt-2 uppercase tracking-[0.3em] text-[10px]">Enterprise Work Order</p>
+      </div>
+      <form id="loginForm" class="space-y-5">
+        <div class="relative group">
+          <i class="fas fa-user absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-theme-accent transition-colors"></i>
+          <input type="text" id="username" class="w-full pl-14 pr-5 py-4 rounded-2xl bg-white/70 border border-slate-200 focus:bg-white focus:border-theme-accent focus:ring-4 focus:ring-theme-accent/20 outline-none font-bold text-slate-700 transition-all" placeholder="Username" required>
+        </div>
+        <div class="relative group">
+          <i class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-theme-accent transition-colors"></i>
+          <input type="password" id="password" class="w-full pl-14 pr-5 py-4 rounded-2xl bg-white/70 border border-slate-200 focus:bg-white focus:border-theme-accent focus:ring-4 focus:ring-theme-accent/20 outline-none font-bold text-slate-700 transition-all" placeholder="Password" required>
+        </div>
+        <button type="submit" class="w-full bg-theme-main text-white font-black py-4 rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-theme-main/30 uppercase tracking-widest text-xs mt-4 transform active:scale-95">Log In Securely</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APP CONTAINER -->
+  <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative">
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-theme-main text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+      <div class="font-black tracking-tighter text-lg uppercase company-display-name truncate max-w-[250px]">WOSys ERP</div>
+      <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><i class="fas fa-bars"></i></button>
+    </div>
+    <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="w-72 md:w-64 bg-theme-main text-white flex-shrink-0 flex flex-col no-print shadow-2xl z-40 relative h-screen sticky top-0">
+      <div class="hidden md:flex p-6 border-b border-white/10 items-center space-x-4">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fas fa-industry text-white text-xl"></i></div>
+        <div class="font-black text-white text-lg uppercase tracking-tighter company-display-name leading-tight">WOSys ERP</div>
+      </div>
+      
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+        <button onclick="navigate('dashboard')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="dashboard">
+            <i class="fas fa-chart-pie w-8 group-hover:scale-110 transition-transform"></i> KPI Dashboard
+        </button>
+        
+        <div id="nav-service-group">
+            <div class="text-[9px] text-white/50 font-black uppercase px-3 pt-6 pb-2 tracking-widest">Service Menu</div>
+            <button onclick="navigate('buat-wo')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="buat-wo">
+                <i class="fas fa-plus-circle w-8 group-hover:scale-110 transition-transform"></i> Buat WO
+            </button>
+            <button onclick="navigate('backlog')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="backlog">
+                <i class="fas fa-clipboard-check w-8 group-hover:scale-110 transition-transform text-amber-400"></i> Backlog Mgmt
+            </button>
+        </div>
+        
+        <button onclick="navigate('list-wo')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="list-wo">
+            <i class="fas fa-laptop-medical w-8 group-hover:scale-110 transition-transform"></i> Monitoring Service
+        </button>
+
+        <div id="nav-daily-group">
+            <button onclick="navigate('daily-hm')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="daily-hm">
+                <i class="fas fa-tachometer-alt w-8 group-hover:scale-110 transition-transform"></i> Input Daily HM
+            </button>
+        </div>
+        
+        <div id="nav-database-section">
+          <div class="text-[9px] text-white/50 font-black uppercase px-3 pt-6 pb-2 tracking-widest">Master Data</div>
+          <button onclick="navigate('master-plan')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-plan">
+              <i class="fas fa-calendar-alt w-8 group-hover:scale-110 transition-transform"></i> Plan Alat (KPI)
+          </button>
+          <button onclick="navigate('master-equip')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-equip">
+              <i class="fas fa-truck-pickup w-8 group-hover:scale-110 transition-transform"></i> Equipments
+          </button>
+          <button onclick="navigate('master-parts')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-parts">
+              <i class="fas fa-cogs w-8 group-hover:scale-110 transition-transform"></i> Spareparts
+          </button>
+        </div>
+
+        <div id="nav-admin-section" style="display: none;">
+          <div class="text-[9px] text-white/40 font-black uppercase px-3 pt-6 pb-2 tracking-widest">System Control</div>
+          <button onclick="navigate('manage-users')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="manage-users">
+              <i class="fas fa-user-shield w-8 group-hover:scale-110 transition-transform"></i> Kelola User
+          </button>
+          <button onclick="navigate('pengaturan')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="pengaturan">
+              <i class="fas fa-paint-roller w-8 group-hover:scale-110 transition-transform"></i> Pengaturan Tema
+          </button>
+        </div>
+      </nav>
+
+      <div class="p-5 border-t border-white/10 bg-black/20 mt-auto">
+        <div class="flex items-center space-x-3 mb-4 p-3 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
+          <div class="w-10 h-10 rounded-xl bg-theme-accent flex items-center justify-center font-black text-white shadow-lg text-lg" id="userInitial">?</div>
+          <div class="overflow-hidden">
+            <div class="text-sm font-black truncate text-white tracking-tight" id="userNameDisplay">Guest</div>
+            <div class="text-[9px] text-blue-300 font-black uppercase tracking-widest" id="userRoleDisplay">No Role</div>
+          </div>
+        </div>
+        <button onclick="handleLogout()" class="w-full py-3 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">Logout Securely</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative no-print h-screen bg-slate-50">
+      
+      <!-- PAGE: DASHBOARD KPI -->
+      <section id="page-dashboard" class="page active pb-12">
+        <div id="banner-admin" class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-[2.5rem] p-8 md:p-12 mb-8 text-white shadow-2xl relative overflow-hidden">
+          <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="w-full">
+              <div class="flex flex-col md:flex-row justify-between items-start w-full gap-4">
+                  <div>
+                      <h2 class="text-3xl md:text-4xl font-black mb-2 tracking-tight text-white" id="dashTitle">Welcome back, <span id="dashName" class="text-theme-accent">Admin</span>! 👋</h2>
+                      <p class="text-slate-300 font-medium text-sm max-w-md leading-relaxed" id="dashDesc">Pantau metrik KPI, WO Terbuka, Backlog, dan ketersediaan alat secara Real-Time.</p>
+                  </div>
+                  <!-- Filter Bulan KPI -->
+                  <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden md:block shadow-inner w-full md:w-auto">
+                      <label class="block text-[9px] font-black uppercase tracking-widest text-blue-200 mb-2"><i class="fas fa-filter mr-1"></i> Filter Bulan KPI</label>
+                      <select id="kpiMonthFilter" onchange="calculateKPIFrontEnd()" class="w-full bg-slate-800 text-white border border-white/10 outline-none font-bold text-sm cursor-pointer rounded-xl px-4 py-2 hover:bg-slate-700 transition-colors">
+                          <option value="ALL">ALL TIME / SEMUA BULAN</option>
+                      </select>
+                  </div>
+              </div>
+              <div class="flex flex-wrap gap-3 mt-8">
+                 <button id="dash-btn-wo" onclick="navigate('buat-wo')" class="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-plus mr-2"></i>Buat WO</button>
+                 <button onclick="globalDataSync()" class="bg-white/20 backdrop-blur-md border border-white/30 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-white/30 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-sync-alt mr-2"></i>Optimized Sync</button>
+              </div>
+            </div>
+          </div>
+          <i class="fas fa-chart-pie absolute -right-10 -bottom-10 text-9xl text-white opacity-5 rotate-12"></i>
+          <div class="absolute top-[-20%] right-[10%] w-64 h-64 bg-theme-accent rounded-full mix-blend-overlay filter blur-[80px] opacity-40"></div>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 ml-2 gap-4">
+            <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
+            <select id="kpiMonthFilterMobile" onchange="document.getElementById('kpiMonthFilter').value=this.value; calculateKPIFrontEnd();" class="md:hidden w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-sm text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+                <option value="ALL">SEMUA BULAN</option>
+            </select>
+        </div>
+
+        <!-- KPI METRICS GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-4 relative z-10">
+               <div class="w-14 h-14 bg-slate-900 text-white rounded-[1.2rem] flex items-center justify-center text-2xl shadow-lg"><i class="fas fa-percentage"></i></div>
+               <span class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black tracking-widest border border-slate-200" id="badgeTargetPA">TARGET >85%</span>
+             </div>
+             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-pa">0<span class="text-2xl text-slate-400">%</span></h3>
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Physical Availability</p>
+           </div>
+           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-4 relative z-10">
+               <div class="w-14 h-14 bg-red-50 text-red-500 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-tools"></i></div>
+               <span class="px-3 py-1.5 bg-red-50 text-red-500 rounded-xl text-[9px] font-black tracking-widest border border-red-100">MTTR</span>
+             </div>
+             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mttr">0<span class="text-2xl text-slate-400">h</span></h3>
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Mean Time To Repair</p>
+           </div>
+           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-4 relative z-10">
+               <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-clock"></i></div>
+               <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black tracking-widest border border-blue-100">MTBF</span>
+             </div>
+             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mtbf">0<span class="text-2xl text-slate-400">h</span></h3>
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Mean Time Btw Failure</p>
+           </div>
+           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-4 relative z-10">
+               <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-clipboard-list"></i></div>
+               <span class="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl text-[9px] font-black tracking-widest border border-amber-100">PENDING</span>
+             </div>
+             <h3 class="text-5xl font-black text-amber-600 relative z-10 tracking-tight" id="kpi-pending-backlog">0</h3>
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Total Open Backlogs</p>
+           </div>
+        </div>
+
+        <!-- NEW: PAPAN CATUR RFU vs BD -->
+        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 overflow-hidden">
+            <div class="flex flex-col xl:flex-row gap-6">
+                <!-- Summary Table -->
+                <div class="w-full xl:w-1/4 overflow-x-auto">
+                    <table class="w-full text-[10px] font-black border-collapse border border-slate-300 uppercase text-center bg-white shadow-sm">
+                        <thead class="bg-slate-100 text-slate-600">
+                            <tr>
+                                <th class="border border-slate-300 p-3 text-left">UNIT MODEL</th>
+                                <th class="border border-slate-300 p-3 text-emerald-600">RFU</th>
+                                <th class="border border-slate-300 p-3 text-red-600">B/D</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryBoardBody"></tbody>
+                        <tfoot id="summaryBoardFooter" class="bg-slate-800 text-white"></tfoot>
+                    </table>
+                </div>
+                <!-- Details Grid Board -->
+                <div class="w-full xl:w-3/4 overflow-x-auto">
+                    <table class="w-full text-[10px] font-black border-collapse border border-slate-300 uppercase text-center bg-white shadow-sm">
+                        <thead class="bg-slate-100 text-slate-600">
+                            <tr>
+                                <th class="border border-slate-300 p-3 w-28 text-left">MODEL</th>
+                                <th class="border border-slate-300 p-3 w-16">STATUS</th>
+                                <th class="border border-slate-300 p-3 text-left pl-4">UNIT NUMBER</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailBoardBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex gap-6 mt-6 justify-center text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-3 rounded-2xl border border-slate-100">
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-[#10b981] shadow-sm border border-emerald-600"></span> RFU (Ready For Use)</div>
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-[#dc2626] shadow-sm border border-red-700"></span> BD (Breakdown)</div>
+            </div>
+        </div>
+
+        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview</h3>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow">
+             <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total WO</p><h3 class="text-3xl font-black text-slate-800" id="kpi-total-wo">0</h3></div>
+           </div>
+           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">OPEN</p><h3 class="text-3xl font-black text-slate-800" id="kpi-open-wo">0</h3></div>
+           </div>
+           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">IN PROGRESS</p><h3 class="text-3xl font-black text-slate-800" id="kpi-progress-wo">0</h3></div>
+           </div>
+           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">WAITING PART</p><h3 class="text-3xl font-black text-slate-800" id="kpi-wait-wo">0</h3></div>
+           </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">WO Status Distribution</h3>
+                <div class="relative h-64 w-full flex justify-center"><canvas id="statusChart"></canvas></div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Equip Breakdown</h3>
+                <div class="relative h-64 w-full"><canvas id="equipChart"></canvas></div>
+            </div>
+        </div>
+      </section>
+
+      <!-- PAGE: BACKLOG MANAGEMENT (NEW) -->
+      <section id="page-backlog" class="content-page hidden page pb-12">
+        <div class="max-w-6xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-6 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-clipboard-check mr-3 text-amber-500"></i> Backlog Management</h2>
+          </div>
+          
+          <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl mb-8 text-amber-800 text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-info-circle text-amber-500 mr-1"></i> Data backlog yang diinput di sini akan terhubung langsung ke <b>Monitoring Service</b> untuk memudahkan mekanik melihat riwayat pending perbaikan alat.
+          </div>
+
+          <form id="backlogForm" onsubmit="handleSaveBacklog(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
+                <input type="text" id="bl_equip" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Unit" required>
+            </div>
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal Ditemukan</label>
+                <input type="date" id="bl_tanggal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Rencana Eksekusi (Opsional)</label>
+                <input type="text" id="bl_rencana" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Misal: Saat PS-2 / Menunggu Part B">
+            </div>
+            <div class="space-y-2 md:col-span-4">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Deskripsi Backlog / Temuan</label>
+                <textarea id="bl_desc" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-theme-accent outline-none shadow-sm resize-none h-24" placeholder="Detail kendala yang belum diselesaikan..." required></textarea>
+            </div>
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-amber-500 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-amber-600">SIMPAN BACKLOG BARU</button>
+            </div>
+          </form>
+
+          <!-- Backlog Table -->
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="relative w-full md:w-80">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="filterBacklog" onkeyup="renderBacklogTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 font-medium text-sm shadow-sm" placeholder="Cari Unit / ID / Deskripsi...">
+            </div>
+            <select id="filterStatusBacklog" onchange="renderBacklogTable()" class="w-full md:w-auto px-5 py-3.5 border border-slate-200 rounded-2xl font-black text-slate-600 outline-none">
+                <option value="OPEN">Tampilkan Status OPEN</option>
+                <option value="CLOSED">Tampilkan Status CLOSED</option>
+                <option value="ALL">Tampilkan Semua Status</option>
+            </select>
+          </div>
+          
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[800px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-6 w-32">ID / TGL</th><th class="p-6 w-32">EQUIP NO</th><th class="p-6">DESKRIPSI & RENCANA</th><th class="p-6 w-32 text-center">STATUS</th><th class="p-6 w-24 text-right">AKSI</th></tr>
+              </thead>
+              <tbody id="backlogTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: INPUT DAILY HM -->
+      <section id="page-daily-hm" class="content-page hidden page pb-12">
+        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-6 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-tachometer-alt mr-3"></i> Input Daily HM</h2>
+          </div>
+          <div class="bg-blue-50 border border-blue-200 p-5 rounded-2xl mb-8 text-blue-800 text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-info-circle text-blue-500 mr-1"></i> Data Hour Meter (HM) harian ini krusial untuk menghitung <b>MTBF yang lebih akurat</b> (Berdasarkan Actual Operating Hours). Kalkulasi <b>Total HM</b> otomatis diambil menjadi nilai operasi aktual dan menggantikan porsi target jika tersedia.
+          </div>
+
+          <form id="dailyHmForm" onsubmit="handleSaveDailyHM(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal</label>
+                <input type="date" id="hm_tanggal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
+                <input type="text" id="hm_equip_no" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Kode Unit" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM Awal Shift</label>
+                <input type="number" step="0.1" id="hm_awal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 1200.5" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM Akhir Shift</label>
+                <input type="number" step="0.1" id="hm_akhir" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 1210.5" required>
+            </div>
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-theme-main text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px]">SIMPAN DAILY HM</button>
+            </div>
+          </form>
+
+          <!-- Daily HM Table / History view -->
+          <div class="mt-12">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-t pt-8 border-slate-200">
+              <h3 class="text-lg font-black text-theme-main uppercase tracking-widest"><i class="fas fa-history mr-2"></i> Riwayat Input HM</h3>
+              <div class="flex gap-4 w-full md:w-auto">
+                <div class="relative w-full md:w-64">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="filterHM" onkeyup="resetPagination('hm'); renderDailyHMTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Cari Unit / Tanggal...">
+                </div>
+                <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+                    <button onclick="changeHmPage(-1)" class="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                    <span class="text-[10px] font-black px-2 text-slate-500 whitespace-nowrap tracking-widest" id="hmPageInfo">1 / 1</span>
+                    <button onclick="changeHmPage(1)" class="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm bg-white">
+              <table class="w-full text-left text-sm min-w-[700px]">
+                <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                  <tr>
+                    <th class="p-5">TANGGAL</th>
+                    <th class="p-5">EQUIP NO</th>
+                    <th class="p-5 text-right">HM AWAL</th>
+                    <th class="p-5 text-right">HM AKHIR</th>
+                    <th class="p-5 text-right text-theme-accent">TOTAL HM</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyHmTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: MANAGE USERS -->
+      <section id="page-manage-users" class="content-page hidden page pb-12">
+        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-users-cog mr-3"></i> User Management</h2>
+          </div>
+          <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Username</label>
+              <input type="text" id="u_username" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none lowercase font-bold shadow-sm" placeholder="userid" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Password</label>
+              <input type="password" id="u_password" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm" placeholder="*****" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Display Name</label>
+              <input type="text" id="u_nama" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm" placeholder="Full Name" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Role Access</label>
+              <select id="u_role" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm cursor-pointer">
+                <option value="SPV Planner">SPV Planner</option>
+                <option value="Admin Plant">Admin Plant</option>
+                <option value="Mekanik">Mekanik</option>
+              </select>
+            </div>
+            <button type="submit" class="md:col-span-4 bg-theme-main text-white font-black py-4 rounded-2xl shadow-xl hover:opacity-90 transition-all uppercase tracking-[0.2em] text-xs mt-2 active:scale-95">Simpan Data User</button>
+          </form>
+
+          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-6">User ID</th><th class="p-6">Full Name</th><th class="p-6">Role</th><th class="p-6 text-right">Action</th></tr>
+              </thead>
+              <tbody id="userTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: PENGATURAN TEMA -->
+      <section id="page-pengaturan" class="content-page hidden page pb-12">
+        <div class="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-[3rem] shadow-sm border border-slate-100">
+            <h2 class="text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
+            <p class="text-sm font-medium text-slate-500 mb-10 border-b pb-6">Ubah identitas dan warna tema aplikasi agar sesuai dengan branding perusahaan Anda.</p>
+            <form id="settingsForm" class="space-y-8">
+                <div>
+                    <label class="block text-[11px] font-black text-slate-500 mb-3 uppercase tracking-widest">Nama Perusahaan (Kop Cetak & Navbar)</label>
+                    <input type="text" id="conf_company" class="w-full px-5 py-4 border border-slate-200 rounded-2xl font-bold text-lg outline-none focus:ring-4 focus:ring-theme-accent/20 transition-shadow shadow-sm" required>
+                </div>
+                <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                    <label class="block text-[11px] font-black text-slate-500 mb-4 uppercase tracking-widest">Warna Tema Aplikasi</label>
+                    <div class="flex gap-6 items-center">
+                        <input type="color" id="conf_color" class="h-16 w-32 rounded-xl cursor-pointer border-2 border-white shadow-md p-0">
+                        <div>
+                           <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Kode Hex</p>
+                           <span class="text-lg text-slate-700 font-mono font-black bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm" id="hexDisplay">#0f172a</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-theme-main text-white font-black py-5 rounded-2xl shadow-2xl shadow-theme-main/30 uppercase tracking-[0.2em] hover:opacity-90 transition-all active:scale-95 text-sm">TERAPKAN KONFIGURASI</button>
+                </div>
+            </form>
+        </div>
+      </section>
+
+      <!-- PAGE: MASTER PLAN ALAT -->
+      <section id="page-master-plan" class="content-page hidden page pb-12">
+        <div class="max-w-4xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-6 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-calendar-alt mr-3"></i> Master Plan Alat (KPI)</h2>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl mb-8 text-amber-800 text-xs font-medium leading-relaxed shadow-sm">
+              <div class="flex items-start gap-3">
+                 <i class="fas fa-exclamation-triangle text-xl text-amber-500 mt-1"></i> 
+                 <div>
+                    <b class="uppercase tracking-widest text-[10px]">Penting (Update):</b><br>
+                    Daftarkan Equip No beserta <b>Target Jam Operasi (HM)</b> dan <b>Target PA (%)</b> per bulan. Model unit pada tabel ini akan menjadi dasar pembentukan layout Papan Catur / Status Unit di Dashboard.
+                 </div>
+              </div>
+          </div>
+
+          <form id="planForm" onsubmit="handleSavePlan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
+                <input type="text" id="m_plan_equip" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Equip" required>
+            </div>
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Model Alat</label>
+                <input type="text" id="m_plan_model" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Misal: D85ESS-2" required>
+            </div>
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Target HM / Bln</label>
+                <input type="number" id="m_plan_hours" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 720" required value="720">
+            </div>
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Target PA (%)</label>
+                <input type="number" step="0.1" id="m_plan_pa" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 85" required value="85">
+            </div>
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-theme-main text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-transform uppercase tracking-widest text-[10px]">DAFTARKAN PLAN & POPULASI</button>
+            </div>
+          </form>
+          
+          <div class="overflow-x-auto shadow-sm rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-sm min-w-[700px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-6">EQUIP NO</th><th class="p-6">MODEL</th><th class="p-6 text-center">TARGET HM</th><th class="p-6 text-center">TARGET PA</th></tr>
+              </thead>
+              <tbody id="masterPlanBody" class="divide-y divide-slate-50"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: MASTER EQUIP -->
+      <section id="page-master-equip" class="content-page hidden page pb-12">
+        <div class="max-w-4xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-truck-pickup mr-3"></i> Master Equipment</h2>
+          </div>
+          <form id="equipForm" onsubmit="handleSaveEquip(event)" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
+               <input type="text" id="m_equip_no" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Kode Unit" required>
+            </div>
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Brand</label>
+               <input type="text" id="m_brand" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Merek" required>
+            </div>
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Unit Type</label>
+               <input type="text" id="m_equip_type" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Tipe Unit" required>
+            </div>
+            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-xs shadow-xl mt-2">Tambah Equipment</button>
+          </form>
+          <div class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="relative w-full md:w-80">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="filterEquip" onkeyup="resetPagination('equip'); renderMasterEquipTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Cari Kode Unit / Brand...">
+            </div>
+            <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+                <button onclick="changeEqPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                <span class="text-[11px] font-black px-4 text-slate-500 whitespace-nowrap tracking-widest" id="equipPageInfo">1 / 1</span>
+                <button onclick="changeEqPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-6">EQUIP NO</th><th class="p-6">BRAND</th><th class="p-6">TYPE</th></tr>
+              </thead>
+              <tbody id="masterEquipBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: MASTER PARTS -->
+      <section id="page-master-parts" class="content-page hidden page pb-12">
+        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-cogs mr-3"></i> Master Parts</h2>
+          </div>
+          
+          <form id="partMasterForm" onsubmit="handleSavePart(event)" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Part Number</label>
+               <input type="text" id="m_part_no" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold font-mono uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="P/N" required>
+            </div>
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Description</label>
+               <input type="text" id="m_part_desc" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Nama Barang" required>
+            </div>
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">UOM</label>
+               <input type="text" id="m_part_uom" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="EA/PC/SET" required>
+            </div>
+            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-xs shadow-xl mt-2">Tambah Sparepart</button>
+          </form>
+
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="relative w-full md:w-96">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="filterParts" onkeyup="resetPagination('parts'); renderMasterPartsTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Ketik Part No / Desc...">
+            </div>
+            
+            <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+                <button onclick="changePtPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                <span class="text-[11px] font-black px-4 text-slate-500 flex items-center whitespace-nowrap tracking-widest" id="partPageInfo">1 / 1</span>
+                <button onclick="changePtPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+          
+          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-6 w-1/4">PART NO</th><th class="p-6 w-1/2">DESCRIPTION</th><th class="p-6 w-1/4">UOM</th></tr>
+              </thead>
+              <tbody id="masterPartsBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: FORM WO -->
+      <section id="page-buat-wo" class="content-page hidden page pb-12">
+        <div class="max-w-5xl mx-auto bg-white p-6 md:p-12 rounded-[3rem] shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-10 border-b pb-6">
+            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-file-contract mr-3"></i> Work Order Form</h2>
+            <div id="wo_status_display" class="px-5 py-2 bg-theme-main/10 text-theme-main rounded-xl text-[11px] font-black uppercase tracking-widest border border-theme-main/20">STATUS: NEW</div>
+          </div>
+          
+          <form id="woForm" class="space-y-8" onsubmit="handleSaveWO(event)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              <div class="sm:col-span-2 md:col-span-1">
+                <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">WO Number</label>
+                <div class="flex gap-2">
+                  <input type="text" id="no_wo" class="flex-1 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent" required placeholder="Ex: 12-0797">
+                  <button type="button" onclick="tarikDataWO()" class="px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No (Master)</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent" placeholder="Kode Unit" required></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500" readonly></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500" readonly></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">HM (Hour Meter)</label><input type="text" id="hm_km" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" required placeholder="Angka HM"></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">PM Service</label><input type="text" id="pm_service" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Misal: PS-1"></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Major Component</label><input type="text" id="major_comp" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Ex: Engine"></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Minor Component</label><input type="text" id="minor_comp" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Ex: Radiator"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50/80 rounded-[2.5rem] border border-slate-200 shadow-inner">
+              <div class="space-y-4">
+                <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-5 flex items-center"><i class="fas fa-calendar-times mr-2 text-red-500 text-lg"></i> Breakdown Time</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_rusak" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm" required></div>
+                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_rusak_hh" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select><select id="jam_rusak_mm" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select></div></div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-5 flex items-center"><i class="fas fa-calendar-check mr-2 text-emerald-500 text-lg"></i> Completion Time</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_selesai" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm"></div>
+                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_selesai_hh" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select><select id="jam_selesai_mm" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+               <div>
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">SCH / UNSCH</label>
+                  <select id="sch_unsch" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-black focus:ring-2 focus:ring-theme-accent shadow-sm text-theme-main bg-white">
+                    <option value="UNSCH">UNSCH (Unscheduled)</option>
+                    <option value="SCH">SCH (Scheduled)</option>
+                  </select>
+               </div>
+               <div>
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Reported By</label>
+                  <input type="text" id="reported_by" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main" required placeholder="Nama Pelapor">
+               </div>
+               <div>
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Lead Technician (Manual)</label>
+                  <input type="text" id="tech" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main" placeholder="Ketik Nama Teknisi">
+               </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Failure Description</label><textarea id="issue" class="w-full px-5 py-5 border border-slate-200 rounded-[2rem] h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-sm" required placeholder="Deskripsi detail kerusakan unit..."></textarea></div>
+               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Analysis Reason</label><textarea id="failure_reason" class="w-full px-5 py-5 border border-slate-200 rounded-[2rem] h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-sm" placeholder="Analisa penyebab kerusakan..."></textarea></div>
+            </div>
+
+            <div class="bg-slate-50 p-6 md:p-10 rounded-[3rem] border border-slate-200 shadow-inner">
+              <div class="flex justify-between items-center mb-8">
+                <h3 class="text-sm font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-boxes text-theme-accent mr-2"></i> Parts Inquiry</h3>
+              </div>
+              <div class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-slate-100">
+                <table class="w-full text-left min-w-[900px]">
+                  <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
+                      <tr><th class="p-4 w-12 text-center">NO</th><th class="p-4 w-72">Part No (Auto-fill)</th><th class="p-4">Description</th><th class="p-4 w-20 text-center">Qty</th><th class="p-4 w-24 text-center">UOM</th><th class="p-4 w-40">Remarks</th><th class="p-4 w-12 text-center"><i class="fas fa-cog"></i></th></tr>
+                  </thead>
+                  <tbody id="partTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+              <button type="button" onclick="addPartRow()" class="mt-8 text-theme-main font-black text-xs uppercase tracking-widest border-2 border-slate-200 px-6 py-3.5 rounded-2xl hover:bg-theme-main hover:text-white hover:border-theme-main transition-all active:scale-95 shadow-sm"><i class="fas fa-plus-circle mr-2"></i> Add Part Row</button>
+            </div>
+            
+            <button type="submit" class="w-full bg-theme-main text-white font-black py-6 rounded-[2.5rem] shadow-2xl shadow-theme-main/40 uppercase tracking-[0.3em] hover:opacity-90 transition-all active:scale-[0.98] mt-6 text-sm">SUBMIT WORK ORDER</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- PAGE: LIST WO / MONITORING SERVICE -->
+      <section id="page-list-wo" class="content-page hidden page pb-12">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+          <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-laptop-medical mr-3"></i> Service Monitoring</h2>
+          <div class="flex flex-col md:flex-row gap-3 w-full sm:w-auto">
+             <div class="relative w-full md:w-72">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="filterMonitoring" onkeyup="resetPagination('monitoring'); renderWOTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-bold text-sm shadow-sm" placeholder="Cari WO / Unit...">
+             </div>
+             <div class="flex gap-2 justify-between">
+                 <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+                   <button onclick="changeMonPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                   <span class="text-[11px] font-black px-3 text-slate-500 whitespace-nowrap tracking-widest" id="monPageInfo">1 / 1</span>
+                   <button onclick="changeMonPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+                 </div>
+                 <button onclick="globalDataSync()" class="px-6 py-3.5 bg-theme-main text-white rounded-2xl font-black text-[10px] tracking-widest shadow-lg hover:opacity-90 transition-all uppercase"><i class="fas fa-sync-alt mr-2"></i> Sync</button>
+             </div>
+          </div>
+        </div>
+        
+        <div class="bg-blue-50/50 border border-blue-100 p-5 rounded-3xl mb-6 text-xs text-blue-800 flex items-start gap-4">
+            <i class="fas fa-info-circle text-2xl text-blue-500 mt-1"></i>
+            <div>
+                <p class="font-black mb-1 text-sm uppercase tracking-tight">Smart Monitoring & Sync</p>
+                <p class="font-medium opacity-90 leading-relaxed">Tabel ini tersinkronisasi langsung dengan <b>Data HM Aktual</b> (kolom Current HM) dan <b>Backlog</b>. Klik pada badge Backlog (jika ada) untuk memastikan mekanik mengeksekusi kendala tambahan saat unit berada di posisi bengkel/service.</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[1000px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-[10px] uppercase font-black text-slate-500 tracking-widest">
+                <tr>
+                    <th class="p-6">WO NO</th>
+                    <th class="p-6">UNIT / HM / BACKLOG</th>
+                    <th class="p-6">BREAKDOWN DATE</th>
+                    <th class="p-6 text-center">STATUS</th>
+                    <th class="p-6 text-right">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="woTableBody" class="divide-y divide-slate-50 text-[13px] font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- DATALISTS -->
+      <datalist id="listEquip"></datalist>
+      <datalist id="listParts"></datalist>
+
+    </main>
+  </div>
+
+  <!-- PRINT AREA (STRICT 1 PAGE A4 - NO OVERFLOW) -->
+  <div id="printArea" class="hidden">
+     <!-- KOP DOKUMEN -->
+     <div class="flex border-black">
+        <div class="w-1/4 p-4 border-r border-black flex items-center justify-center font-black print-header-title company-display-name">BSS</div>
+        <div class="w-1/2 p-4 border-r border-black flex items-center justify-center font-black text-xl uppercase tracking-[0.4em]">Work Order</div>
+        <div class="w-1/4 text-[8pt] font-black">
+           <div class="flex border-b border-black"><div class="w-1/2 p-1 border-r border-black uppercase">No Dok.</div><div class="w-1/2 p-1 uppercase">PLANT-BSS/XI/1/2025</div></div>
+           <div class="flex border-b border-black"><div class="w-1/2 p-1 border-r border-black uppercase">Tgl Efektif</div><div class="w-1/2 p-1 uppercase">13-Nov-25</div></div>
+           <div class="flex border-b border-black"><div class="w-1/2 p-1 border-r border-black uppercase">Revisi</div><div class="w-1/2 p-1 uppercase text-center">2</div></div>
+           <div class="flex"><div class="w-1/2 p-1 border-r border-black uppercase">Halaman</div><div class="w-1/2 p-1 text-center font-black">1</div></div>
+        </div>
+     </div>
+     
+     <!-- DETAIL WO -->
+     <div class="grid grid-cols-4 border-x border-b border-black uppercase font-black">
+        <div class="p-1 border-r border-black bg-gray-pdf print-label font-bold">Equip No</div><div class="p-1 border-r border-black print-value font-black" id="prn-equip">-</div>
+        <div class="p-1 border-r border-black bg-gray-pdf print-label font-bold">Work Order No.</div><div class="p-1 print-value font-black" id="prn-wo">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">Brand</div><div class="p-1 border-r border-t border-black print-value" id="prn-brand">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">HM/KM</div><div class="p-1 border-t border-black print-value" id="prn-hm">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">Unit Type</div><div class="p-1 border-r border-t border-black print-value" id="prn-type">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">PM Service</div><div class="p-1 border-t border-black print-value" id="prn-pm">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold text-[8pt]">Major Comp.</div><div class="p-1 border-r border-t border-black print-value" id="prn-major">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold text-[8pt]">Minor Comp.</div><div class="p-1 border-t border-black print-value" id="prn-minor">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">Sch/Unsch</div><div class="p-1 border-r border-t border-black print-value" id="prn-sch">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">WO Status</div><div class="p-1 border-t border-black print-value font-black text-blue-700" id="prn-status">OPEN</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">Breakdown DT</div><div class="p-1 border-r border-t border-black print-value font-black" id="prn-dt-r">-</div>
+        <div class="p-1 border-r border-t border-black bg-gray-pdf print-label font-bold">Completed DT</div><div class="p-1 border-t border-black print-value font-black" id="prn-dt-s">-</div>
+     </div>
+
+     <div class="flex border-x border-b border-black uppercase font-black">
+        <div class="w-1/4 p-1 bg-gray-pdf print-label font-bold border-r border-black">Reported By</div><div class="w-1/4 p-1 border-r border-black print-value font-black" id="prn-reported">-</div>
+        <div class="w-1/4 p-1 bg-gray-pdf print-label font-bold border-r border-black text-[8pt]">Lead Tech</div><div class="w-1/4 p-1 print-value font-black" id="prn-tech">-</div>
+     </div>
+
+     <div class="border-x border-b border-black">
+        <div class="p-1 bg-gray-pdf font-black text-center uppercase tracking-widest text-[9pt] border-b border-black">Deskripsi Kerusakan</div>
+        <div class="p-2 min-h-desc print-value font-black italic" id="prn-desc">-</div>
+        <div class="p-1 bg-gray-pdf font-black text-center uppercase tracking-widest text-[9pt] border-y border-black">Suspected Reason of Failure</div>
+        <div class="p-1 min-h-fail print-value font-black px-3" id="prn-failure">-</div>
+     </div>
+
+     <!-- PARTS TABLE PRINT -->
+     <div class="border-x border-b border-black">
+        <table class="w-full text-left border-collapse" style="table-layout: fixed;">
+          <thead>
+            <tr class="bg-gray-100 border-b border-black font-black uppercase text-[8.5pt]">
+              <th class="p-1 border-r border-black w-[5%] text-center">NO</th><th class="p-1 border-r border-black w-[20%]">Part Number</th><th class="p-1 border-r border-black w-[40%]">Description</th><th class="p-1 border-r border-black w-[10%] text-center">Qty</th><th class="p-1 border-r border-black w-[10%] text-center">UOM</th><th class="p-1 w-[15%] text-center">Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="prn-parts-body" class="print-value font-black text-[9pt]"></tbody>
+        </table>
+     </div>
+
+     <!-- TANDA TANGAN -->
+     <div class="grid grid-cols-3 text-center border-x border-b border-black h-sign uppercase font-black">
+        <div class="p-2 border-r border-black flex flex-col justify-between">
+          <span class="text-[8.5pt] tracking-tighter">Admin Plant / Planner</span>
+          <span id="prn-sign-admin" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+        </div>
+        <div class="p-2 border-r border-black flex flex-col justify-between">
+          <span class="text-[8.5pt] tracking-tighter">Mekanik</span>
+          <span id="prn-sign-mekanik" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+        </div>
+        <div class="p-2 flex flex-col justify-between">
+          <span class="text-[8.5pt] tracking-tighter">Spv Plant</span>
+          <span id="prn-sign-spv" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+        </div>
+     </div>
+  </div>
+
+  <!-- COPYRIGHT ATURAN WAJIB -->
+  <div class="no-print" style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
+    develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let mockDB = [];
+    let woDataCache = [];
+    let backlogCache = []; 
+    let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [] };
+    let partsDictCache = []; 
+    let allUsersCache = [];
+    
+    // Pagination Config
+    let currentMonPage = 1;
+    let currentEqPage = 1;
+    let currentPtPage = 1;
+    let currentHmPage = 1; // Ditambahkan: pagination untuk tabel HM
+    const ITEMS_PER_PAGE = 50;
+
+    // KPI Charts
+    let statusChartInstance = null;
+    let equipChartInstance = null;
+
+    // -------------------------------------------------------------------
+    // INIT & AUTH
+    // -------------------------------------------------------------------
+    window.onload = () => {
+      loadSettings();
+      const session = localStorage.getItem('bss_session_v18'); 
+      if (session) {
+        try {
+           currentUser = JSON.parse(session);
+           showApp();
+        } catch(e) { showLogin(); }
+      } else { showLogin(); }
+      
+      if(document.getElementById('conf_color')) {
+          document.getElementById('conf_color').addEventListener('input', function(e) {
+              document.getElementById('hexDisplay').innerText = e.target.value;
+          });
+      }
+    };
+
+    function loadSettings() {
+        if(typeof google === 'undefined') { applyTheme({CompanyName: 'PT. BSS (Simulasi)', ThemeColor: '#0f172a'}); return; }
+        google.script.run.withSuccessHandler(res => {
+            if(res.success) applyTheme(res.data);
+        }).getSettings();
+    }
+
+    function applyTheme(config) {
+        if(config.ThemeColor) {
+            document.documentElement.style.setProperty('--theme-main', config.ThemeColor);
+            if(document.getElementById('conf_color')) document.getElementById('conf_color').value = config.ThemeColor;
+            if(document.getElementById('hexDisplay')) document.getElementById('hexDisplay').innerText = config.ThemeColor;
+        }
+        if(config.CompanyName) {
+            document.querySelectorAll('.company-display-name').forEach(el => el.innerText = config.CompanyName);
+            if(document.getElementById('conf_company')) document.getElementById('conf_company').value = config.CompanyName;
+        }
+    }
+
+    if(document.getElementById('settingsForm')) {
+        document.getElementById('settingsForm').onsubmit = function(e) {
+            e.preventDefault();
+            const conf = { CompanyName: document.getElementById('conf_company').value, ThemeColor: document.getElementById('conf_color').value };
+            applyTheme(conf);
+            Swal.fire('Berhasil', 'Konfigurasi Sistem Diperbarui', 'success');
+            if(typeof google !== 'undefined') google.script.run.saveSettings(conf);
+        };
+    }
+
+    function showLogin() {
+      const authCont = document.getElementById('authContainer');
+      const appCont = document.getElementById('appContainer');
+      if(authCont) authCont.classList.remove('hidden');
+      if(appCont) appCont.classList.add('hidden');
+    }
+
+    function showApp() {
+      const authCont = document.getElementById('authContainer');
+      const appCont = document.getElementById('appContainer');
+      if(authCont) authCont.classList.add('hidden');
+      if(appCont) appCont.classList.remove('hidden');
+      
+      if(document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').innerText = currentUser.nama;
+      if(document.getElementById('dashName')) document.getElementById('dashName').innerText = currentUser.nama.split(' ')[0];
+      if(document.getElementById('userRoleDisplay')) document.getElementById('userRoleDisplay').innerText = currentUser.role;
+      if(document.getElementById('userInitial')) document.getElementById('userInitial').innerText = currentUser.nama.charAt(0).toUpperCase();
+
+      const isMekanik = currentUser.role === 'Mekanik';
+      const r = (currentUser.role || '').toUpperCase();
+
+      if (isMekanik) {
+        if(document.getElementById('dashTitle')) document.getElementById('dashTitle').innerText = "Mechanic Area 👋";
+        if(document.getElementById('dashDesc')) document.getElementById('dashDesc').innerText = "Pantau status Work Order, Backlog, dan Monitoring.";
+        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').classList.add('hidden');
+      }
+
+      if (document.getElementById('nav-admin-section')) {
+         document.getElementById('nav-admin-section').style.display = r.includes('PLANNER') ? 'block' : 'none';
+      }
+
+      initTimeSelectors();
+      globalDataSync(); 
+      navigate('dashboard');
+    }
+
+    document.getElementById('loginForm').onsubmit = function(e) {
+      e.preventDefault();
+      const fd = { username: this.username.value, password: this.password.value };
+      startLoading("VERIFIKASI AKUN...");
+      if (typeof google === 'undefined') {
+        setTimeout(() => {
+          endLoading();
+          let r = fd.username === 'planner' ? 'SPV Planner' : (fd.username === 'mekanik' ? 'Mekanik' : 'Admin Plant');
+          currentUser = { username: fd.username, nama: fd.username.toUpperCase(), role: r };
+          localStorage.setItem('bss_session_v18', JSON.stringify(currentUser));
+          showApp();
+        }, 800);
+      } else {
+        google.script.run.withSuccessHandler(res => { 
+          endLoading(); 
+          if(res.success){ currentUser = res.user; localStorage.setItem('bss_session_v18', JSON.stringify(currentUser)); showApp(); } 
+          else { Swal.fire('Gagal', res.message, 'error'); } 
+        }).withFailureHandler(err => { endLoading(); Swal.fire('Error', err, 'error'); }).loginUser(fd);
+      }
+    };
+
+    function handleLogout() { localStorage.removeItem('bss_session_v18'); location.reload(); }
+
+    function navigate(id) {
+      if(window.innerWidth < 768) { 
+          const sidebar = document.getElementById('sidebar');
+          if (sidebar) sidebar.classList.remove('open'); 
+          const overlay = document.getElementById('sidebarOverlay');
+          if (overlay) overlay.classList.remove('active'); 
+      }
+      
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById('page-' + id);
+      if (target) target.classList.add('active');
+      
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        const isActive = b.dataset.page === id;
+        b.classList.toggle('active', isActive);
+      });
+      
+      if(id === 'list-wo') { currentMonPage=1; renderWOTable(); }
+      if(id === 'dashboard') { calculateKPIFrontEnd(); }
+      if(id === 'buat-wo') { prepareWOForm(); }
+      if(id === 'backlog') { renderBacklogTable(); }
+      if(id === 'daily-hm') { renderDailyHMTable(); }
+      if(id === 'master-equip') { currentEqPage=1; renderMasterEquipTable(); }
+      if(id === 'master-parts') { currentPtPage=1; renderMasterPartsTable(); }
+      if(id === 'manage-users') { loadUsers(); }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if(sidebar) sidebar.classList.toggle('open');
+      if(overlay) overlay.classList.toggle('active');
+    }
+
+    function initTimeSelectors() {
+      const hh = ['jam_rusak_hh', 'jam_selesai_hh'];
+      const mm = ['jam_rusak_mm', 'jam_selesai_mm'];
+      hh.forEach(id => { const sel = document.getElementById(id); if(sel) { sel.innerHTML = '<option value="">HH</option>'; for(let i=0; i<24; i++) { let v = i.toString().padStart(2,'0'); sel.innerHTML += `<option value="${v}">${v}</option>`; } } });
+      mm.forEach(id => { const sel = document.getElementById(id); if(sel) { sel.innerHTML = '<option value="">MM</option>'; for(let i=0; i<60; i+=5) { let v = i.toString().padStart(2,'0'); sel.innerHTML += `<option value="${v}">${v}</option>`; } } });
+    }
+
+    function startLoading(t) { document.getElementById('loadingText').innerText = t || "Processing..."; document.getElementById('loadingOverlay').classList.remove('hidden'); }
+    function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+
+    // -------------------------------------------------------------------
+    // OPTIMIZED SYNC (Single-trip backend fetching)
+    // -------------------------------------------------------------------
+    function globalDataSync() {
+      if(typeof google === 'undefined') {
+          woDataCache = [...mockDB];
+          populateMonthFilter();
+          renderWOTable();
+          renderBacklogTable();
+          renderDailyHMTable();
+          calculateKPIFrontEnd();
+          return;
+      }
+      startLoading("OPTIMIZED SYNC...");
+      google.script.run.withSuccessHandler(res => {
+          endLoading();
+          if (res && res.success) {
+              masterCache.equip = res.equip || [];
+              masterCache.parts = res.parts || [];
+              masterCache.planAlat = res.planAlat || [];
+              masterCache.dailyHM = res.dailyHM || [];
+              woDataCache = res.wo || [];
+              backlogCache = res.backlog || [];
+              partsDictCache = res.parts || [];
+              
+              // Populate Datalists
+              const le = document.getElementById('listEquip');
+              if(le) le.innerHTML = masterCache.equip.map(e => `<option value="${e.equip_no}">${e.brand} - ${e.unit_type}</option>`).join('');
+              
+              const lp = document.getElementById('listParts');
+              if(lp) lp.innerHTML = masterCache.parts.map(p => `<option value="${p.part_number}">${p.description}</option>`).join('');
+              
+              // Re-render UI
+              populateMonthFilter();
+              calculateKPIFrontEnd();
+              renderWOTable();
+              renderBacklogTable();
+              renderDailyHMTable();
+              renderMasterEquipTable();
+              renderMasterPartsTable();
+              if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
+          } else {
+              Swal.fire('Error', res.message || 'Gagal sinkronisasi.', 'error');
+          }
+      }).withFailureHandler(err => {
+          endLoading();
+          Swal.fire('Error Fatal', err.toString(), 'error');
+      }).getOptimizedData();
+    }
+    
+    // Alias untuk fallback jika fungsi lama dipanggil di tag HTML
+    function syncMasterData() { globalDataSync(); }
+    function loadWOData() { globalDataSync(); }
+
+    // -------------------------------------------------------------------
+    // KPI MODULE (Dynamic Plan PA & Dashboard Chessboard)
+    // -------------------------------------------------------------------
+    function populateMonthFilter() {
+      const select = document.getElementById('kpiMonthFilter');
+      const selectMob = document.getElementById('kpiMonthFilterMobile');
+      if(!select || !selectMob) return;
+      
+      const months = new Set();
+      (woDataCache || []).forEach(d => {
+         let dateStr = d.tgl_rusak || d.tgl_input;
+         if(dateStr && dateStr.length >= 7) { months.add(dateStr.substring(0, 7)); }
+      });
+      
+      const sortedMonths = Array.from(months).sort().reverse();
+      let html = `<option value="ALL">ALL TIME / SEMUA BULAN</option>`;
+      sortedMonths.forEach(m => { html += `<option value="${m}">${m}</option>`; });
+      
+      const currentVal = select.value;
+      select.innerHTML = html; selectMob.innerHTML = html;
+      if(sortedMonths.includes(currentVal)) { select.value = currentVal; selectMob.value = currentVal; }
+    }
+
+    function calculateKPIFrontEnd() {
+      const monthFilter = document.getElementById('kpiMonthFilter') ? document.getElementById('kpiMonthFilter').value : 'ALL';
+      let data = woDataCache || [];
+
+      if (monthFilter !== 'ALL') {
+          data = data.filter(d => (d.tgl_rusak || '').startsWith(monthFilter) || (d.tgl_input || '').startsWith(monthFilter));
+      }
+
+      let validEquipSet = new Set();
+      let totalPlanHours = 0;
+      let targetPAWeight = 0; 
+      
+      if (masterCache.planAlat && masterCache.planAlat.length > 0) {
+          masterCache.planAlat.forEach(p => {
+              if(p.equip_no) { 
+                  validEquipSet.add(p.equip_no.toString().toUpperCase()); 
+                  totalPlanHours += parseInt(p.plan_hours_per_month) || 720; 
+                  targetPAWeight += parseFloat(p.plan_pa) || 85;
+              }
+          });
+      }
+
+      let kpiData = data;
+      let avgTargetPA = 85;
+      if (validEquipSet.size > 0) {
+          kpiData = data.filter(d => d.equip_no && validEquipSet.has(d.equip_no.toString().toUpperCase()));
+          avgTargetPA = (targetPAWeight / validEquipSet.size).toFixed(1);
+      } else {
+          const uniqueEquipCount = new Set(data.filter(d => d.equip_no).map(d => d.equip_no.toString().toUpperCase())).size || 1;
+          totalPlanHours = uniqueEquipCount * 720;
+      }
+      
+      if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `TARGET >${avgTargetPA}%`;
+
+      // Kalkulasi Aktual HM Operation (Akumulasi nilai Total_HM dari sheet DailyHM)
+      let actualOperatingHours = 0;
+      if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
+          masterCache.dailyHM.forEach(hm => {
+              if(hm.equip_no && validEquipSet.has(hm.equip_no.toString().toUpperCase())) {
+                  if(monthFilter === 'ALL' || (hm.tanggal && hm.tanggal.startsWith(monthFilter))) {
+                      actualOperatingHours += parseFloat(hm.total_hm) || 0;
+                  }
+              }
+          });
+      }
+
+      let downtimeUnsch = 0; let downtimeSch = 0; let countUnsch = 0; let countSch = 0;
+      const closedWOs = kpiData.filter(d => d.status === 'CLOSED' && d.tgl_rusak && d.tgl_selesai);
+      
+      closedWOs.forEach(wo => {
+          try {
+              const start = new Date(`${wo.tgl_rusak}T${wo.jam_rusak || '00:00'}`);
+              const end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
+              if (!isNaN(start) && !isNaN(end) && end > start) {
+                  const diffHours = (end - start) / (1000 * 60 * 60);
+                  if((wo.sch_unsch || '').toUpperCase() === 'UNSCH') { downtimeUnsch += diffHours; countUnsch++; }
+                  else { downtimeSch += diffHours; countSch++; }
+              }
+          } catch(e) {}
+      });
+
+      const totalDowntime = downtimeUnsch + downtimeSch;
+      const totalBreakdowns = countUnsch + countSch;
+
+      // MTBF CALCULATION - Jika Actual Operating Hours (Dari Total_HM DailyHM) lebih dari 0, gunakan itu, jika kosong kembali ke Plan.
+      const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : (totalPlanHours - totalDowntime);
+
+      const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
+      const mtbf = countUnsch > 0 ? (uptimeHours / countUnsch).toFixed(1) : 0; 
+      
+      // PA Actual calculation
+      let pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
+      if(pa > 100) pa = 100; if(pa < 0 || isNaN(pa)) pa = 0;
+
+      if(document.getElementById('kpi-pa')) document.getElementById('kpi-pa').innerHTML = `${pa}<span class="text-2xl text-slate-400">%</span>`;
+      if(document.getElementById('kpi-mttr')) document.getElementById('kpi-mttr').innerHTML = `${mttr}<span class="text-2xl text-slate-400">h</span>`;
+      if(document.getElementById('kpi-mtbf')) document.getElementById('kpi-mtbf').innerHTML = `${mtbf}<span class="text-2xl text-slate-400">h</span>`;
+      
+      // Update Total Pending Backlogs indicator
+      const openBacklogCount = (backlogCache || []).filter(b => b.status === 'OPEN').length;
+      if(document.getElementById('kpi-pending-backlog')) document.getElementById('kpi-pending-backlog').innerText = openBacklogCount;
+
+      const totalWO = data.length;
+      const totalOpen = data.filter(d => d.status === 'OPEN' || !d.status).length;
+      const totalProg = data.filter(d => d.status === 'PROGRESS').length;
+      const totalWait = data.filter(d => d.status === 'WAITING PART').length;
+      const totalClosed = data.filter(d => d.status === 'CLOSED').length;
+
+      if(document.getElementById('kpi-total-wo')) document.getElementById('kpi-total-wo').innerText = totalWO;
+      if(document.getElementById('kpi-open-wo')) document.getElementById('kpi-open-wo').innerText = totalOpen;
+      if(document.getElementById('kpi-progress-wo')) document.getElementById('kpi-progress-wo').innerText = totalProg;
+      if(document.getElementById('kpi-wait-wo')) document.getElementById('kpi-wait-wo').innerText = totalWait;
+
+      // Update Charts
+      const ctxStatus = document.getElementById('statusChart');
+      if(ctxStatus) {
+          if(statusChartInstance) statusChartInstance.destroy();
+          statusChartInstance = new Chart(ctxStatus.getContext('2d'), {
+              type: 'doughnut',
+              data: { labels: ['OPEN', 'PROGRESS', 'WAITING PART', 'CLOSED'], datasets: [{ data: [totalOpen, totalProg, totalWait, totalClosed], backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'], borderWidth: 0 }] },
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 10, family: 'Plus Jakarta Sans'} } } } }
+          });
+      }
+
+      const ctxEquip = document.getElementById('equipChart');
+      if(ctxEquip) {
+          let equipCount = {};
+          data.forEach(d => { if(d.equip_no) { equipCount[d.equip_no] = (equipCount[d.equip_no] || 0) + 1; } });
+          let sortedEquip = Object.entries(equipCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+          if(equipChartInstance) equipChartInstance.destroy();
+          const themeColor = document.documentElement.style.getPropertyValue('--theme-main') || '#0f172a';
+          equipChartInstance = new Chart(ctxEquip.getContext('2d'), {
+              type: 'bar',
+              data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] },
+              options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } }
+          });
+      }
+
+      // Render Unit Status Board
+      const summaryBody = document.getElementById('summaryBoardBody');
+      const summaryFooter = document.getElementById('summaryBoardFooter');
+      const detailBody = document.getElementById('detailBoardBody');
+
+      if (masterCache.planAlat) {
+          const boardData = {}; 
+
+          masterCache.planAlat.forEach(p => {
+              const unitNo = p.equip_no.toUpperCase();
+              let model = p.model ? p.model.toUpperCase() : 'OTHERS';
+
+              if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
+
+              const activeWOs = (woDataCache || []).filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.status !== 'CLOSED');
+              
+              if (activeWOs.length > 0) {
+                  boardData[model].bd.push(unitNo);
+              } else {
+                  boardData[model].rfu.push(unitNo);
+              }
+          });
+
+          let summaryHTML = '';
+          let detailHTML = '';
+          let totalRFU = 0;
+          let totalBD = 0;
+
+          const models = Object.keys(boardData).sort();
+
+          models.forEach(model => {
+              const rfuList = boardData[model].rfu.sort();
+              const bdList = boardData[model].bd.sort();
+              const rfuCount = rfuList.length;
+              const bdCount = bdList.length;
+
+              totalRFU += rfuCount;
+              totalBD += bdCount;
+
+              summaryHTML += `<tr>
+                <td class="border border-slate-300 p-2 text-left font-black">${model}</td>
+                <td class="border border-slate-300 p-2 text-emerald-600">${rfuCount}</td>
+                <td class="border border-slate-300 p-2 text-red-600">${bdCount}</td>
+              </tr>`;
+
+              detailHTML += `<tr>
+                  <td class="border border-slate-300 p-2" rowspan="2" style="background-color: #f8fafc;">${model}</td>
+                  <td class="border border-slate-300 p-2 bg-emerald-100 text-emerald-700">RFU</td>
+                  <td class="border border-slate-300 p-2 text-left">
+                      <div class="flex flex-wrap gap-1.5 pl-2">
+                          ${rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded text-[10px] shadow-sm">${u}</span>`).join('')}
+                      </div>
+                  </td>
+              </tr>
+              <tr>
+                  <td class="border border-slate-300 p-2 bg-red-100 text-red-700">BD</td>
+                  <td class="border border-slate-300 p-2 text-left">
+                      <div class="flex flex-wrap gap-1.5 pl-2">
+                          ${bdList.map(u => `<span class="px-2 py-1 bg-red-600 text-white rounded text-[10px] shadow-sm">${u}</span>`).join('')}
+                      </div>
+                  </td>
+              </tr>`;
+          });
+
+          if (models.length === 0) {
+              summaryHTML = `<tr><td colspan="3" class="border border-slate-300 p-4 text-slate-400">No Data</td></tr>`;
+              detailHTML = `<tr><td colspan="3" class="border border-slate-300 p-4 text-slate-400">Silakan daftarkan unit di Master Plan Alat.</td></tr>`;
+          }
+
+          const summaryFooterHTML = `<tr><td class="border border-slate-300 p-2 text-left">TOTAL</td><td class="border border-slate-300 p-2 text-emerald-400">${totalRFU}</td><td class="border border-slate-300 p-2 text-red-400">${totalBD}</td></tr>`;
+
+          if(summaryBody) summaryBody.innerHTML = summaryHTML;
+          if(summaryFooter) summaryFooter.innerHTML = summaryFooterHTML;
+          if(detailBody) detailBody.innerHTML = detailHTML;
+      }
+    }
+
+    // -------------------------------------------------------------------
+    // MASTER DATA RENDERER (Equip, Parts, Plan, Daily HM)
+    // -------------------------------------------------------------------
+    function changeEqPage(dir) { currentEqPage += dir; renderMasterEquipTable(); }
+    function changePtPage(dir) { currentPtPage += dir; renderMasterPartsTable(); }
+    function changeHmPage(dir) { currentHmPage += dir; renderDailyHMTable(); }
+    
+    function resetPagination(type) { 
+        if(type==='equip') currentEqPage=1; 
+        if(type==='parts') currentPtPage=1; 
+        if(type==='hm') currentHmPage=1;
+    }
+
+    function renderMasterEquipTable() {
+      const eBody = document.getElementById('masterEquipBody');
+      if(!eBody) return;
+      const qE = document.getElementById('filterEquip')?.value.toLowerCase() || '';
+      let filteredE = (masterCache.equip || []).filter(e => String(e.equip_no||'').toLowerCase().includes(qE) || String(e.brand||'').toLowerCase().includes(qE));
+      
+      const totalPages = Math.ceil(filteredE.length / ITEMS_PER_PAGE) || 1;
+      if(currentEqPage > totalPages) currentEqPage = totalPages;
+      if(currentEqPage < 1) currentEqPage = 1;
+      const paged = filteredE.slice((currentEqPage - 1) * ITEMS_PER_PAGE, currentEqPage * ITEMS_PER_PAGE);
+      
+      const pageInfo = document.getElementById('equipPageInfo');
+      if(pageInfo) pageInfo.innerText = `${currentEqPage} / ${totalPages} (${filteredE.length} Data)`;
+      
+      if(paged.length === 0) { eBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
+      eBody.innerHTML = paged.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black uppercase text-slate-800">${e.equip_no}</td><td class="p-4 uppercase">${e.brand}</td><td class="p-4 uppercase text-theme-accent font-bold">${e.unit_type}</td></tr>`).join('');
+    }
+
+    function renderMasterPartsTable() {
+      const pBody = document.getElementById('masterPartsBody');
+      if(!pBody) return;
+      const qP = document.getElementById('filterParts')?.value.toLowerCase() || '';
+      let filteredP = (masterCache.parts || []).filter(p => String(p.part_number||'').toLowerCase().includes(qP) || String(p.description||'').toLowerCase().includes(qP));
+      
+      const totalPages = Math.ceil(filteredP.length / ITEMS_PER_PAGE) || 1;
+      if(currentPtPage > totalPages) currentPtPage = totalPages;
+      if(currentPtPage < 1) currentPtPage = 1;
+      const paged = filteredP.slice((currentPtPage - 1) * ITEMS_PER_PAGE, currentPtPage * ITEMS_PER_PAGE);
+      
+      const pageInfo = document.getElementById('partPageInfo');
+      if(pageInfo) pageInfo.innerText = `${currentPtPage} / ${totalPages} (${filteredP.length} Data)`;
+      
+      if(paged.length === 0) { pBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
+      pBody.innerHTML = paged.map(pt => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black uppercase text-slate-800">${pt.part_number}</td><td class="p-4">${pt.description}</td><td class="p-4 font-black text-theme-accent uppercase">${pt.uom}</td></tr>`).join('');
+    }
+
+    function renderMasterPlanTable() {
+      const pb = document.getElementById('masterPlanBody');
+      if(!pb) return;
+      if(!masterCache.planAlat || masterCache.planAlat.length === 0) {
+          pb.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold">Belum ada Plan Alat terdaftar.</td></tr>';
+          return;
+      }
+      pb.innerHTML = masterCache.planAlat.map(p => `<tr class="border-b hover:bg-slate-50">
+         <td class="p-6 font-black uppercase text-slate-800">${p.equip_no}</td>
+         <td class="p-6 font-black text-slate-500">${p.model || '-'}</td>
+         <td class="p-6 font-black text-theme-accent text-center">${p.plan_hours_per_month} Jam</td>
+         <td class="p-6 font-black text-blue-500 text-center">${p.plan_pa || 85}%</td>
+      </tr>`).join('');
+    }
+
+    function renderDailyHMTable() {
+        const tbody = document.getElementById('dailyHmTableBody');
+        if(!tbody) return;
+        
+        const q = (document.getElementById('filterHM')?.value || '').toLowerCase();
+        
+        // Urutkan HM dari yang paling baru
+        let sortedHM = [...(masterCache.dailyHM || [])].sort((a,b) => {
+            let da = new Date(a.tanggal || 0);
+            let db = new Date(b.tanggal || 0);
+            return db - da;
+        });
+
+        let filtered = sortedHM.filter(h => 
+            String(h.equip_no||'').toLowerCase().includes(q) || 
+            String(h.tanggal||'').toLowerCase().includes(q)
+        );
+        
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+        if(currentHmPage > totalPages) currentHmPage = totalPages;
+        if(currentHmPage < 1) currentHmPage = 1;
+        const paged = filtered.slice((currentHmPage - 1) * ITEMS_PER_PAGE, currentHmPage * ITEMS_PER_PAGE);
+        
+        const pageInfo = document.getElementById('hmPageInfo');
+        if(pageInfo) pageInfo.innerText = `${currentHmPage} / ${totalPages} (${filtered.length} Data)`;
+        
+        if(paged.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Data riwayat HM kosong.</td></tr>'; 
+            return; 
+        }
+        
+        tbody.innerHTML = paged.map(h => `<tr class="border-b hover:bg-slate-50 transition-colors">
+            <td class="p-5 font-bold text-slate-500 text-xs">${h.tanggal}</td>
+            <td class="p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
+            <td class="p-5 text-right font-mono">${h.hm_awal}</td>
+            <td class="p-5 text-right font-mono">${h.hm_akhir}</td>
+            <td class="p-5 text-right font-black text-theme-accent">${h.total_hm} h</td>
+        </tr>`).join('');
+    }
+
+    // -------------------------------------------------------------------
+    // FORM HANDLERS (Equip, Part, Plan, Daily HM)
+    // -------------------------------------------------------------------
+    function handleSaveEquip(e) {
+      e.preventDefault();
+      const payload = [ document.getElementById('m_equip_no').value.toUpperCase(), document.getElementById('m_brand').value.toUpperCase(), document.getElementById('m_equip_type').value.toUpperCase() ];
+      startLoading("SAVING EQUIP...");
+      if(typeof google === 'undefined'){ endLoading(); return; }
+      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('equipForm').reset(); globalDataSync(); } }).saveMaster('equip', payload);
+    }
+
+    function handleSavePart(e) {
+      e.preventDefault();
+      const payload = [ document.getElementById('m_part_no').value.toUpperCase(), document.getElementById('m_part_desc').value, document.getElementById('m_part_uom').value.toUpperCase() ];
+      startLoading("SAVING PART...");
+      if(typeof google === 'undefined'){ endLoading(); return; }
+      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('partMasterForm').reset(); globalDataSync(); } }).saveMaster('parts', payload);
+    }
+
+    function handleSavePlan(e) {
+      e.preventDefault();
+      const payload = [ 
+          document.getElementById('m_plan_equip').value.toUpperCase(), 
+          document.getElementById('m_plan_model').value.toUpperCase(), 
+          document.getElementById('m_plan_hours').value,
+          "", // Current HM placeholder
+          "", // Next PM placeholder
+          document.getElementById('m_plan_pa').value // Index 5: Plan PA
+      ];
+      startLoading("SAVING PLAN...");
+      if(typeof google === 'undefined'){ endLoading(); return; }
+      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).saveMaster('plan', payload);
+    }
+
+    function handleSaveDailyHM(e) {
+      e.preventDefault();
+      const payload = { 
+          tanggal: document.getElementById('hm_tanggal').value, 
+          equip_no: document.getElementById('hm_equip_no').value.toUpperCase(),
+          hm_awal: document.getElementById('hm_awal').value,
+          hm_akhir: document.getElementById('hm_akhir').value
+      };
+      if(parseFloat(payload.hm_akhir) < parseFloat(payload.hm_awal)) {
+          return Swal.fire('Error', 'HM Akhir tidak boleh lebih kecil dari HM Awal!', 'error');
+      }
+      startLoading("SAVING HM...");
+      if(typeof google === 'undefined'){ endLoading(); return; }
+      google.script.run.withSuccessHandler(res => { 
+          endLoading(); 
+          if(res.success) { 
+              Swal.fire('Sukses', res.message, 'success'); 
+              document.getElementById('dailyHmForm').reset(); 
+              globalDataSync(); 
+          } else {
+              Swal.fire('Error', res.message, 'error');
+          }
+      }).saveDailyHM(payload);
+    }
+
+    // -------------------------------------------------------------------
+    // BACKLOG MANAGEMENT
+    // -------------------------------------------------------------------
+    function handleSaveBacklog(e) {
+        e.preventDefault();
+        const payload = {
+            equip_no: document.getElementById('bl_equip').value.toUpperCase(),
+            tanggal: document.getElementById('bl_tanggal').value,
+            deskripsi: document.getElementById('bl_desc').value,
+            rencana: document.getElementById('bl_rencana').value || '-'
+        };
+        startLoading("SAVING BACKLOG...");
+        if(typeof google === 'undefined') {
+            setTimeout(() => { endLoading(); Swal.fire('Sukses', 'Simulasi Backlog Disimpan', 'success'); }, 800);
+            return;
+        }
+        google.script.run.withSuccessHandler(res => {
+            endLoading();
+            if(res.success) {
+                Swal.fire('Sukses', res.message, 'success');
+                document.getElementById('backlogForm').reset();
+                globalDataSync(); // Akan fetch ulang dan re-render table
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        }).saveBacklog(payload);
+    }
+
+    function renderBacklogTable() {
+        const tbody = document.getElementById('backlogTableBody');
+        if(!tbody) return;
+        
+        const q = (document.getElementById('filterBacklog')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('filterStatusBacklog')?.value || 'ALL';
+        
+        let filtered = (backlogCache || []).filter(b => {
+            const matchQuery = String(b.equip_no||'').toLowerCase().includes(q) || String(b.id||'').toLowerCase().includes(q) || String(b.deskripsi_backlog||'').toLowerCase().includes(q);
+            const matchStatus = statusFilter === 'ALL' || b.status === statusFilter;
+            return matchQuery && matchStatus;
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Data Backlog tidak ditemukan.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(b => {
+            const stCol = b.status === 'OPEN' ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-emerald-100 text-emerald-700 border border-emerald-300";
+            return `<tr class="hover:bg-slate-50 transition-colors border-b">
+                <td class="p-6">
+                    <div class="font-black text-slate-800 tracking-tight text-xs">${b.id}</div>
+                    <div class="text-[9px] font-bold text-slate-400 mt-1">${b.tanggal}</div>
+                </td>
+                <td class="p-6 font-black uppercase text-theme-accent">${b.equip_no}</td>
+                <td class="p-6">
+                    <div class="font-medium text-slate-700 text-sm mb-1">${b.deskripsi_backlog}</div>
+                    <div class="text-[10px] text-slate-500 font-bold"><i class="fas fa-tools mr-1 opacity-50"></i> Rencana: ${b.rencana_eksekusi || '-'}</div>
+                </td>
+                <td class="p-6 text-center"><span class="px-4 py-1.5 rounded-lg text-[9px] font-black shadow-sm cursor-pointer ${stCol}" onclick="updateBacklogStatus('${b.id}')" title="Klik untuk ubah status">${b.status || 'OPEN'}</span></td>
+                <td class="p-6 text-right">
+                    <button onclick="deleteBacklog('${b.id}')" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors mx-auto" title="Hapus Backlog"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function updateBacklogStatus(id) {
+        const { value: status } = await Swal.fire({ title: 'Update Status Backlog', input: 'select', inputOptions: { 'OPEN': 'OPEN', 'CLOSED': 'CLOSED' }, showCancelButton: true });
+        if (status) { 
+            startLoading("UPDATING..."); 
+            if(typeof google === 'undefined') return;
+            google.script.run.withSuccessHandler(res => { 
+                endLoading(); 
+                if(res.success) { Swal.fire('Sukses',res.message,'success'); globalDataSync(); }
+                else { Swal.fire('Error',res.message,'error'); }
+            }).updateBacklogStatus(id, status); 
+        }
+    }
+
+    function deleteBacklog(id) {
+        Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => {
+            if(r.isConfirmed) { 
+                startLoading("DELETING..."); 
+                if(typeof google === 'undefined') return;
+                google.script.run.withSuccessHandler(res => { 
+                    endLoading(); 
+                    if(res.success) { globalDataSync(); }
+                }).deleteBacklog(id); 
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------
+    // WORK ORDER & MONITORING SERVICE LOGIC
+    // -------------------------------------------------------------------
+    function autoFillEquip(val) {
+      if(!val) return;
+      const unit = (masterCache.equip || []).find(e => String(e.equip_no).trim().toUpperCase() === String(val).trim().toUpperCase());
+      if (unit) {
+        const bd = document.getElementById('brand');
+        const ut = document.getElementById('unit_type');
+        if(bd) bd.value = unit.brand || '';
+        if(ut) ut.value = unit.unit_type || '';
+      }
+    }
+
+    function autoFillPart(input) {
+      if(!input || !input.value) return;
+      const val = String(input.value).trim().toUpperCase();
+      const p = (partsDictCache || []).find(x => x.part_number && String(x.part_number).trim().toUpperCase() === val);
+      if (p) {
+        const tr = input.closest('tr');
+        if(tr) {
+            const descEl = tr.querySelector('.part-desc');
+            const uomEl = tr.querySelector('.part-uom');
+            if(descEl) descEl.value = p.description || '';
+            if(uomEl) uomEl.value = p.uom || '';
+        }
+      }
+    }
+
+    function changeMonPage(dir) { currentMonPage += dir; renderWOTable(); }
+
+    function renderWOTable() {
+      const tbody = document.getElementById('woTableBody');
+      if(!tbody) return;
+      
+      const filterInput = document.getElementById('filterMonitoring');
+      const q = filterInput ? filterInput.value.toLowerCase() : '';
+      const isPlanner = currentUser.role.toUpperCase().includes('PLANNER');
+      const isPlant = currentUser.role === 'Admin Plant';
+      
+      let filtered = (woDataCache || []).filter(i => String(i.no_wo||'').toLowerCase().includes(q) || String(i.equip_no||'').toLowerCase().includes(q));
+      
+      const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+      if(currentMonPage > totalPages) currentMonPage = totalPages;
+      if(currentMonPage < 1) currentMonPage = 1;
+      const paged = filtered.slice((currentMonPage - 1) * ITEMS_PER_PAGE, currentMonPage * ITEMS_PER_PAGE);
+      
+      const pageInfo = document.getElementById('monPageInfo');
+      if(pageInfo) pageInfo.innerText = `${currentMonPage} / ${totalPages} (${filtered.length} WO)`;
+
+      if (paged.length === 0) {
+         tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Work Order ditemukan.</td></tr>';
+         return;
+      }
+
+      tbody.innerHTML = paged.map(i => {
+        const unitNo = (i.equip_no || '').toUpperCase();
+        
+        let actualHM = "N/A";
+        const unitHMRecords = (masterCache.dailyHM || []).filter(hm => (hm.equip_no || '').toUpperCase() === unitNo);
+        if(unitHMRecords.length > 0) {
+            const maxHM = Math.max(...unitHMRecords.map(hm => parseFloat(hm.hm_akhir) || 0));
+            actualHM = maxHM.toString();
+        } else if (i.hm_km) {
+            actualHM = i.hm_km;
+        }
+
+        const pendingBacklogs = (backlogCache || []).filter(b => (b.equip_no || '').toUpperCase() === unitNo && b.status === 'OPEN');
+        let backlogBadge = '';
+        if(pendingBacklogs.length > 0) {
+            backlogBadge = `<div class="mt-2 inline-block px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg text-[9px] font-black cursor-pointer shadow-sm animate-pulse hover:bg-amber-200" onclick="navigate('backlog'); document.getElementById('filterBacklog').value='${unitNo}'; renderBacklogTable();"><i class="fas fa-exclamation-triangle mr-1"></i> ${pendingBacklogs.length} Backlog Pending!</div>`;
+        }
+
+        const stCol = i.status === 'PROGRESS' ? "bg-amber-50 text-amber-600 border border-amber-200" : (i.status === 'CLOSED' ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : (i.status === 'WAITING PART' ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"));
+        let actionButtons = "";
+        const canUpdate = isPlanner || isPlant;
+
+        actionButtons += `<button onclick="printWO('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-900 hover:text-white transition-all" title="Cetak WO"><i class="fas fa-print"></i></button>`;
+        if (canUpdate) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg transition-colors" title="Update Status"><i class="fas fa-tasks"></i></button>`;
+        if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors" title="Hapus WO"><i class="fas fa-trash"></i></button>`;
+        
+        return `<tr class="hover:bg-slate-50 transition-colors border-b">
+          <td class="p-6 font-black text-slate-900 tracking-tight text-sm">${i.no_wo}</td>
+          <td class="p-6">
+              <div class="font-black text-lg text-theme-accent uppercase">${unitNo}</div>
+              <div class="text-[10px] font-bold text-slate-500 mt-1 uppercase"><i class="fas fa-tachometer-alt mr-1"></i> HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>
+              ${backlogBadge}
+          </td>
+          <td class="p-6 text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-xs"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td>
+          <td class="p-6 text-center"><span class="px-4 py-2 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td>
+          <td class="p-6 text-right space-x-2 flex justify-end">${actionButtons}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function handleSaveWO(e) {
+       e.preventDefault();
+       const partsData = [];
+       const rows = document.querySelectorAll('#partTableBody tr');
+       rows.forEach(tr => {
+          const noInput = tr.querySelector('.part-no');
+          if(noInput && noInput.value.trim() !== '') {
+             partsData.push({
+                no: noInput.value.trim().toUpperCase(),
+                desc: tr.querySelector('.part-desc') ? tr.querySelector('.part-desc').value : '',
+                qty: tr.querySelector('.part-qty') ? tr.querySelector('.part-qty').value : '',
+                uom: tr.querySelector('.part-uom') ? tr.querySelector('.part-uom').value : '',
+                rem: tr.querySelector('.part-rem') ? tr.querySelector('.part-rem').value : ''
+             });
+          }
+       });
+
+       const payload = {
+         no_wo: document.getElementById('no_wo').value.toUpperCase(),
+         equip_no: document.getElementById('equip_no').value.toUpperCase(),
+         brand: document.getElementById('brand').value,
+         unit_type: document.getElementById('unit_type').value,
+         hm_km: document.getElementById('hm_km').value,
+         pm_service: document.getElementById('pm_service').value,
+         major_comp: document.getElementById('major_comp').value,
+         minor_comp: document.getElementById('minor_comp').value,
+         sch_unsch: document.getElementById('sch_unsch').value,
+         pelanggan: document.getElementById('equip_no').value,
+         tgl_rusak: document.getElementById('tgl_rusak').value,
+         jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value,
+         tgl_selesai: document.getElementById('tgl_selesai').value,
+         jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '',
+         kendala: document.getElementById('issue').value,
+         failure_reason: document.getElementById('failure_reason').value,
+         parts: partsData,
+         tech: document.getElementById('tech').value,
+         reported_by: document.getElementById('reported_by').value
+       };
+
+       startLoading("SAVING WO...");
+       if (typeof google === 'undefined') { setTimeout(() => { endLoading(); mockDB.unshift({...payload, status: 'OPEN'}); woDataCache=[...mockDB]; Swal.fire('Sukses', 'Saved!', 'success'); navigate('list-wo'); }, 1000); }
+       else { google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); globalDataSync(); navigate('list-wo'); } else { Swal.fire('Error', res.message, 'error'); } }).saveWorkOrder(payload); }
+    }
+
+    function addPartRow() {
+      const tbody = document.getElementById('partTableBody');
+      if(!tbody) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="py-4 text-center font-black text-slate-300 text-[10px]">${tbody.children.length + 1}</td>
+        <td class="py-4 pr-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent shadow-sm" placeholder="Ketik P/N"></td>
+        <td class="py-4 pr-2"><input type="text" class="part-desc w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px] shadow-sm" placeholder="Otomatis terisi"></td>
+        <td class="py-4 pr-2"><input type="number" class="part-qty w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold shadow-sm" value="1"></td>
+        <td class="py-4 pr-2"><input type="text" class="part-uom w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold shadow-sm" placeholder="UNIT"></td>
+        <td class="py-4 pr-2"><input type="text" class="part-rem w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px] shadow-sm" placeholder="-"></td>
+        <td class="py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function tarikDataWO() {
+      const noInput = document.getElementById('no_wo');
+      if(!noInput || !noInput.value) return Swal.fire('Perhatian', 'Ketik No WO dulu', 'warning');
+      const no = noInput.value.trim().toUpperCase();
+      const t = woDataCache.find(i => i.no_wo.toString().toUpperCase() === no);
+      if(t) {
+        ['equip_no','brand','unit_type','hm_km','pm_service','major_comp','minor_comp','sch_unsch','reported_by','tech','tgl_rusak','issue','failure_reason'].forEach(k => { const el = document.getElementById(k); if(el) el.value = t[k]||""; });
+        if (t.jam_rusak && t.jam_rusak.includes(':')) { const [h, m] = t.jam_rusak.split(':'); document.getElementById('jam_rusak_hh').value = h; document.getElementById('jam_rusak_mm').value = m; }
+        if (t.jam_selesai && t.jam_selesai.includes(':')) { const [h, m] = t.jam_selesai.split(':'); document.getElementById('jam_selesai_hh').value = h; document.getElementById('jam_selesai_mm').value = m; }
+        if (t.tgl_selesai) document.getElementById('tgl_selesai').value = t.tgl_selesai;
+
+        const tb = document.getElementById('partTableBody'); if(tb) tb.innerHTML = '';
+        if(t.parts_json) { 
+           try { 
+              JSON.parse(t.parts_json).forEach(p => {
+                 const tr = document.createElement('tr');
+                 tr.innerHTML = `<td class="py-4 text-center font-black text-slate-300 text-[10px]">${tb.children.length + 1}</td>
+                  <td class="py-4 px-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent" value="${p.no||''}"></td>
+                  <td class="py-4 px-2"><input type="text" class="part-desc w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px]" value="${p.desc||''}"></td>
+                  <td class="py-4 px-2"><input type="number" class="part-qty w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold" value="${p.qty||'1'}"></td>
+                  <td class="py-4 px-2"><input type="text" class="part-uom w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold" value="${p.uom||''}"></td>
+                  <td class="py-4 px-2"><input type="text" class="part-rem w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px]" value="${p.rem||''}"></td>
+                  <td class="py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
+                 tb.appendChild(tr);
+              }); 
+           } catch(e) {} 
+        }
+        if (tb && tb.children.length === 0) addPartRow();
+        const statDisp = document.getElementById('wo_status_display');
+        if(statDisp) statDisp.innerText = 'STATUS: ' + (t.status || 'OPEN');
+        Swal.fire('Ditemukan', 'Data Work Order ditarik', 'success');
+      } else { Swal.fire('Info', 'Data tidak ditemukan.', 'info'); }
+    }
+
+    async function updateStatus(noWo) {
+      const { value: status } = await Swal.fire({ title: 'Update Status WO', input: 'select', inputOptions: { 'OPEN': 'OPEN', 'PROGRESS': 'PROGRESS', 'WAITING PART': 'WAITING PART', 'CLOSED': 'CLOSED' }, showCancelButton: true });
+      if (status) { 
+          startLoading("UPDATING..."); 
+          if(typeof google === 'undefined') { return; }
+          else { google.script.run.withSuccessHandler(() => { endLoading(); Swal.fire('Sukses','Status diperbarui','success'); globalDataSync(); }).updateWOStatus(noWo, status); }
+      }
+    }
+
+    function handleDeleteWO(noWo) {
+      Swal.fire({ title: 'Hapus WO?', text: noWo, icon: 'warning', showCancelButton: true }).then(r => {
+        if(r.isConfirmed) { 
+            startLoading("DELETING..."); 
+            if(typeof google === 'undefined') return;
+            google.script.run.withSuccessHandler(() => { endLoading(); globalDataSync(); }).deleteWO(noWo); 
+        }
+      });
+    }
+
+    function prepareWOForm() { 
+        const wf = document.getElementById('woForm');
+        if(wf) wf.reset(); 
+        const ptb = document.getElementById('partTableBody');
+        if(ptb) { ptb.innerHTML = ''; addPartRow(); }
+        const wsd = document.getElementById('wo_status_display');
+        if(wsd) wsd.innerText = 'STATUS: NEW'; 
+    }
+
+    // -------------------------------------------------------------------
+    // USER MANAGEMENT
+    // -------------------------------------------------------------------
+    function loadUsers() {
+      if(typeof google === 'undefined') return;
+      startLoading("LOADING USERS...");
+      google.script.run.withSuccessHandler(res => { 
+          endLoading(); 
+          if (res && res.success && res.payload) { 
+              try { allUsersCache = JSON.parse(res.payload); } catch(e) {} 
+          } else if (res && res.payload) {
+              try { allUsersCache = JSON.parse(res.payload); } catch(e) {}
+          } else if (res && res.data) {
+              allUsersCache = res.data;
+          }
+          renderUserTable(); 
+      }).getUsersList();
+    }
+    
+    function renderUserTable() {
+      const tbody = document.getElementById('userTableBody');
+      if(!tbody) return;
+      if (!allUsersCache || allUsersCache.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
+      tbody.innerHTML = allUsersCache.map(u => `<tr class="hover:bg-slate-50 transition-colors border-b"><td class="p-6 font-black text-slate-800">${u.username}</td><td class="p-6 font-medium">${u.nama}</td><td class="p-6"><span class="px-4 py-2 bg-theme-main/10 text-theme-main rounded-xl font-black text-[9px] uppercase tracking-widest">${u.role}</span></td><td class="p-6 text-right"><button onclick="deleteUserAccount('${u.username}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+    }
+    
+    function deleteUserAccount(username) {
+      if(username === currentUser.username) return Swal.fire('Error', 'Tidak bisa menghapus akun sendiri!', 'error');
+      Swal.fire({ title: 'Hapus User?', text: `User ${username} akan dihapus`, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); google.script.run.withSuccessHandler(() => { endLoading(); loadUsers(); }).deleteUser(username); } });
+    }
+
+    if(document.getElementById('userForm')) {
+      document.getElementById('userForm').onsubmit = function(e) {
+        e.preventDefault();
+        const fd = { username: document.getElementById('u_username').value, password: document.getElementById('u_password').value, nama: document.getElementById('u_nama').value, role: document.getElementById('u_role').value };
+        startLoading("SAVING USER...");
+        google.script.run.withSuccessHandler(res => { endLoading(); if(res.success){ Swal.fire('Success', res.message, 'success'); this.reset(); loadUsers(); } else { Swal.fire('Error', res.message, 'error'); } }).saveUser(fd);
+      };
+    }
+
+    // -------------------------------------------------------------------
+    // PRINT REPLICATION A4
+    // -------------------------------------------------------------------
+    function printWO(noWo) {
+       const item = woDataCache.find(i => i.no_wo === noWo);
+       if(!item) return;
+       const map = { 'prn-equip': 'equip_no', 'prn-wo': 'no_wo', 'prn-brand': 'brand', 'prn-hm': 'hm_km', 'prn-type': 'unit_type', 'prn-pm': 'pm_service', 'prn-major': 'major_comp', 'prn-minor': 'minor_comp', 'prn-sch': 'sch_unsch', 'prn-reported': 'reported_by', 'prn-tech': 'tech', 'prn-desc': 'kendala', 'prn-failure': 'failure_reason' };
+       Object.keys(map).forEach(id => { const el = document.getElementById(id); if(el) el.innerText = item[map[id]] || "-"; });
+       const st = document.getElementById('prn-status'); if(st) st.innerText = item.status || "OPEN";
+       const dtr = document.getElementById('prn-dt-r'); if(dtr) dtr.innerText = (item.tgl_rusak || "-") + " " + (item.jam_rusak || "");
+       const dts = document.getElementById('prn-dt-s'); if(dts) dts.innerText = (item.tgl_selesai || "-") + " " + (item.jam_selesai || "");
+       const formatSign = (name) => (name && name.trim() !== "" ? `( ${name.toUpperCase()} )` : "");
+       document.getElementById('prn-sign-admin').innerText = formatSign(item.reported_by);
+       document.getElementById('prn-sign-mekanik').innerText = formatSign(item.tech);
+       
+       const parts = item.parts_json ? JSON.parse(item.parts_json) : [];
+       const pb = document.getElementById('printArea').querySelector('#prn-parts-body'); 
+       if(pb) {
+           pb.innerHTML = '';
+           for(let i=0; i<10; i++) {
+             const p = parts[i] || { no:'', desc:'', qty:'', uom:'', rem:'' };
+             pb.innerHTML += `<tr class="border-b border-black"><td class="p-0.5 border-r border-black text-center font-black">${i+1}</td><td class="p-0.5 border-r border-black font-black uppercase text-left">${p.no||''}</td><td class="p-0.5 border-r border-black font-black uppercase text-left">${p.desc||''}</td><td class="p-0.5 border-r border-black text-center font-black">${p.qty||''}</td><td class="p-0.5 border-r border-black text-center font-black uppercase">${p.uom||''}</td><td class="p-0.5 font-black text-left">${p.rem||''}</td></tr>`;
+           }
+       }
+       const pa = document.getElementById('printArea');
+       if(pa) {
+           pa.classList.remove('hidden');
+           setTimeout(() => { 
+               window.print(); 
+               pa.classList.add('hidden'); 
+           }, 500);
+       }
+    }
+  </script>
+</body>
+</html>
