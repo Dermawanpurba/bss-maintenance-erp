@@ -21,8 +21,10 @@
     .text-theme-main { color: var(--theme-main) !important; }
     .border-theme-main { border-color: var(--theme-main) !important; }
 
+    /* Fix BUG Blank Page: Hapus penggunaan 'hidden' di section, gunakan logic CSS murni */
     .page { display: none; }
     .page.active { display: block; animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    
     .nav-btn.active { 
         background-color: rgba(255, 255, 255, 0.15); 
         color: #ffffff !important; 
@@ -63,10 +65,9 @@
     .kpi-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .kpi-card:hover { transform: translateY(-8px); box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: var(--theme-accent); }
     
-    /* Board Styles */
-    .board-cell { border: 1px solid #cbd5e1; padding: 0.4rem; }
-    .bd-badge { background-color: #dc2626; color: white; border-radius: 4px; padding: 2px 6px; display: inline-block; font-size: 9px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-    .rfu-badge { background-color: #10b981; color: white; border-radius: 4px; padding: 2px 6px; display: inline-block; font-size: 9px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    /* Responsive Enhancements */
+    .mobile-optim { padding: 1.5rem; border-radius: 1.5rem; }
+    @media (min-width: 768px) { .mobile-optim { padding: 2.5rem; border-radius: 2.5rem; } }
   </style>
 </head>
 <body class="text-slate-800 flex flex-col min-h-screen">
@@ -78,17 +79,19 @@
   </div>
 
   <!-- PREMIUM AUTH CONTAINER -->
-  <div id="authContainer" class="flex-grow flex items-center justify-center p-6 relative overflow-hidden bg-slate-900">
+  <div id="authContainer" class="flex-grow flex items-center justify-center p-4 relative overflow-hidden bg-slate-900">
     <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float" style="animation-delay: 2s;"></div>
     
-    <div class="glass-card p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-10">
+    <div class="glass-card mobile-optim shadow-2xl w-full max-w-md relative z-10">
       <div class="text-center mb-8">
-        <div class="bg-theme-main text-white w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl transform transition-transform hover:rotate-6 hover:scale-105"><i class="fas fa-industry text-3xl" id="loginLogo"></i></div>
-        <h1 class="text-3xl font-black text-slate-900 leading-tight tracking-tight company-display-name">Loading...</h1>
+        <div class="bg-theme-main text-white w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl transform transition-transform hover:rotate-6 hover:scale-105 overflow-hidden p-2 dynamic-logo-wrapper">
+            <i class="fas fa-industry text-3xl dynamic-logo-icon"></i>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-black text-slate-900 leading-tight tracking-tight company-display-name">Loading...</h1>
         <p class="text-theme-accent font-black mt-2 uppercase tracking-[0.3em] text-[10px]">Enterprise Work Order</p>
       </div>
-      <form id="loginForm" class="space-y-5">
+      <form id="loginForm" class="space-y-4 md:space-y-5">
         <div class="relative group">
           <i class="fas fa-user absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-theme-accent transition-colors"></i>
           <input type="text" id="username" class="w-full pl-14 pr-5 py-4 rounded-2xl bg-white/70 border border-slate-200 focus:bg-white focus:border-theme-accent focus:ring-4 focus:ring-theme-accent/20 outline-none font-bold text-slate-700 transition-all" placeholder="Username" required>
@@ -106,7 +109,12 @@
   <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative">
     <!-- Mobile Header -->
     <div class="md:hidden bg-theme-main text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-      <div class="font-black tracking-tighter text-lg uppercase company-display-name truncate max-w-[250px]">WOSys ERP</div>
+      <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden p-1 dynamic-logo-wrapper">
+              <i class="fas fa-industry text-white text-sm dynamic-logo-icon"></i>
+          </div>
+          <div class="font-black tracking-tighter text-sm uppercase company-display-name truncate max-w-[200px]">WOSys ERP</div>
+      </div>
       <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><i class="fas fa-bars"></i></button>
     </div>
     <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -114,8 +122,10 @@
     <!-- SIDEBAR -->
     <aside id="sidebar" class="w-72 md:w-64 bg-theme-main text-white flex-shrink-0 flex flex-col no-print shadow-2xl z-40 relative h-screen sticky top-0">
       <div class="hidden md:flex p-6 border-b border-white/10 items-center space-x-4">
-        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fas fa-industry text-white text-xl"></i></div>
-        <div class="font-black text-white text-lg uppercase tracking-tighter company-display-name leading-tight">WOSys ERP</div>
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-1.5 dynamic-logo-wrapper">
+            <i class="fas fa-industry text-white text-xl dynamic-logo-icon"></i>
+        </div>
+        <div class="font-black text-white text-lg uppercase tracking-tighter company-display-name leading-tight line-clamp-2">WOSys ERP</div>
       </div>
       
       <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -130,6 +140,9 @@
             </button>
             <button onclick="navigate('backlog')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="backlog">
                 <i class="fas fa-clipboard-check w-8 group-hover:scale-110 transition-transform text-amber-400"></i> Backlog Mgmt
+            </button>
+            <button onclick="navigate('aktifitas')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="aktifitas">
+                <i class="fas fa-hard-hat w-8 group-hover:scale-110 transition-transform text-orange-400"></i> Laporan Aktifitas
             </button>
         </div>
         
@@ -146,13 +159,16 @@
         <div id="nav-database-section">
           <div class="text-[9px] text-white/50 font-black uppercase px-3 pt-6 pb-2 tracking-widest">Master Data</div>
           <button onclick="navigate('master-plan')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-plan">
-              <i class="fas fa-calendar-alt w-8 group-hover:scale-110 transition-transform"></i> Plan Alat (KPI)
+              <i class="fas fa-calendar-alt w-8 group-hover:scale-110 transition-transform"></i> Plan Alat & Service
           </button>
           <button onclick="navigate('master-equip')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-equip">
               <i class="fas fa-truck-pickup w-8 group-hover:scale-110 transition-transform"></i> Equipments
           </button>
           <button onclick="navigate('master-parts')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-parts">
               <i class="fas fa-cogs w-8 group-hover:scale-110 transition-transform"></i> Spareparts
+          </button>
+          <button onclick="navigate('master-comp')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="master-comp">
+              <i class="fas fa-layer-group w-8 group-hover:scale-110 transition-transform"></i> Komponen
           </button>
         </div>
 
@@ -180,187 +196,236 @@
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative no-print h-screen bg-slate-50">
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative no-print h-screen bg-slate-50 pb-20">
       
       <!-- PAGE: DASHBOARD KPI -->
       <section id="page-dashboard" class="page active pb-12">
-        <div id="banner-admin" class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-[2.5rem] p-8 md:p-12 mb-8 text-white shadow-2xl relative overflow-hidden">
+        <div id="banner-admin" class="bg-gradient-to-r from-slate-900 to-slate-800 mobile-optim mb-8 text-white shadow-2xl relative overflow-hidden">
           <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="w-full">
               <div class="flex flex-col md:flex-row justify-between items-start w-full gap-4">
                   <div>
-                      <h2 class="text-3xl md:text-4xl font-black mb-2 tracking-tight text-white" id="dashTitle">Welcome back, <span id="dashName" class="text-theme-accent">Admin</span>! 👋</h2>
-                      <p class="text-slate-300 font-medium text-sm max-w-md leading-relaxed" id="dashDesc">Pantau metrik KPI, WO Terbuka, Backlog, dan ketersediaan alat secara Real-Time.</p>
+                      <h2 class="text-2xl md:text-4xl font-black mb-2 tracking-tight text-white" id="dashTitle">Welcome back, <span id="dashName" class="text-theme-accent">Admin</span>! 👋</h2>
+                      <p class="text-slate-300 font-medium text-xs md:text-sm max-w-md leading-relaxed" id="dashDesc">Pantau metrik KPI, WO Terbuka, Backlog, dan ketersediaan alat secara Real-Time.</p>
                   </div>
                   <!-- Filter Bulan KPI -->
-                  <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden md:block shadow-inner w-full md:w-auto">
+                  <div class="bg-white/10 p-3 md:p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden md:block shadow-inner w-full md:w-auto">
                       <label class="block text-[9px] font-black uppercase tracking-widest text-blue-200 mb-2"><i class="fas fa-filter mr-1"></i> Filter Bulan KPI</label>
-                      <select id="kpiMonthFilter" onchange="calculateKPIFrontEnd()" class="w-full bg-slate-800 text-white border border-white/10 outline-none font-bold text-sm cursor-pointer rounded-xl px-4 py-2 hover:bg-slate-700 transition-colors">
+                      <select id="kpiMonthFilter" onchange="calculateKPIFrontEnd()" class="w-full bg-slate-800 text-white border border-white/10 outline-none font-bold text-xs md:text-sm cursor-pointer rounded-xl px-4 py-2 hover:bg-slate-700 transition-colors">
                           <option value="ALL">ALL TIME / SEMUA BULAN</option>
                       </select>
                   </div>
               </div>
-              <div class="flex flex-wrap gap-3 mt-8">
-                 <button id="dash-btn-wo" onclick="navigate('buat-wo')" class="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-plus mr-2"></i>Buat WO</button>
-                 <button onclick="globalDataSync()" class="bg-white/20 backdrop-blur-md border border-white/30 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-white/30 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-sync-alt mr-2"></i>Optimized Sync</button>
+              <div class="flex flex-wrap gap-3 mt-6 md:mt-8">
+                 <button id="dash-btn-wo" onclick="navigate('buat-wo')" class="bg-white text-slate-900 px-5 md:px-6 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-plus mr-2"></i>Buat WO</button>
+                 <button onclick="globalDataSync()" class="bg-white/20 backdrop-blur-md border border-white/30 text-white px-5 md:px-6 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-white/30 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-sync-alt mr-2"></i>Optimized Sync</button>
               </div>
             </div>
           </div>
-          <i class="fas fa-chart-pie absolute -right-10 -bottom-10 text-9xl text-white opacity-5 rotate-12"></i>
-          <div class="absolute top-[-20%] right-[10%] w-64 h-64 bg-theme-accent rounded-full mix-blend-overlay filter blur-[80px] opacity-40"></div>
+          <i class="fas fa-chart-pie absolute -right-10 -bottom-10 text-8xl md:text-9xl text-white opacity-5 rotate-12"></i>
+          <div class="absolute top-[-20%] right-[10%] w-48 h-48 md:w-64 md:h-64 bg-theme-accent rounded-full mix-blend-overlay filter blur-[60px] md:blur-[80px] opacity-40"></div>
         </div>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 ml-2 gap-4">
-            <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
-            <select id="kpiMonthFilterMobile" onchange="document.getElementById('kpiMonthFilter').value=this.value; calculateKPIFrontEnd();" class="md:hidden w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-sm text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 ml-2 gap-3">
+            <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
+            <select id="kpiMonthFilterMobile" onchange="document.getElementById('kpiMonthFilter').value=this.value; calculateKPIFrontEnd();" class="md:hidden w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
                 <option value="ALL">SEMUA BULAN</option>
             </select>
         </div>
 
         <!-- KPI METRICS GRID -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
-             <div class="flex justify-between items-start mb-4 relative z-10">
-               <div class="w-14 h-14 bg-slate-900 text-white rounded-[1.2rem] flex items-center justify-center text-2xl shadow-lg"><i class="fas fa-percentage"></i></div>
-               <span class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black tracking-widest border border-slate-200" id="badgeTargetPA">TARGET >85%</span>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+           <div class="kpi-card p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-3 md:mb-4 relative z-10">
+               <div class="w-10 h-10 md:w-14 md:h-14 bg-slate-900 text-white rounded-xl md:rounded-[1.2rem] flex items-center justify-center text-lg md:text-2xl shadow-lg"><i class="fas fa-percentage"></i></div>
+               <span class="px-2 py-1 md:px-3 md:py-1.5 bg-slate-100 text-slate-500 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest border border-slate-200" id="badgeTargetPA">>85%</span>
              </div>
-             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-pa">0<span class="text-2xl text-slate-400">%</span></h3>
-             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Physical Availability</p>
+             <h3 class="text-3xl md:text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-pa">0<span class="text-lg md:text-2xl text-slate-400">%</span></h3>
+             <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 md:mt-3 relative z-10 line-clamp-1">Physical Availability</p>
            </div>
-           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
-             <div class="flex justify-between items-start mb-4 relative z-10">
-               <div class="w-14 h-14 bg-red-50 text-red-500 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-tools"></i></div>
-               <span class="px-3 py-1.5 bg-red-50 text-red-500 rounded-xl text-[9px] font-black tracking-widest border border-red-100">MTTR</span>
+           <div class="kpi-card p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-3 md:mb-4 relative z-10">
+               <div class="w-10 h-10 md:w-14 md:h-14 bg-red-50 text-red-500 rounded-xl md:rounded-[1.2rem] flex items-center justify-center text-lg md:text-2xl shadow-inner"><i class="fas fa-tools"></i></div>
+               <span class="px-2 py-1 md:px-3 md:py-1.5 bg-red-50 text-red-500 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest border border-red-100">MTTR</span>
              </div>
-             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mttr">0<span class="text-2xl text-slate-400">h</span></h3>
-             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Mean Time To Repair</p>
+             <h3 class="text-3xl md:text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mttr">0<span class="text-lg md:text-2xl text-slate-400">h</span></h3>
+             <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 md:mt-3 relative z-10 line-clamp-1">Mean Time To Repair</p>
            </div>
-           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
-             <div class="flex justify-between items-start mb-4 relative z-10">
-               <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-clock"></i></div>
-               <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black tracking-widest border border-blue-100">MTBF</span>
+           <div class="kpi-card p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-3 md:mb-4 relative z-10">
+               <div class="w-10 h-10 md:w-14 md:h-14 bg-blue-50 text-blue-600 rounded-xl md:rounded-[1.2rem] flex items-center justify-center text-lg md:text-2xl shadow-inner"><i class="fas fa-clock"></i></div>
+               <span class="px-2 py-1 md:px-3 md:py-1.5 bg-blue-50 text-blue-600 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest border border-blue-100">MTBF</span>
              </div>
-             <h3 class="text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mtbf">0<span class="text-2xl text-slate-400">h</span></h3>
-             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Mean Time Btw Failure</p>
+             <h3 class="text-3xl md:text-5xl font-black text-slate-800 relative z-10 tracking-tight" id="kpi-mtbf">0<span class="text-lg md:text-2xl text-slate-400">h</span></h3>
+             <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 md:mt-3 relative z-10 line-clamp-1">Mean Time Btw Failure</p>
            </div>
-           <div class="kpi-card p-6 rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
-             <div class="flex justify-between items-start mb-4 relative z-10">
-               <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-[1.2rem] flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-clipboard-list"></i></div>
-               <span class="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl text-[9px] font-black tracking-widest border border-amber-100">PENDING</span>
+           <div class="kpi-card p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
+             <div class="flex justify-between items-start mb-3 md:mb-4 relative z-10">
+               <div class="w-10 h-10 md:w-14 md:h-14 bg-amber-50 text-amber-500 rounded-xl md:rounded-[1.2rem] flex items-center justify-center text-lg md:text-2xl shadow-inner"><i class="fas fa-clipboard-list"></i></div>
+               <span class="px-2 py-1 md:px-3 md:py-1.5 bg-amber-50 text-amber-600 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest border border-amber-100">PENDING</span>
              </div>
-             <h3 class="text-5xl font-black text-amber-600 relative z-10 tracking-tight" id="kpi-pending-backlog">0</h3>
-             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 relative z-10">Total Open Backlogs</p>
+             <h3 class="text-3xl md:text-5xl font-black text-amber-600 relative z-10 tracking-tight" id="kpi-pending-backlog">0</h3>
+             <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 md:mt-3 relative z-10 line-clamp-1">Open Backlogs</p>
            </div>
         </div>
 
-        <!-- NEW: PAPAN CATUR RFU vs BD -->
-        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 overflow-hidden">
-            <div class="flex flex-col xl:flex-row gap-6">
-                <!-- Summary Table -->
-                <div class="w-full xl:w-1/4 overflow-x-auto">
-                    <table class="w-full text-[10px] font-black border-collapse border border-slate-300 uppercase text-center bg-white shadow-sm">
-                        <thead class="bg-slate-100 text-slate-600">
-                            <tr>
-                                <th class="border border-slate-300 p-3 text-left">UNIT MODEL</th>
-                                <th class="border border-slate-300 p-3 text-emerald-600">RFU</th>
-                                <th class="border border-slate-300 p-3 text-red-600">B/D</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summaryBoardBody"></tbody>
-                        <tfoot id="summaryBoardFooter" class="bg-slate-800 text-white"></tfoot>
-                    </table>
-                </div>
-                <!-- Details Grid Board -->
-                <div class="w-full xl:w-3/4 overflow-x-auto">
-                    <table class="w-full text-[10px] font-black border-collapse border border-slate-300 uppercase text-center bg-white shadow-sm">
-                        <thead class="bg-slate-100 text-slate-600">
-                            <tr>
-                                <th class="border border-slate-300 p-3 w-28 text-left">MODEL</th>
-                                <th class="border border-slate-300 p-3 w-16">STATUS</th>
-                                <th class="border border-slate-300 p-3 text-left pl-4">UNIT NUMBER</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailBoardBody"></tbody>
-                    </table>
+        <!-- NEW: PAPAN CATUR RFU vs BD (CARD KANBAN STYLE) -->
+        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
+        <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+                <div class="text-[10px] md:text-xs font-bold text-slate-500">Total Keseluruhan: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
+                <div class="flex gap-3 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-2 px-4 rounded-xl border border-slate-100 w-full md:w-auto justify-center">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> RFU</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500 shadow-sm animate-pulse"></span> BD</div>
                 </div>
             </div>
             
-            <div class="flex gap-6 mt-6 justify-center text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-3 rounded-2xl border border-slate-100">
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-[#10b981] shadow-sm border border-emerald-600"></span> RFU (Ready For Use)</div>
-                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-[#dc2626] shadow-sm border border-red-700"></span> BD (Breakdown)</div>
+            <!-- Kanban Grid untuk Papan Catur -->
+            <div id="detailBoardBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                <!-- Di-render oleh JS -->
             </div>
         </div>
 
-        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview</h3>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow">
-             <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total WO</p><h3 class="text-3xl font-black text-slate-800" id="kpi-total-wo">0</h3></div>
+        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview</h3>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
+           <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow">
+             <div><p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total WO</p><h3 class="text-2xl md:text-3xl font-black text-slate-800" id="kpi-total-wo">0</h3></div>
            </div>
-           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-             <div><p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">OPEN</p><h3 class="text-3xl font-black text-slate-800" id="kpi-open-wo">0</h3></div>
+           <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">OPEN</p><h3 class="text-2xl md:text-3xl font-black text-slate-800" id="kpi-open-wo">0</h3></div>
            </div>
-           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
-             <div><p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">IN PROGRESS</p><h3 class="text-3xl font-black text-slate-800" id="kpi-progress-wo">0</h3></div>
+           <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[9px] md:text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">PROGRESS</p><h3 class="text-2xl md:text-3xl font-black text-slate-800" id="kpi-progress-wo">0</h3></div>
            </div>
-           <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
-             <div><p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">WAITING PART</p><h3 class="text-3xl font-black text-slate-800" id="kpi-wait-wo">0</h3></div>
+           <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+             <div><p class="text-[9px] md:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">WAIT PART</p><h3 class="text-2xl md:text-3xl font-black text-slate-800" id="kpi-wait-wo">0</h3></div>
            </div>
         </div>
 
-        <!-- Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">WO Status Distribution</h3>
-                <div class="relative h-64 w-full flex justify-center"><canvas id="statusChart"></canvas></div>
+        <!-- Charts (GRID 3 KOLOM) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Distribusi Status WO</h3>
+                <div class="relative h-48 md:h-64 w-full flex justify-center"><canvas id="statusChart"></canvas></div>
             </div>
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Equip Breakdown</h3>
-                <div class="relative h-64 w-full"><canvas id="equipChart"></canvas></div>
+            <!-- NEW CHART: SERVICE PREDICTIONS -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Prediksi Service (Interval 250H)</h3>
+                <div class="relative h-48 md:h-64 w-full flex justify-center"><canvas id="serviceChart"></canvas></div>
+            </div>
+            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 lg:col-span-1">
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown Alat</h3>
+                <div class="relative h-48 md:h-64 w-full"><canvas id="equipChart"></canvas></div>
             </div>
         </div>
       </section>
 
-      <!-- PAGE: BACKLOG MANAGEMENT (NEW) -->
-      <section id="page-backlog" class="content-page hidden page pb-12">
-        <div class="max-w-6xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-6 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-clipboard-check mr-3 text-amber-500"></i> Backlog Management</h2>
+      <!-- PAGE: LAPORAN AKTIFITAS (NEW) -->
+      <section id="page-aktifitas" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-hard-hat mr-3 text-orange-500"></i> Laporan Aktifitas Mekanik</h2>
           </div>
           
-          <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl mb-8 text-amber-800 text-xs font-medium leading-relaxed shadow-sm">
+          <div class="bg-orange-50 border border-orange-200 p-4 md:p-5 rounded-2xl mb-8 text-orange-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-info-circle text-orange-500 mr-1"></i> Form ini digunakan untuk melaporkan detail pekerjaan harian (Activity Log) yang terhubung langsung dengan Work Order.
+          </div>
+
+          <form id="activityForm" onsubmit="handleSaveActivity(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal</label>
+                <input type="date" id="act_tgl" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Pilih Work Order (Aktif)</label>
+                <select id="act_wo" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
+                    <option value="">Pilih Work Order</option>
+                </select>
+            </div>
+            <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Mekanik</label>
+                <select id="act_mekanik" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm cursor-pointer" required>
+                    <option value="">Pilih Mekanik</option>
+                </select>
+            </div>
+            
+            <div class="space-y-2 md:col-span-4">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Deskripsi Pekerjaan / Aktifitas</label>
+                <textarea id="act_desc" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-theme-accent outline-none shadow-sm resize-none h-24 text-sm" placeholder="Contoh: Melepas alternator, membersihkan komponen, dll..." required></textarea>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Jam Mulai</label>
+                <input type="time" id="act_start" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Jam Selesai</label>
+                <input type="time" id="act_end" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
+            </div>
+
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-orange-600">SIMPAN LAPORAN AKTIFITAS</button>
+            </div>
+          </form>
+
+          <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-history mr-2"></i> Riwayat Aktifitas</h3>
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[800px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr>
+                    <th class="p-4 md:p-5 w-32">TANGGAL</th>
+                    <th class="p-4 md:p-5 w-40">WO NO</th>
+                    <th class="p-4 md:p-5 w-32">MEKANIK</th>
+                    <th class="p-4 md:p-5">DESKRIPSI AKTIFITAS</th>
+                    <th class="p-4 md:p-5 w-32 text-center">WAKTU</th>
+                </tr>
+              </thead>
+              <tbody id="activityTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: BACKLOG MANAGEMENT -->
+      <section id="page-backlog" class="page pb-12">
+        <div class="max-w-6xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-clipboard-check mr-3 text-amber-500"></i> Backlog Management</h2>
+          </div>
+          
+          <div class="bg-amber-50 border border-amber-200 p-4 md:p-5 rounded-2xl mb-8 text-amber-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
               <i class="fas fa-info-circle text-amber-500 mr-1"></i> Data backlog yang diinput di sini akan terhubung langsung ke <b>Monitoring Service</b> untuk memudahkan mekanik melihat riwayat pending perbaikan alat.
           </div>
 
-          <form id="backlogForm" onsubmit="handleSaveBacklog(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+          <form id="backlogForm" onsubmit="handleSaveBacklog(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
             <div class="space-y-2 md:col-span-1">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
-                <input type="text" id="bl_equip" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Unit" required>
+                <input type="text" id="bl_equip" list="listEquip" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Ketik Unit" required>
             </div>
             <div class="space-y-2 md:col-span-1">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal Ditemukan</label>
-                <input type="date" id="bl_tanggal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" required>
+                <input type="date" id="bl_tanggal" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
             </div>
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Rencana Eksekusi (Opsional)</label>
-                <input type="text" id="bl_rencana" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Misal: Saat PS-2 / Menunggu Part B">
+                <input type="text" id="bl_rencana" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Misal: Saat PS-2 / Menunggu Part B">
             </div>
             <div class="space-y-2 md:col-span-4">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Deskripsi Backlog / Temuan</label>
-                <textarea id="bl_desc" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-theme-accent outline-none shadow-sm resize-none h-24" placeholder="Detail kendala yang belum diselesaikan..." required></textarea>
+                <textarea id="bl_desc" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-theme-accent outline-none shadow-sm resize-none h-24 text-sm" placeholder="Detail kendala yang belum diselesaikan..." required></textarea>
             </div>
             <div class="md:col-span-4 mt-2">
-                <button type="submit" class="w-full bg-amber-500 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-amber-600">SIMPAN BACKLOG BARU</button>
+                <button type="submit" class="w-full bg-amber-500 text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-amber-600">SIMPAN BACKLOG BARU</button>
             </div>
           </form>
 
           <!-- Backlog Table -->
-          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="filterBacklog" onkeyup="renderBacklogTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 font-medium text-sm shadow-sm" placeholder="Cari Unit / ID / Deskripsi...">
+                <input type="text" id="filterBacklog" onkeyup="renderBacklogTable()" class="w-full pl-12 pr-5 py-3 md:py-3.5 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 font-medium text-xs md:text-sm shadow-sm" placeholder="Cari Unit / ID / Deskripsi...">
             </div>
-            <select id="filterStatusBacklog" onchange="renderBacklogTable()" class="w-full md:w-auto px-5 py-3.5 border border-slate-200 rounded-2xl font-black text-slate-600 outline-none">
+            <select id="filterStatusBacklog" onchange="renderBacklogTable()" class="w-full md:w-auto px-5 py-3 md:py-3.5 border border-slate-200 rounded-xl md:rounded-2xl font-black text-slate-600 outline-none text-xs md:text-sm">
                 <option value="OPEN">Tampilkan Status OPEN</option>
                 <option value="CLOSED">Tampilkan Status CLOSED</option>
                 <option value="ALL">Tampilkan Semua Status</option>
@@ -370,7 +435,7 @@
           <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
             <table class="w-full text-left text-sm min-w-[800px]">
               <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-6 w-32">ID / TGL</th><th class="p-6 w-32">EQUIP NO</th><th class="p-6">DESKRIPSI & RENCANA</th><th class="p-6 w-32 text-center">STATUS</th><th class="p-6 w-24 text-right">AKSI</th></tr>
+                <tr><th class="p-4 md:p-6 w-32">ID / TGL</th><th class="p-4 md:p-6 w-32">EQUIP NO</th><th class="p-4 md:p-6">DESKRIPSI & RENCANA</th><th class="p-4 md:p-6 w-32 text-center">STATUS</th><th class="p-4 md:p-6 w-24 text-right">AKSI</th></tr>
               </thead>
               <tbody id="backlogTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
             </table>
@@ -379,63 +444,63 @@
       </section>
 
       <!-- PAGE: INPUT DAILY HM -->
-      <section id="page-daily-hm" class="content-page hidden page pb-12">
-        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+      <section id="page-daily-hm" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-6 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-tachometer-alt mr-3"></i> Input Daily HM</h2>
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-tachometer-alt mr-3"></i> Input Daily HM</h2>
           </div>
-          <div class="bg-blue-50 border border-blue-200 p-5 rounded-2xl mb-8 text-blue-800 text-xs font-medium leading-relaxed shadow-sm">
-              <i class="fas fa-info-circle text-blue-500 mr-1"></i> Data Hour Meter (HM) harian ini krusial untuk menghitung <b>MTBF yang lebih akurat</b> (Berdasarkan Actual Operating Hours). Kalkulasi <b>Total HM</b> otomatis diambil menjadi nilai operasi aktual dan menggantikan porsi target jika tersedia.
+          <div class="bg-blue-50 border border-blue-200 p-4 md:p-5 rounded-2xl mb-8 text-blue-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-info-circle text-blue-500 mr-1"></i> Data Hour Meter (HM) harian ini krusial untuk menghitung <b>MTBF yang lebih akurat</b> dan <b>Prediksi Service Terjadwal (PM)</b>. Kalkulasi Total HM otomatis diambil menjadi nilai operasi aktual.
           </div>
 
-          <form id="dailyHmForm" onsubmit="handleSaveDailyHM(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+          <form id="dailyHmForm" onsubmit="handleSaveDailyHM(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal</label>
-                <input type="date" id="hm_tanggal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" required>
+                <input type="date" id="hm_tanggal" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
             </div>
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
-                <input type="text" id="hm_equip_no" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Kode Unit" required>
+                <input type="text" id="hm_equip_no" list="listEquip" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Ketik Kode Unit" required>
             </div>
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM Awal Shift</label>
-                <input type="number" step="0.1" id="hm_awal" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 1200.5" required>
+                <input type="number" step="0.1" id="hm_awal" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 1200.5" required>
             </div>
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM Akhir Shift</label>
-                <input type="number" step="0.1" id="hm_akhir" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 1210.5" required>
+                <input type="number" step="0.1" id="hm_akhir" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 1210.5" required>
             </div>
             <div class="md:col-span-4 mt-2">
-                <button type="submit" class="w-full bg-theme-main text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px]">SIMPAN DAILY HM</button>
+                <button type="submit" class="w-full bg-theme-main text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px]">SIMPAN DAILY HM</button>
             </div>
           </form>
 
           <!-- Daily HM Table / History view -->
-          <div class="mt-12">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-t pt-8 border-slate-200">
-              <h3 class="text-lg font-black text-theme-main uppercase tracking-widest"><i class="fas fa-history mr-2"></i> Riwayat Input HM</h3>
-              <div class="flex gap-4 w-full md:w-auto">
+          <div class="mt-8 md:mt-12">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 border-t pt-6 md:pt-8 border-slate-200">
+              <h3 class="text-base md:text-lg font-black text-theme-main uppercase tracking-widest"><i class="fas fa-history mr-2"></i> Riwayat Input HM</h3>
+              <div class="flex gap-2 md:gap-4 w-full md:w-auto">
                 <div class="relative w-full md:w-64">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="filterHM" onkeyup="resetPagination('hm'); renderDailyHMTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Cari Unit / Tanggal...">
+                    <input type="text" id="filterHM" onkeyup="resetPagination('hm'); renderDailyHMTable()" class="w-full pl-12 pr-5 py-2.5 md:py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-xs md:text-sm shadow-sm" placeholder="Cari Unit / Tanggal...">
                 </div>
-                <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-                    <button onclick="changeHmPage(-1)" class="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
-                    <span class="text-[10px] font-black px-2 text-slate-500 whitespace-nowrap tracking-widest" id="hmPageInfo">1 / 1</span>
-                    <button onclick="changeHmPage(1)" class="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+                <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex-shrink-0">
+                    <button onclick="changeHmPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                    <span class="text-[9px] md:text-[10px] font-black px-1 md:px-2 text-slate-500 whitespace-nowrap tracking-widest" id="hmPageInfo">1 / 1</span>
+                    <button onclick="changeHmPage(1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
                 </div>
               </div>
             </div>
             
-            <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm bg-white">
-              <table class="w-full text-left text-sm min-w-[700px]">
+            <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm bg-white">
+              <table class="w-full text-left text-sm min-w-[600px]">
                 <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
                   <tr>
-                    <th class="p-5">TANGGAL</th>
-                    <th class="p-5">EQUIP NO</th>
-                    <th class="p-5 text-right">HM AWAL</th>
-                    <th class="p-5 text-right">HM AKHIR</th>
-                    <th class="p-5 text-right text-theme-accent">TOTAL HM</th>
+                    <th class="p-4 md:p-5">TANGGAL</th>
+                    <th class="p-4 md:p-5">EQUIP NO</th>
+                    <th class="p-4 md:p-5 text-right">HM AWAL</th>
+                    <th class="p-4 md:p-5 text-right">HM AKHIR</th>
+                    <th class="p-4 md:p-5 text-right text-theme-accent">TOTAL HM</th>
                   </tr>
                 </thead>
                 <tbody id="dailyHmTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
@@ -445,116 +510,79 @@
         </div>
       </section>
 
-      <!-- PAGE: MANAGE USERS -->
-      <section id="page-manage-users" class="content-page hidden page pb-12">
-        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-8 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-users-cog mr-3"></i> User Management</h2>
+      <!-- PAGE: MASTER PLAN ALAT & SERVICE -->
+      <section id="page-master-plan" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-6 gap-4">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-calendar-alt mr-3"></i> Plan Alat & Service</h2>
           </div>
-          <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Username</label>
-              <input type="text" id="u_username" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none lowercase font-bold shadow-sm" placeholder="userid" required>
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Password</label>
-              <input type="password" id="u_password" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm" placeholder="*****" required>
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Display Name</label>
-              <input type="text" id="u_nama" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm" placeholder="Full Name" required>
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Role Access</label>
-              <select id="u_role" class="w-full px-5 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm cursor-pointer">
-                <option value="SPV Planner">SPV Planner</option>
-                <option value="Admin Plant">Admin Plant</option>
-                <option value="Mekanik">Mekanik</option>
-              </select>
-            </div>
-            <button type="submit" class="md:col-span-4 bg-theme-main text-white font-black py-4 rounded-2xl shadow-xl hover:opacity-90 transition-all uppercase tracking-[0.2em] text-xs mt-2 active:scale-95">Simpan Data User</button>
-          </form>
-
-          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-6">User ID</th><th class="p-6">Full Name</th><th class="p-6">Role</th><th class="p-6 text-right">Action</th></tr>
-              </thead>
-              <tbody id="userTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- PAGE: PENGATURAN TEMA -->
-      <section id="page-pengaturan" class="content-page hidden page pb-12">
-        <div class="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-[3rem] shadow-sm border border-slate-100">
-            <h2 class="text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
-            <p class="text-sm font-medium text-slate-500 mb-10 border-b pb-6">Ubah identitas dan warna tema aplikasi agar sesuai dengan branding perusahaan Anda.</p>
-            <form id="settingsForm" class="space-y-8">
-                <div>
-                    <label class="block text-[11px] font-black text-slate-500 mb-3 uppercase tracking-widest">Nama Perusahaan (Kop Cetak & Navbar)</label>
-                    <input type="text" id="conf_company" class="w-full px-5 py-4 border border-slate-200 rounded-2xl font-bold text-lg outline-none focus:ring-4 focus:ring-theme-accent/20 transition-shadow shadow-sm" required>
-                </div>
-                <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                    <label class="block text-[11px] font-black text-slate-500 mb-4 uppercase tracking-widest">Warna Tema Aplikasi</label>
-                    <div class="flex gap-6 items-center">
-                        <input type="color" id="conf_color" class="h-16 w-32 rounded-xl cursor-pointer border-2 border-white shadow-md p-0">
-                        <div>
-                           <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Kode Hex</p>
-                           <span class="text-lg text-slate-700 font-mono font-black bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm" id="hexDisplay">#0f172a</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="pt-4">
-                    <button type="submit" class="w-full bg-theme-main text-white font-black py-5 rounded-2xl shadow-2xl shadow-theme-main/30 uppercase tracking-[0.2em] hover:opacity-90 transition-all active:scale-95 text-sm">TERAPKAN KONFIGURASI</button>
-                </div>
-            </form>
-        </div>
-      </section>
-
-      <!-- PAGE: MASTER PLAN ALAT -->
-      <section id="page-master-plan" class="content-page hidden page pb-12">
-        <div class="max-w-4xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-6 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-calendar-alt mr-3"></i> Master Plan Alat (KPI)</h2>
-          </div>
-          <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl mb-8 text-amber-800 text-xs font-medium leading-relaxed shadow-sm">
+          <div class="bg-emerald-50 border border-emerald-200 p-4 md:p-5 rounded-2xl mb-8 text-emerald-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
               <div class="flex items-start gap-3">
-                 <i class="fas fa-exclamation-triangle text-xl text-amber-500 mt-1"></i> 
+                 <i class="fas fa-tools text-xl text-emerald-500 mt-1"></i> 
                  <div>
-                    <b class="uppercase tracking-widest text-[10px]">Penting (Update):</b><br>
-                    Daftarkan Equip No beserta <b>Target Jam Operasi (HM)</b> dan <b>Target PA (%)</b> per bulan. Model unit pada tabel ini akan menjadi dasar pembentukan layout Papan Catur / Status Unit di Dashboard.
+                    <b class="uppercase tracking-widest text-[10px]">Pembaruan Pintar (Smart Service Engine):</b><br>
+                    Daftarkan Equip No beserta <b>Tgl & HM Service Terakhir</b>. Sistem akan otomatis memonitor nilai <b>HM Aktual</b> (dari pengisian Daily HM) dan memberi peringatan ketika unit sudah mendekati jadwal service berikutnya (Interval 250 HM).
                  </div>
               </div>
           </div>
 
-          <form id="planForm" onsubmit="handleSavePlan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
-            <div class="space-y-2 md:col-span-1">
+          <form id="planForm" onsubmit="handleSavePlan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
-                <input type="text" id="m_plan_equip" list="listEquip" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Ketik Equip" required>
+                <input type="text" id="m_plan_equip" list="listEquip" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Ketik Equip" required>
             </div>
-            <div class="space-y-2 md:col-span-1">
+            <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Model Alat</label>
-                <input type="text" id="m_plan_model" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Misal: D85ESS-2" required>
+                <input type="text" id="m_plan_model" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Misal: D85ESS-2" required>
             </div>
-            <div class="space-y-2 md:col-span-1">
+            <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Target HM / Bln</label>
-                <input type="number" id="m_plan_hours" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 720" required value="720">
+                <input type="number" id="m_plan_hours" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 720" required value="720">
             </div>
-            <div class="space-y-2 md:col-span-1">
+            <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Target PA (%)</label>
-                <input type="number" step="0.1" id="m_plan_pa" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Contoh: 85" required value="85">
+                <input type="number" step="0.1" id="m_plan_pa" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 85" required value="85">
             </div>
+            <!-- NEW FIELDS: Service History -->
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tgl Service Terakhir</label>
+                <input type="date" id="m_plan_last_date" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM Service Terakhir</label>
+                <input type="number" step="0.1" id="m_plan_last_hm" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 1250" required>
+            </div>
+
             <div class="md:col-span-4 mt-2">
-                <button type="submit" class="w-full bg-theme-main text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-transform uppercase tracking-widest text-[10px]">DAFTARKAN PLAN & POPULASI</button>
+                <button type="submit" class="w-full bg-theme-main text-white font-black py-4 md:py-4 rounded-xl md:rounded-2xl shadow-lg active:scale-95 transition-transform uppercase tracking-widest text-[10px] md:text-xs">DAFTARKAN PLAN & SERVICE TRACKER</button>
             </div>
           </form>
           
+          <!-- Plan Alat Filters -->
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">
+            <div class="relative w-full md:w-80">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="filterPlan" onkeyup="renderMasterPlanTable()" class="w-full pl-12 pr-5 py-3 md:py-3.5 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-xs md:text-sm shadow-sm" placeholder="Cari Unit / Model...">
+            </div>
+            <select id="filterStatusPlan" onchange="renderMasterPlanTable()" class="w-full md:w-auto px-5 py-3 md:py-3.5 border border-slate-200 rounded-xl md:rounded-2xl font-black text-slate-600 outline-none text-xs md:text-sm cursor-pointer">
+                <option value="ALL">Tampilkan Semua Status</option>
+                <option value="OVERDUE">🔴 OVERDUE SERVICE</option>
+                <option value="MENDEKATI">🟡 MENDEKATI SERVICE</option>
+                <option value="AMAN">🟢 AMAN</option>
+                <option value="WAITING">⚪ WAITING HM</option>
+            </select>
+          </div>
+
           <div class="overflow-x-auto shadow-sm rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-sm min-w-[700px]">
+            <table class="w-full text-left text-sm min-w-[900px]">
               <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-6">EQUIP NO</th><th class="p-6">MODEL</th><th class="p-6 text-center">TARGET HM</th><th class="p-6 text-center">TARGET PA</th></tr>
+                <tr>
+                    <th class="p-4 md:p-5 w-48">EQUIP / MODEL</th>
+                    <th class="p-4 md:p-5 text-center">TARGET HM / PA</th>
+                    <th class="p-4 md:p-5 text-center">LAST SERVICE</th>
+                    <th class="p-4 md:p-5 text-center">NEXT SERVICE (+250)</th>
+                    <th class="p-4 md:p-5 text-center">STATUS (Real-Time)</th>
+                </tr>
               </thead>
               <tbody id="masterPlanBody" class="divide-y divide-slate-50"></tbody>
             </table>
@@ -563,41 +591,41 @@
       </section>
 
       <!-- PAGE: MASTER EQUIP -->
-      <section id="page-master-equip" class="content-page hidden page pb-12">
-        <div class="max-w-4xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+      <section id="page-master-equip" class="page pb-12">
+        <div class="max-w-4xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-truck-pickup mr-3"></i> Master Equipment</h2>
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-truck-pickup mr-3"></i> Master Equipment</h2>
           </div>
-          <form id="equipForm" onsubmit="handleSaveEquip(event)" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+          <form id="equipForm" onsubmit="handleSaveEquip(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
-               <input type="text" id="m_equip_no" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Kode Unit" required>
+               <input type="text" id="m_equip_no" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Kode Unit" required>
             </div>
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Brand</label>
-               <input type="text" id="m_brand" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Merek" required>
+               <input type="text" id="m_brand" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Merek" required>
             </div>
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Unit Type</label>
-               <input type="text" id="m_equip_type" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Tipe Unit" required>
+               <input type="text" id="m_equip_type" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Tipe Unit" required>
             </div>
-            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-xs shadow-xl mt-2">Tambah Equipment</button>
+            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-xl md:rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px] md:text-xs shadow-xl mt-2">Tambah Equipment</button>
           </form>
-          <div class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="filterEquip" onkeyup="resetPagination('equip'); renderMasterEquipTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Cari Kode Unit / Brand...">
+                <input type="text" id="filterEquip" onkeyup="resetPagination('equip'); renderMasterEquipTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-xs md:text-sm shadow-sm" placeholder="Cari Kode Unit / Brand...">
             </div>
-            <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-                <button onclick="changeEqPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
-                <span class="text-[11px] font-black px-4 text-slate-500 whitespace-nowrap tracking-widest" id="equipPageInfo">1 / 1</span>
-                <button onclick="changeEqPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+            <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                <button onclick="changeEqPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                <span class="text-[9px] md:text-[11px] font-black px-2 md:px-4 text-slate-500 whitespace-nowrap tracking-widest" id="equipPageInfo">1 / 1</span>
+                <button onclick="changeEqPage(1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
             </div>
           </div>
-          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
-            <table class="w-full text-left text-sm">
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[500px]">
               <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-6">EQUIP NO</th><th class="p-6">BRAND</th><th class="p-6">TYPE</th></tr>
+                <tr><th class="p-4 md:p-6">EQUIP NO</th><th class="p-4 md:p-6">BRAND</th><th class="p-4 md:p-6">TYPE</th></tr>
               </thead>
               <tbody id="masterEquipBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
             </table>
@@ -606,45 +634,45 @@
       </section>
 
       <!-- PAGE: MASTER PARTS -->
-      <section id="page-master-parts" class="content-page hidden page pb-12">
-        <div class="max-w-5xl mx-auto bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
+      <section id="page-master-parts" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-cogs mr-3"></i> Master Parts</h2>
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-cogs mr-3"></i> Master Parts</h2>
           </div>
           
-          <form id="partMasterForm" onsubmit="handleSavePart(event)" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 bg-slate-50 p-8 rounded-[2rem] border border-slate-200 shadow-inner">
+          <form id="partMasterForm" onsubmit="handleSavePart(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Part Number</label>
-               <input type="text" id="m_part_no" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold font-mono uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="P/N" required>
+               <input type="text" id="m_part_no" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold font-mono uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="P/N" required>
             </div>
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Description</label>
-               <input type="text" id="m_part_desc" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="Nama Barang" required>
+               <input type="text" id="m_part_desc" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Nama Barang" required>
             </div>
             <div class="space-y-2">
                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">UOM</label>
-               <input type="text" id="m_part_uom" class="w-full px-5 py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm" placeholder="EA/PC/SET" required>
+               <input type="text" id="m_part_uom" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="EA/PC/SET" required>
             </div>
-            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-xs shadow-xl mt-2">Tambah Sparepart</button>
+            <button type="submit" class="md:col-span-3 bg-theme-main text-white font-black py-4 rounded-xl md:rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px] md:text-xs shadow-xl mt-2">Tambah Sparepart</button>
           </form>
 
-          <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div class="relative w-full md:w-96">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="filterParts" onkeyup="resetPagination('parts'); renderMasterPartsTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-sm shadow-sm" placeholder="Ketik Part No / Desc...">
+                <input type="text" id="filterParts" onkeyup="resetPagination('parts'); renderMasterPartsTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-medium text-xs md:text-sm shadow-sm" placeholder="Ketik Part No / Desc...">
             </div>
             
-            <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-                <button onclick="changePtPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
-                <span class="text-[11px] font-black px-4 text-slate-500 flex items-center whitespace-nowrap tracking-widest" id="partPageInfo">1 / 1</span>
-                <button onclick="changePtPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+            <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                <button onclick="changePtPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                <span class="text-[9px] md:text-[11px] font-black px-2 md:px-4 text-slate-500 flex items-center whitespace-nowrap tracking-widest" id="partPageInfo">1 / 1</span>
+                <button onclick="changePtPage(1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
             </div>
           </div>
           
-          <div class="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
-            <table class="w-full text-left text-sm">
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[600px]">
               <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-6 w-1/4">PART NO</th><th class="p-6 w-1/2">DESCRIPTION</th><th class="p-6 w-1/4">UOM</th></tr>
+                <tr><th class="p-4 md:p-6 w-1/4">PART NO</th><th class="p-4 md:p-6 w-1/2">DESCRIPTION</th><th class="p-4 md:p-6 w-1/4">UOM</th></tr>
               </thead>
               <tbody id="masterPartsBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
             </table>
@@ -652,136 +680,259 @@
         </div>
       </section>
 
-      <!-- PAGE: FORM WO -->
-      <section id="page-buat-wo" class="content-page hidden page pb-12">
-        <div class="max-w-5xl mx-auto bg-white p-6 md:p-12 rounded-[3rem] shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-10 border-b pb-6">
-            <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-file-contract mr-3"></i> Work Order Form</h2>
-            <div id="wo_status_display" class="px-5 py-2 bg-theme-main/10 text-theme-main rounded-xl text-[11px] font-black uppercase tracking-widest border border-theme-main/20">STATUS: NEW</div>
+      <!-- PAGE: MASTER COMPONENT (NEW) -->
+      <section id="page-master-comp" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-layer-group mr-3"></i> Master Komponen</h2>
           </div>
           
-          <form id="woForm" class="space-y-8" onsubmit="handleSaveWO(event)">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="bg-blue-50 border border-blue-200 p-4 md:p-5 rounded-2xl mb-8 text-blue-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-info-circle text-blue-500 mr-1"></i> Data di sini akan membangun struktur relasi "Dependent Dropdown" antara <b>Major Component</b> dan <b>Minor Component</b> pada form Work Order.
+          </div>
+
+          <form id="compMasterForm" onsubmit="handleSaveComponent(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Major Component</label>
+               <input type="text" id="m_comp_major" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: ENGINE" required>
+            </div>
+            <div class="space-y-2">
+               <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Minor Component</label>
+               <input type="text" id="m_comp_minor" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: CYLINDER HEAD" required>
+            </div>
+            <button type="submit" class="md:col-span-2 bg-theme-main text-white font-black py-4 rounded-xl md:rounded-2xl active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px] md:text-xs shadow-xl mt-2">Tambah Relasi Komponen</button>
+          </form>
+
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[500px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-4 md:p-6 w-1/2">MAJOR COMPONENT</th><th class="p-4 md:p-6 w-1/2">MINOR COMPONENT</th></tr>
+              </thead>
+              <tbody id="masterCompBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: MANAGE USERS -->
+      <section id="page-manage-users" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-users-cog mr-3"></i> User Management</h2>
+          </div>
+          <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2">
+              <label class="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-widest">Username</label>
+              <input type="text" id="u_username" class="w-full px-4 py-3 md:py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none lowercase font-bold shadow-sm text-sm" placeholder="userid" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-widest">Password</label>
+              <input type="password" id="u_password" class="w-full px-4 py-3 md:py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm text-sm" placeholder="*****" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-widest">Display Name</label>
+              <input type="text" id="u_nama" class="w-full px-4 py-3 md:py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm text-sm" placeholder="Full Name" required>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-widest">Role Access</label>
+              <select id="u_role" class="w-full px-4 py-3 md:py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-theme-accent outline-none font-bold shadow-sm cursor-pointer text-sm">
+                <option value="SPV Planner">SPV Planner</option>
+                <option value="Admin Plant">Admin Plant</option>
+                <option value="Mekanik">Mekanik</option>
+              </select>
+            </div>
+            <button type="submit" class="md:col-span-4 bg-theme-main text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl hover:opacity-90 transition-all uppercase tracking-[0.2em] text-[10px] md:text-xs mt-2 active:scale-95">Simpan Data User</button>
+          </form>
+
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[500px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr><th class="p-4 md:p-6">User ID</th><th class="p-4 md:p-6">Full Name</th><th class="p-4 md:p-6">Role</th><th class="p-4 md:p-6 text-right">Action</th></tr>
+              </thead>
+              <tbody id="userTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: PENGATURAN TEMA -->
+      <section id="page-pengaturan" class="page pb-12">
+        <div class="max-w-3xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+            <h2 class="text-xl md:text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
+            <p class="text-xs md:text-sm font-medium text-slate-500 mb-8 md:mb-10 border-b pb-6">Ubah identitas, logo, dan warna tema aplikasi agar sesuai dengan branding perusahaan Anda.</p>
+            <form id="settingsForm" class="space-y-6 md:space-y-8">
+                <div>
+                    <label class="block text-[10px] md:text-[11px] font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest">Nama Perusahaan (Kop Cetak & Navbar)</label>
+                    <input type="text" id="conf_company" class="w-full px-4 py-3 md:px-5 md:py-4 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-base md:text-lg outline-none focus:ring-4 focus:ring-theme-accent/20 transition-shadow shadow-sm" required>
+                </div>
+                <div>
+                    <label class="block text-[10px] md:text-[11px] font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest">URL Logo Perusahaan (Opsional)</label>
+                    <input type="url" id="conf_logo" class="w-full px-4 py-3 md:px-5 md:py-4 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-theme-accent/20 transition-shadow shadow-sm placeholder-slate-300" placeholder="https://example.com/logo.png">
+                    <p class="text-[9px] text-slate-400 mt-2 italic">* Kosongkan untuk menggunakan ikon pabrik bawaan.</p>
+                </div>
+                <div class="bg-slate-50 p-5 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100">
+                    <label class="block text-[10px] md:text-[11px] font-black text-slate-500 mb-3 md:mb-4 uppercase tracking-widest">Warna Tema Aplikasi</label>
+                    <div class="flex gap-4 md:gap-6 items-center">
+                        <input type="color" id="conf_color" class="h-12 w-24 md:h-16 md:w-32 rounded-xl cursor-pointer border-2 border-white shadow-md p-0">
+                        <div>
+                           <p class="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Kode Hex</p>
+                           <span class="text-base md:text-lg text-slate-700 font-mono font-black bg-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl border border-slate-200 shadow-sm" id="hexDisplay">#0f172a</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-theme-main text-white font-black py-4 md:py-5 rounded-xl md:rounded-2xl shadow-2xl shadow-theme-main/30 uppercase tracking-[0.2em] hover:opacity-90 transition-all active:scale-95 text-xs md:text-sm">TERAPKAN KONFIGURASI</button>
+                </div>
+            </form>
+        </div>
+      </section>
+
+      <!-- PAGE: FORM WO -->
+      <section id="page-buat-wo" class="page pb-12">
+        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-10 border-b pb-6">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-file-contract mr-3"></i> Work Order Form</h2>
+            <div id="wo_status_display" class="px-4 py-2 bg-theme-main/10 text-theme-main rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest border border-theme-main/20">STATUS: NEW</div>
+          </div>
+          
+          <form id="woForm" class="space-y-6 md:space-y-8" onsubmit="handleSaveWO(event)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               <div class="sm:col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">WO Number</label>
                 <div class="flex gap-2">
-                  <input type="text" id="no_wo" class="flex-1 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent" required placeholder="Ex: 12-0797">
-                  <button type="button" onclick="tarikDataWO()" class="px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90"><i class="fas fa-search"></i></button>
+                  <input type="text" id="no_wo" class="flex-1 px-4 py-3 md:py-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm" required placeholder="Ex: 12-0797">
+                  <button type="button" onclick="tarikDataWO()" class="px-4 md:px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90"><i class="fas fa-search"></i></button>
                 </div>
               </div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No (Master)</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent" placeholder="Kode Unit" required></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500" readonly></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500" readonly></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent text-sm" placeholder="Kode Unit" required></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm" readonly></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm" readonly></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">HM (Hour Meter)</label><input type="text" id="hm_km" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" required placeholder="Angka HM"></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">PM Service</label><input type="text" id="pm_service" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Misal: PS-1"></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Major Component</label><input type="text" id="major_comp" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Ex: Engine"></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Minor Component</label><input type="text" id="minor_comp" class="w-full px-4 py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none" placeholder="Ex: Radiator"></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">HM (Hour Meter)</label><input type="text" id="hm_km" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" required placeholder="Angka HM"></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">PM Service</label><input type="text" id="pm_service" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" placeholder="Misal: PS-1"></div>
+              <!-- CHANGED TO DROPDOWNS -->
+              <div>
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Major Component</label>
+                  <select id="major_comp" onchange="updateMinorComp()" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm cursor-pointer bg-white">
+                      <option value="">- Pilih Major -</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Minor Component</label>
+                  <select id="minor_comp" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm cursor-pointer bg-white">
+                      <option value="">- Pilih Minor -</option>
+                  </select>
+              </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50/80 rounded-[2.5rem] border border-slate-200 shadow-inner">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 p-6 md:p-8 bg-slate-50/80 rounded-2xl md:rounded-[2.5rem] border border-slate-200 shadow-inner">
               <div class="space-y-4">
-                <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-5 flex items-center"><i class="fas fa-calendar-times mr-2 text-red-500 text-lg"></i> Breakdown Time</h3>
-                <div class="grid grid-cols-2 gap-4">
-                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_rusak" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm" required></div>
-                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_rusak_hh" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select><select id="jam_rusak_mm" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select></div></div>
+                <h3 class="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center"><i class="fas fa-calendar-times mr-2 text-red-500 text-base md:text-lg"></i> Breakdown Time</h3>
+                <div class="grid grid-cols-2 gap-3 md:gap-4">
+                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_rusak" class="w-full px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm text-xs md:text-sm" required></div>
+                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_rusak_hh" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select><select id="jam_rusak_mm" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select></div></div>
                 </div>
               </div>
               <div class="space-y-4">
-                <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-5 flex items-center"><i class="fas fa-calendar-check mr-2 text-emerald-500 text-lg"></i> Completion Time</h3>
-                <div class="grid grid-cols-2 gap-4">
-                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_selesai" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm"></div>
-                  <div><label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_selesai_hh" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select><select id="jam_selesai_mm" class="custom-select-time w-full h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent"></select></div></div>
+                <h3 class="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center"><i class="fas fa-calendar-check mr-2 text-emerald-500 text-base md:text-lg"></i> Completion Time</h3>
+                <div class="grid grid-cols-2 gap-3 md:gap-4">
+                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_selesai" class="w-full px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm text-xs md:text-sm"></div>
+                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_selesai_hh" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select><select id="jam_selesai_mm" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select></div></div>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                <div>
                   <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">SCH / UNSCH</label>
-                  <select id="sch_unsch" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-black focus:ring-2 focus:ring-theme-accent shadow-sm text-theme-main bg-white">
+                  <select id="sch_unsch" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-black focus:ring-2 focus:ring-theme-accent shadow-sm text-theme-main bg-white text-sm">
                     <option value="UNSCH">UNSCH (Unscheduled)</option>
                     <option value="SCH">SCH (Scheduled)</option>
                   </select>
                </div>
+               <!-- CHANGED TO DROPDOWNS POPULATED FROM USERS -->
                <div>
                   <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Reported By</label>
-                  <input type="text" id="reported_by" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main" required placeholder="Nama Pelapor">
+                  <select id="reported_by" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main text-sm cursor-pointer" required>
+                      <option value="">- Pilih Pelapor -</option>
+                  </select>
                </div>
                <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Lead Technician (Manual)</label>
-                  <input type="text" id="tech" class="w-full px-5 py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main" placeholder="Ketik Nama Teknisi">
+                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Lead Technician</label>
+                  <select id="tech" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main text-sm cursor-pointer">
+                      <option value="">- Pilih Teknisi Utama -</option>
+                  </select>
                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Failure Description</label><textarea id="issue" class="w-full px-5 py-5 border border-slate-200 rounded-[2rem] h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-sm" required placeholder="Deskripsi detail kerusakan unit..."></textarea></div>
-               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Analysis Reason</label><textarea id="failure_reason" class="w-full px-5 py-5 border border-slate-200 rounded-[2rem] h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-sm" placeholder="Analisa penyebab kerusakan..."></textarea></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Failure Description</label><textarea id="issue" class="w-full px-4 py-4 md:px-5 md:py-5 border border-slate-200 rounded-2xl md:rounded-[2rem] h-24 md:h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-xs md:text-sm" required placeholder="Deskripsi detail kerusakan unit..."></textarea></div>
+               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Analysis Reason</label><textarea id="failure_reason" class="w-full px-4 py-4 md:px-5 md:py-5 border border-slate-200 rounded-2xl md:rounded-[2rem] h-24 md:h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-xs md:text-sm" placeholder="Analisa penyebab kerusakan..."></textarea></div>
             </div>
 
-            <div class="bg-slate-50 p-6 md:p-10 rounded-[3rem] border border-slate-200 shadow-inner">
-              <div class="flex justify-between items-center mb-8">
-                <h3 class="text-sm font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-boxes text-theme-accent mr-2"></i> Parts Inquiry</h3>
+            <div class="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border border-slate-200 shadow-inner">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xs md:text-sm font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-boxes text-theme-accent mr-2"></i> Parts Inquiry</h3>
               </div>
-              <div class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-slate-100">
-                <table class="w-full text-left min-w-[900px]">
-                  <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <tr><th class="p-4 w-12 text-center">NO</th><th class="p-4 w-72">Part No (Auto-fill)</th><th class="p-4">Description</th><th class="p-4 w-20 text-center">Qty</th><th class="p-4 w-24 text-center">UOM</th><th class="p-4 w-40">Remarks</th><th class="p-4 w-12 text-center"><i class="fas fa-cog"></i></th></tr>
+              <div class="overflow-x-auto bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-100">
+                <table class="w-full text-left min-w-[800px]">
+                  <thead class="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
+                      <tr><th class="p-3 md:p-4 w-10 md:w-12 text-center">NO</th><th class="p-3 md:p-4 w-48 md:w-72">Part No</th><th class="p-3 md:p-4">Description</th><th class="p-3 md:p-4 w-16 md:w-20 text-center">Qty</th><th class="p-3 md:p-4 w-20 md:w-24 text-center">UOM</th><th class="p-3 md:p-4 w-32 md:w-40">Remarks</th><th class="p-3 md:p-4 w-10 md:w-12 text-center"><i class="fas fa-cog"></i></th></tr>
                   </thead>
                   <tbody id="partTableBody" class="divide-y divide-slate-100"></tbody>
                 </table>
               </div>
-              <button type="button" onclick="addPartRow()" class="mt-8 text-theme-main font-black text-xs uppercase tracking-widest border-2 border-slate-200 px-6 py-3.5 rounded-2xl hover:bg-theme-main hover:text-white hover:border-theme-main transition-all active:scale-95 shadow-sm"><i class="fas fa-plus-circle mr-2"></i> Add Part Row</button>
+              <button type="button" onclick="addPartRow()" class="mt-6 text-theme-main font-black text-[10px] md:text-xs uppercase tracking-widest border-2 border-slate-200 px-5 py-3 md:px-6 md:py-3.5 rounded-xl md:rounded-2xl hover:bg-theme-main hover:text-white hover:border-theme-main transition-all active:scale-95 shadow-sm"><i class="fas fa-plus-circle mr-2"></i> Add Part Row</button>
             </div>
             
-            <button type="submit" class="w-full bg-theme-main text-white font-black py-6 rounded-[2.5rem] shadow-2xl shadow-theme-main/40 uppercase tracking-[0.3em] hover:opacity-90 transition-all active:scale-[0.98] mt-6 text-sm">SUBMIT WORK ORDER</button>
+            <button type="submit" class="w-full bg-theme-main text-white font-black py-5 md:py-6 rounded-2xl md:rounded-[2.5rem] shadow-2xl shadow-theme-main/40 uppercase tracking-[0.3em] hover:opacity-90 transition-all active:scale-[0.98] mt-6 text-xs md:text-sm">SUBMIT WORK ORDER</button>
           </form>
         </div>
       </section>
 
       <!-- PAGE: LIST WO / MONITORING SERVICE -->
-      <section id="page-list-wo" class="content-page hidden page pb-12">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-          <h2 class="text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-laptop-medical mr-3"></i> Service Monitoring</h2>
+      <section id="page-list-wo" class="page pb-12">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
+          <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-laptop-medical mr-3"></i> Service Monitoring</h2>
           <div class="flex flex-col md:flex-row gap-3 w-full sm:w-auto">
              <div class="relative w-full md:w-72">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="filterMonitoring" onkeyup="resetPagination('monitoring'); renderWOTable()" class="w-full pl-12 pr-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-bold text-sm shadow-sm" placeholder="Cari WO / Unit...">
+                <input type="text" id="filterMonitoring" onkeyup="resetPagination('monitoring'); renderWOTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-bold text-xs md:text-sm shadow-sm" placeholder="Cari WO / Unit...">
              </div>
              <div class="flex gap-2 justify-between">
-                 <div class="flex items-center space-x-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
-                   <button onclick="changeMonPage(-1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
-                   <span class="text-[11px] font-black px-3 text-slate-500 whitespace-nowrap tracking-widest" id="monPageInfo">1 / 1</span>
-                   <button onclick="changeMonPage(1)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
+                 <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                   <button onclick="changeMonPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
+                   <span class="text-[9px] md:text-[11px] font-black px-2 md:px-3 text-slate-500 whitespace-nowrap tracking-widest" id="monPageInfo">1 / 1</span>
+                   <button onclick="changeMonPage(1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-right"></i></button>
                  </div>
-                 <button onclick="globalDataSync()" class="px-6 py-3.5 bg-theme-main text-white rounded-2xl font-black text-[10px] tracking-widest shadow-lg hover:opacity-90 transition-all uppercase"><i class="fas fa-sync-alt mr-2"></i> Sync</button>
+                 <button onclick="globalDataSync()" class="px-5 py-3 md:px-6 md:py-3 bg-theme-main text-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] tracking-widest shadow-lg hover:opacity-90 transition-all uppercase"><i class="fas fa-sync-alt md:mr-2"></i> <span class="hidden md:inline">Sync</span></button>
              </div>
           </div>
         </div>
         
-        <div class="bg-blue-50/50 border border-blue-100 p-5 rounded-3xl mb-6 text-xs text-blue-800 flex items-start gap-4">
-            <i class="fas fa-info-circle text-2xl text-blue-500 mt-1"></i>
+        <div class="bg-blue-50/50 border border-blue-100 p-4 md:p-5 rounded-2xl md:rounded-3xl mb-6 text-[10px] md:text-xs text-blue-800 flex items-start gap-3 md:gap-4">
+            <i class="fas fa-info-circle text-xl md:text-2xl text-blue-500 mt-0.5 md:mt-1"></i>
             <div>
-                <p class="font-black mb-1 text-sm uppercase tracking-tight">Smart Monitoring & Sync</p>
-                <p class="font-medium opacity-90 leading-relaxed">Tabel ini tersinkronisasi langsung dengan <b>Data HM Aktual</b> (kolom Current HM) dan <b>Backlog</b>. Klik pada badge Backlog (jika ada) untuk memastikan mekanik mengeksekusi kendala tambahan saat unit berada di posisi bengkel/service.</p>
+                <p class="font-black mb-1 text-xs md:text-sm uppercase tracking-tight">Smart Monitoring & Sync</p>
+                <p class="font-medium opacity-90 leading-relaxed">Tabel ini tersinkronisasi langsung dengan <b>Data HM Aktual</b> dan <b>Backlog</b>. Klik pada badge Backlog (jika ada) untuk memastikan mekanik mengeksekusi kendala tambahan saat unit di-service.</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[1000px]">
-              <thead class="bg-slate-50 border-b border-slate-100 text-[10px] uppercase font-black text-slate-500 tracking-widest">
+            <table class="w-full text-left min-w-[900px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-[9px] md:text-[10px] uppercase font-black text-slate-500 tracking-widest">
                 <tr>
-                    <th class="p-6">WO NO</th>
-                    <th class="p-6">UNIT / HM / BACKLOG</th>
-                    <th class="p-6">BREAKDOWN DATE</th>
-                    <th class="p-6 text-center">STATUS</th>
-                    <th class="p-6 text-right">ACTIONS</th>
+                    <th class="p-4 md:p-6">WO NO</th>
+                    <th class="p-4 md:p-6">UNIT / HM / BACKLOG</th>
+                    <th class="p-4 md:p-6">BREAKDOWN DATE</th>
+                    <th class="p-4 md:p-6 text-center">STATUS</th>
+                    <th class="p-4 md:p-6 text-right">ACTIONS</th>
                 </tr>
               </thead>
-              <tbody id="woTableBody" class="divide-y divide-slate-50 text-[13px] font-medium text-slate-700"></tbody>
+              <tbody id="woTableBody" class="divide-y divide-slate-50 text-[11px] md:text-[13px] font-medium text-slate-700"></tbody>
             </table>
           </div>
         </div>
@@ -794,7 +945,7 @@
     </main>
   </div>
 
-  <!-- PRINT AREA (STRICT 1 PAGE A4 - NO OVERFLOW) -->
+  <!-- PRINT AREA (STRICT 1 PAGE A4) -->
   <div id="printArea" class="hidden">
      <!-- KOP DOKUMEN -->
      <div class="flex border-black">
@@ -871,68 +1022,26 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbw79QxMSp1lCYbsGqfCy71Mb58r3BI9tETH-vFxtMBWErA7JcwVpWjL39h_6pfBSt6a/exec";
-    
     let currentUser = null;
     let mockDB = [];
     let woDataCache = [];
     let backlogCache = []; 
-    let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [] };
+    // ADDED: components, usersData, activities
+    let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [], components: [], usersData: [], mekanikList: [], pelaporList: [], activities: [] };
     let partsDictCache = []; 
     let allUsersCache = [];
-
-    /* =========================LOAD DATA FROM API========================= */
-async function loadERPData(){
-
-  try{
-
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        action:"getOptimizedData"
-      })
-    });
-
-    const data = await res.json();
-
-    console.log("DATA ERP:",data);
-
-    if(data.success){
-
-      mockDB = data.wo || [];
-      backlogCache = data.backlog || [];
-      masterCache = {
-        equip:data.equip || [],
-        parts:data.parts || [],
-        planAlat:data.planAlat || [],
-        dailyHM:data.dailyHM || []
-      };
-
-      console.log("ERP Loaded");
-
-    }
-
-  }catch(err){
-
-    console.error("ERROR LOAD ERP:",err);
-
-  }
-
-}
     
     // Pagination Config
     let currentMonPage = 1;
     let currentEqPage = 1;
     let currentPtPage = 1;
-    let currentHmPage = 1; // Ditambahkan: pagination untuk tabel HM
+    let currentHmPage = 1;
     const ITEMS_PER_PAGE = 50;
 
     // KPI Charts
     let statusChartInstance = null;
     let equipChartInstance = null;
+    let serviceChartInstance = null; // New Chart for Predictive Service
 
     // -------------------------------------------------------------------
     // INIT & AUTH
@@ -955,9 +1064,17 @@ async function loadERPData(){
     };
 
     function loadSettings() {
-        if(typeof google === 'undefined') { applyTheme({CompanyName: 'PT. BSS (Simulasi)', ThemeColor: '#0f172a'}); return; }
+        const localLogo = localStorage.getItem('bss_logo');
+        if(typeof google === 'undefined') { 
+            applyTheme({CompanyName: 'PT. BSS (Simulasi)', ThemeColor: '#0f172a', CompanyLogo: localLogo || ''}); 
+            return; 
+        }
         google.script.run.withSuccessHandler(res => {
-            if(res.success) applyTheme(res.data);
+            if(res.success) {
+                // Gunakan logo dari localStorage jika ada sbg fallback instant UI
+                if(!res.data.CompanyLogo && localLogo) res.data.CompanyLogo = localLogo;
+                applyTheme(res.data);
+            }
         }).getSettings();
     }
 
@@ -971,13 +1088,39 @@ async function loadERPData(){
             document.querySelectorAll('.company-display-name').forEach(el => el.innerText = config.CompanyName);
             if(document.getElementById('conf_company')) document.getElementById('conf_company').value = config.CompanyName;
         }
+        // Handle Custom Logo (Jika URL Diisi)
+        if(config.CompanyLogo !== undefined) {
+            const logoWrappers = document.querySelectorAll('.dynamic-logo-wrapper');
+            logoWrappers.forEach(el => {
+                if(config.CompanyLogo && config.CompanyLogo.trim() !== '') {
+                    el.innerHTML = `<img src="${config.CompanyLogo}" class="w-full h-full object-contain rounded-lg" alt="Logo" onerror="this.outerHTML='<i class=\\'fas fa-industry text-white text-xl md:text-3xl dynamic-logo-icon\\'></i>'">`;
+                    el.classList.remove('bg-theme-main', 'bg-white/10');
+                    el.classList.add('bg-white'); // Beri background putih agar logo PNG terlihat jelas
+                } else {
+                    // Fallback to default icon
+                    const isBig = el.closest('#authContainer') ? 'text-3xl' : (el.closest('#sidebar') ? 'text-xl' : 'text-sm');
+                    el.innerHTML = `<i class="fas fa-industry text-white ${isBig} dynamic-logo-icon"></i>`;
+                    el.classList.add(el.closest('#authContainer') ? 'bg-theme-main' : 'bg-white/10');
+                    el.classList.remove('bg-white');
+                }
+            });
+            if(document.getElementById('conf_logo')) document.getElementById('conf_logo').value = config.CompanyLogo;
+        }
     }
 
     if(document.getElementById('settingsForm')) {
         document.getElementById('settingsForm').onsubmit = function(e) {
             e.preventDefault();
-            const conf = { CompanyName: document.getElementById('conf_company').value, ThemeColor: document.getElementById('conf_color').value };
+            const conf = { 
+                CompanyName: document.getElementById('conf_company').value, 
+                ThemeColor: document.getElementById('conf_color').value,
+                CompanyLogo: document.getElementById('conf_logo').value
+            };
+            
+            // Simpan Logo di LocalStorage agar Instan Render di Frontend 
+            localStorage.setItem('bss_logo', conf.CompanyLogo);
             applyTheme(conf);
+            
             Swal.fire('Berhasil', 'Konfigurasi Sistem Diperbarui', 'success');
             if(typeof google !== 'undefined') google.script.run.saveSettings(conf);
         };
@@ -1006,12 +1149,23 @@ async function loadERPData(){
 
       if (isMekanik) {
         if(document.getElementById('dashTitle')) document.getElementById('dashTitle').innerText = "Mechanic Area 👋";
-        if(document.getElementById('dashDesc')) document.getElementById('dashDesc').innerText = "Pantau status Work Order, Backlog, dan Monitoring.";
-        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').classList.add('hidden');
-      }
-
-      if (document.getElementById('nav-admin-section')) {
-         document.getElementById('nav-admin-section').style.display = r.includes('PLANNER') ? 'block' : 'none';
+        if(document.getElementById('dashDesc')) document.getElementById('dashDesc').innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
+        
+        // HIDE ALL UNNECESSARY SECTIONS FOR MEKANIK
+        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'none';
+        if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = 'none';
+        if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'none';
+        
+        const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
+        if(btnBuatWo) btnBuatWo.style.display = 'none';
+        
+      } else {
+        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'block';
+        if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = r.includes('PLANNER') ? 'block' : 'none';
+        if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'block';
+        
+        const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
+        if(btnBuatWo) btnBuatWo.style.display = 'flex';
       }
 
       initTimeSelectors();
@@ -1063,9 +1217,12 @@ async function loadERPData(){
       if(id === 'dashboard') { calculateKPIFrontEnd(); }
       if(id === 'buat-wo') { prepareWOForm(); }
       if(id === 'backlog') { renderBacklogTable(); }
+      if(id === 'aktifitas') { renderActivityTable(); prefillActivityForm(); }
       if(id === 'daily-hm') { renderDailyHMTable(); }
       if(id === 'master-equip') { currentEqPage=1; renderMasterEquipTable(); }
       if(id === 'master-parts') { currentPtPage=1; renderMasterPartsTable(); }
+      if(id === 'master-comp') { renderMasterCompTable(); }
+      if(id === 'master-plan') { renderMasterPlanTable(); }
       if(id === 'manage-users') { loadUsers(); }
     }
 
@@ -1092,11 +1249,14 @@ async function loadERPData(){
     function globalDataSync() {
       if(typeof google === 'undefined') {
           woDataCache = [...mockDB];
+          populateDependentDropdowns();
           populateMonthFilter();
           renderWOTable();
           renderBacklogTable();
           renderDailyHMTable();
+          renderActivityTable();
           calculateKPIFrontEnd();
+          if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
           return;
       }
       startLoading("OPTIMIZED SYNC...");
@@ -1107,6 +1267,14 @@ async function loadERPData(){
               masterCache.parts = res.parts || [];
               masterCache.planAlat = res.planAlat || [];
               masterCache.dailyHM = res.dailyHM || [];
+              masterCache.components = res.components || [];
+              masterCache.usersData = res.usersData || [];
+              masterCache.mekanikList = res.mekanikList || [];
+              masterCache.pelaporList = res.pelaporList || [];
+              masterCache.activities = res.activities || [];
+              
+              allUsersCache = res.usersData || []; // Fix for Manage User Blank Load
+
               woDataCache = res.wo || [];
               backlogCache = res.backlog || [];
               partsDictCache = res.parts || [];
@@ -1118,7 +1286,7 @@ async function loadERPData(){
               const lp = document.getElementById('listParts');
               if(lp) lp.innerHTML = masterCache.parts.map(p => `<option value="${p.part_number}">${p.description}</option>`).join('');
               
-              // Re-render UI
+              populateDependentDropdowns();
               populateMonthFilter();
               calculateKPIFrontEnd();
               renderWOTable();
@@ -1126,6 +1294,10 @@ async function loadERPData(){
               renderDailyHMTable();
               renderMasterEquipTable();
               renderMasterPartsTable();
+              renderMasterCompTable();
+              renderActivityTable();
+              prefillActivityForm();
+              if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
           } else {
               Swal.fire('Error', res.message || 'Gagal sinkronisasi.', 'error');
@@ -1139,6 +1311,70 @@ async function loadERPData(){
     // Alias untuk fallback jika fungsi lama dipanggil di tag HTML
     function syncMasterData() { globalDataSync(); }
     function loadWOData() { globalDataSync(); }
+
+    // Helper untuk cari Actual HM dari Daily HM Log
+    function getActualHM(equipNo) {
+        if(!equipNo) return 0;
+        const hms = (masterCache.dailyHM || []).filter(h => String(h.equip_no).toUpperCase() === equipNo.toUpperCase());
+        if(hms.length === 0) return 0;
+        return Math.max(...hms.map(h => parseFloat(h.hm_akhir) || 0));
+    }
+
+    // -------------------------------------------------------------------
+    // DEPENDENT DROPDOWNS (Komponen & Users)
+    // -------------------------------------------------------------------
+    function populateDependentDropdowns() {
+        // Populate Major Components safely
+        const majors = [...new Set((masterCache.components || []).map(c => c.major_component).filter(Boolean))];
+        const majSel = document.getElementById('major_comp');
+        if(majSel) {
+            const currentMaj = majSel.value;
+            majSel.innerHTML = '<option value="">- Pilih Major -</option>' + majors.map(m => `<option value="${m}">${m}</option>`).join('');
+            if(majors.includes(currentMaj)) majSel.value = currentMaj; 
+        }
+
+        // Populate Reported By (Dari MasterPelapor)
+        const repSel = document.getElementById('reported_by');
+        if(repSel && masterCache.pelaporList) {
+            const currentRep = repSel.value;
+            repSel.innerHTML = '<option value="">- Pilih Pelapor -</option>' + masterCache.pelaporList.map(u => `<option value="${u.nama_pelapor}">${u.nama_pelapor}</option>`).join('');
+            if(masterCache.pelaporList.some(u => u.nama_pelapor === currentRep)) repSel.value = currentRep;
+        }
+
+        // Populate Tech (Dari MasterMekanik)
+        const techSel = document.getElementById('tech');
+        if(techSel && masterCache.mekanikList) {
+            const currentTech = techSel.value;
+            techSel.innerHTML = '<option value="">- Pilih Teknisi Utama -</option>' + masterCache.mekanikList.map(u => `<option value="${u.nama_mekanik}">${u.nama_mekanik}</option>`).join('');
+            if(masterCache.mekanikList.some(u => u.nama_mekanik === currentTech)) techSel.value = currentTech;
+        }
+
+        // Populate Mekanik di Laporan Aktifitas
+        const actMekSel = document.getElementById('act_mekanik');
+        if(actMekSel && masterCache.mekanikList) {
+            const currentActMek = actMekSel.value;
+            actMekSel.innerHTML = '<option value="">- Pilih Mekanik -</option>' + masterCache.mekanikList.map(u => `<option value="${u.nama_mekanik}">${u.nama_mekanik}</option>`).join('');
+            if(masterCache.mekanikList.some(u => u.nama_mekanik === currentActMek)) actMekSel.value = currentActMek;
+        }
+
+        // Populate WO List di Laporan Aktifitas
+        const actWoSel = document.getElementById('act_wo');
+        if(actWoSel && woDataCache) {
+            let activeWOs = woDataCache.filter(w => w.status !== 'CLOSED');
+            // Jika role mekanik, opsional bisa di filter berdasarkan tech nya
+            actWoSel.innerHTML = '<option value="">Pilih Work Order</option>' + activeWOs.map(w => `<option value="${w.no_wo}">${w.no_wo} - ${w.equip_no}</option>`).join('');
+        }
+    }
+
+    function updateMinorComp() {
+        const major = document.getElementById('major_comp').value;
+        const minorSel = document.getElementById('minor_comp');
+        if(!minorSel) return;
+        minorSel.innerHTML = '<option value="">- Pilih Minor -</option>';
+        if(!major) return;
+        const minors = (masterCache.components || []).filter(c => c.major_component === major).map(c => c.minor_component);
+        minors.forEach(m => { minorSel.innerHTML += `<option value="${m}">${m}</option>`; });
+    }
 
     // -------------------------------------------------------------------
     // KPI MODULE (Dynamic Plan PA & Dashboard Chessboard)
@@ -1175,12 +1411,26 @@ async function loadERPData(){
       let totalPlanHours = 0;
       let targetPAWeight = 0; 
       
+      let countAman = 0, countMendekati = 0, countOverdue = 0, countWaiting = 0;
+
       if (masterCache.planAlat && masterCache.planAlat.length > 0) {
           masterCache.planAlat.forEach(p => {
-              if(p.equip_no) { 
-                  validEquipSet.add(p.equip_no.toString().toUpperCase()); 
+              const unitNo = (p.equip_no || '').toUpperCase();
+              if(unitNo) { 
+                  validEquipSet.add(unitNo); 
                   totalPlanHours += parseInt(p.plan_hours_per_month) || 720; 
                   targetPAWeight += parseFloat(p.plan_pa) || 85;
+
+                  // Perhitungan untuk Chart Predictive Service
+                  const lastHM = parseFloat(p.last_service_hm) || 0;
+                  const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
+                  const actualHM = getActualHM(unitNo);
+                  const remainingHM = nextHM - actualHM;
+
+                  if (remainingHM <= 0 && actualHM > 0) countOverdue++;
+                  else if (remainingHM <= 50 && remainingHM > 0 && actualHM > 0) countMendekati++;
+                  else if (actualHM === 0) countWaiting++;
+                  else countAman++;
               }
           });
       }
@@ -1195,7 +1445,7 @@ async function loadERPData(){
           totalPlanHours = uniqueEquipCount * 720;
       }
       
-      if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `TARGET >${avgTargetPA}%`;
+      if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `>${avgTargetPA}%`;
 
       // Kalkulasi Aktual HM Operation (Akumulasi nilai Total_HM dari sheet DailyHM)
       let actualOperatingHours = 0;
@@ -1227,21 +1477,18 @@ async function loadERPData(){
       const totalDowntime = downtimeUnsch + downtimeSch;
       const totalBreakdowns = countUnsch + countSch;
 
-      // MTBF CALCULATION - Jika Actual Operating Hours (Dari Total_HM DailyHM) lebih dari 0, gunakan itu, jika kosong kembali ke Plan.
       const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : (totalPlanHours - totalDowntime);
 
       const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
       const mtbf = countUnsch > 0 ? (uptimeHours / countUnsch).toFixed(1) : 0; 
       
-      // PA Actual calculation
       let pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
       if(pa > 100) pa = 100; if(pa < 0 || isNaN(pa)) pa = 0;
 
-      if(document.getElementById('kpi-pa')) document.getElementById('kpi-pa').innerHTML = `${pa}<span class="text-2xl text-slate-400">%</span>`;
-      if(document.getElementById('kpi-mttr')) document.getElementById('kpi-mttr').innerHTML = `${mttr}<span class="text-2xl text-slate-400">h</span>`;
-      if(document.getElementById('kpi-mtbf')) document.getElementById('kpi-mtbf').innerHTML = `${mtbf}<span class="text-2xl text-slate-400">h</span>`;
+      if(document.getElementById('kpi-pa')) document.getElementById('kpi-pa').innerHTML = `${pa}<span class="text-lg md:text-2xl text-slate-400">%</span>`;
+      if(document.getElementById('kpi-mttr')) document.getElementById('kpi-mttr').innerHTML = `${mttr}<span class="text-lg md:text-2xl text-slate-400">h</span>`;
+      if(document.getElementById('kpi-mtbf')) document.getElementById('kpi-mtbf').innerHTML = `${mtbf}<span class="text-lg md:text-2xl text-slate-400">h</span>`;
       
-      // Update Total Pending Backlogs indicator
       const openBacklogCount = (backlogCache || []).filter(b => b.status === 'OPEN').length;
       if(document.getElementById('kpi-pending-backlog')) document.getElementById('kpi-pending-backlog').innerText = openBacklogCount;
 
@@ -1267,6 +1514,24 @@ async function loadERPData(){
           });
       }
 
+      // NEW CHART: Service Prediction Chart
+      const ctxService = document.getElementById('serviceChart');
+      if(ctxService) {
+          if(serviceChartInstance) serviceChartInstance.destroy();
+          serviceChartInstance = new Chart(ctxService.getContext('2d'), {
+              type: 'pie',
+              data: { 
+                  labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], 
+                  datasets: [{ 
+                      data: [countAman, countMendekati, countOverdue, countWaiting], 
+                      backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], 
+                      borderWidth: 2, borderColor: '#ffffff'
+                  }] 
+              },
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } }
+          });
+      }
+
       const ctxEquip = document.getElementById('equipChart');
       if(ctxEquip) {
           let equipCount = {};
@@ -1282,17 +1547,16 @@ async function loadERPData(){
           });
       }
 
-      // Render Unit Status Board
-      const summaryBody = document.getElementById('summaryBoardBody');
-      const summaryFooter = document.getElementById('summaryBoardFooter');
+      // Render Unit Status Board (NEW GRID / KANBAN STYLE)
       const detailBody = document.getElementById('detailBoardBody');
 
       if (masterCache.planAlat) {
           const boardData = {}; 
 
           masterCache.planAlat.forEach(p => {
-              const unitNo = p.equip_no.toUpperCase();
+              const unitNo = (p.equip_no || '').toUpperCase();
               let model = p.model ? p.model.toUpperCase() : 'OTHERS';
+              if(!unitNo) return;
 
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
 
@@ -1305,7 +1569,6 @@ async function loadERPData(){
               }
           });
 
-          let summaryHTML = '';
           let detailHTML = '';
           let totalRFU = 0;
           let totalBD = 0;
@@ -1321,46 +1584,40 @@ async function loadERPData(){
               totalRFU += rfuCount;
               totalBD += bdCount;
 
-              summaryHTML += `<tr>
-                <td class="border border-slate-300 p-2 text-left font-black">${model}</td>
-                <td class="border border-slate-300 p-2 text-emerald-600">${rfuCount}</td>
-                <td class="border border-slate-300 p-2 text-red-600">${bdCount}</td>
-              </tr>`;
-
-              detailHTML += `<tr>
-                  <td class="border border-slate-300 p-2" rowspan="2" style="background-color: #f8fafc;">${model}</td>
-                  <td class="border border-slate-300 p-2 bg-emerald-100 text-emerald-700">RFU</td>
-                  <td class="border border-slate-300 p-2 text-left">
-                      <div class="flex flex-wrap gap-1.5 pl-2">
-                          ${rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded text-[10px] shadow-sm">${u}</span>`).join('')}
+              detailHTML += `
+              <div class="bg-slate-50 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                  <h4 class="font-black text-slate-700 uppercase tracking-widest text-xs md:text-sm mb-3 md:mb-4 border-b border-slate-200 pb-2">${model}</h4>
+                  <div class="mb-3 md:mb-4">
+                      <div class="text-[9px] md:text-[10px] font-bold text-emerald-600 mb-1.5 uppercase tracking-widest flex items-center justify-between">
+                          <span>Ready For Use</span> <span class="bg-emerald-100 px-2 py-0.5 rounded-md">${rfuCount}</span>
                       </div>
-                  </td>
-              </tr>
-              <tr>
-                  <td class="border border-slate-300 p-2 bg-red-100 text-red-700">BD</td>
-                  <td class="border border-slate-300 p-2 text-left">
-                      <div class="flex flex-wrap gap-1.5 pl-2">
-                          ${bdList.map(u => `<span class="px-2 py-1 bg-red-600 text-white rounded text-[10px] shadow-sm">${u}</span>`).join('')}
+                      <div class="flex flex-wrap gap-1.5">
+                          ${rfuList.length > 0 ? rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}
                       </div>
-                  </td>
-              </tr>`;
+                  </div>
+                  <div>
+                      <div class="text-[9px] md:text-[10px] font-bold text-red-600 mb-1.5 uppercase tracking-widest flex items-center justify-between">
+                          <span>Breakdown</span> <span class="bg-red-100 px-2 py-0.5 rounded-md">${bdCount}</span>
+                      </div>
+                      <div class="flex flex-wrap gap-1.5">
+                          ${bdList.length > 0 ? bdList.map(u => `<span class="px-2 py-1 bg-red-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold animate-pulse tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}
+                      </div>
+                  </div>
+              </div>`;
           });
 
           if (models.length === 0) {
-              summaryHTML = `<tr><td colspan="3" class="border border-slate-300 p-4 text-slate-400">No Data</td></tr>`;
-              detailHTML = `<tr><td colspan="3" class="border border-slate-300 p-4 text-slate-400">Silakan daftarkan unit di Master Plan Alat.</td></tr>`;
+              detailHTML = `<div class="col-span-full p-6 text-center text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">Silakan daftarkan unit di Master Plan Alat terlebih dahulu.</div>`;
           }
 
-          const summaryFooterHTML = `<tr><td class="border border-slate-300 p-2 text-left">TOTAL</td><td class="border border-slate-300 p-2 text-emerald-400">${totalRFU}</td><td class="border border-slate-300 p-2 text-red-400">${totalBD}</td></tr>`;
-
-          if(summaryBody) summaryBody.innerHTML = summaryHTML;
-          if(summaryFooter) summaryFooter.innerHTML = summaryFooterHTML;
+          if(document.getElementById('totalRfuCount')) document.getElementById('totalRfuCount').innerText = `${totalRFU} RFU`;
+          if(document.getElementById('totalBdCount')) document.getElementById('totalBdCount').innerText = `${totalBD} B/D`;
           if(detailBody) detailBody.innerHTML = detailHTML;
       }
     }
 
     // -------------------------------------------------------------------
-    // MASTER DATA RENDERER (Equip, Parts, Plan, Daily HM)
+    // MASTER DATA RENDERER (Equip, Parts, Comp, Plan, Daily HM)
     // -------------------------------------------------------------------
     function changeEqPage(dir) { currentEqPage += dir; renderMasterEquipTable(); }
     function changePtPage(dir) { currentPtPage += dir; renderMasterPartsTable(); }
@@ -1387,7 +1644,7 @@ async function loadERPData(){
       if(pageInfo) pageInfo.innerText = `${currentEqPage} / ${totalPages} (${filteredE.length} Data)`;
       
       if(paged.length === 0) { eBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
-      eBody.innerHTML = paged.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black uppercase text-slate-800">${e.equip_no}</td><td class="p-4 uppercase">${e.brand}</td><td class="p-4 uppercase text-theme-accent font-bold">${e.unit_type}</td></tr>`).join('');
+      eBody.innerHTML = paged.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black uppercase text-slate-800">${e.equip_no}</td><td class="p-4 md:p-6 uppercase">${e.brand}</td><td class="p-4 md:p-6 uppercase text-theme-accent font-bold">${e.unit_type}</td></tr>`).join('');
     }
 
     function renderMasterPartsTable() {
@@ -1405,22 +1662,97 @@ async function loadERPData(){
       if(pageInfo) pageInfo.innerText = `${currentPtPage} / ${totalPages} (${filteredP.length} Data)`;
       
       if(paged.length === 0) { pBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
-      pBody.innerHTML = paged.map(pt => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black uppercase text-slate-800">${pt.part_number}</td><td class="p-4">${pt.description}</td><td class="p-4 font-black text-theme-accent uppercase">${pt.uom}</td></tr>`).join('');
+      pBody.innerHTML = paged.map(pt => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black uppercase text-slate-800">${pt.part_number}</td><td class="p-4 md:p-6">${pt.description}</td><td class="p-4 md:p-6 font-black text-theme-accent uppercase">${pt.uom}</td></tr>`).join('');
     }
 
+    function renderMasterCompTable() {
+      const cBody = document.getElementById('masterCompBody');
+      if(!cBody) return;
+      if(!masterCache.components || masterCache.components.length === 0) {
+          cBody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400 font-bold">Data komponen kosong.</td></tr>';
+          return;
+      }
+      cBody.innerHTML = masterCache.components.map(c => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black text-slate-800">${c.major_component}</td><td class="p-4 md:p-6 font-bold text-theme-accent">${c.minor_component}</td></tr>`).join('');
+    }
+
+    // UPDATED: Logic perhitungan pintar membandingkan Actual HM vs Next Service dengan Filtering
     function renderMasterPlanTable() {
       const pb = document.getElementById('masterPlanBody');
       if(!pb) return;
       if(!masterCache.planAlat || masterCache.planAlat.length === 0) {
-          pb.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold">Belum ada Plan Alat terdaftar.</td></tr>';
+          pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Plan Alat terdaftar.</td></tr>';
           return;
       }
-      pb.innerHTML = masterCache.planAlat.map(p => `<tr class="border-b hover:bg-slate-50">
-         <td class="p-6 font-black uppercase text-slate-800">${p.equip_no}</td>
-         <td class="p-6 font-black text-slate-500">${p.model || '-'}</td>
-         <td class="p-6 font-black text-theme-accent text-center">${p.plan_hours_per_month} Jam</td>
-         <td class="p-6 font-black text-blue-500 text-center">${p.plan_pa || 85}%</td>
-      </tr>`).join('');
+
+      const q = (document.getElementById('filterPlan')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('filterStatusPlan')?.value || 'ALL';
+      
+      let html = '';
+      let count = 0;
+
+      masterCache.planAlat.forEach(p => {
+          const unitNo = (p.equip_no || '').toUpperCase();
+          const model = (p.model || '').toUpperCase();
+          
+          if (q && !unitNo.toLowerCase().includes(q) && !model.toLowerCase().includes(q)) return;
+
+          const lastDate = p.last_service_date || '-';
+          const lastHM = parseFloat(p.last_service_hm) || 0;
+          const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
+          
+          const actualHM = getActualHM(unitNo);
+          const remainingHM = nextHM - actualHM;
+          
+          let statusRaw = 'AMAN';
+          let statusBadge = '<span class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-[9px] font-black tracking-widest border border-emerald-300 shadow-sm">AMAN</span>';
+          let remainingText = `<span class="text-emerald-600 font-black ml-1">${remainingHM.toFixed(1)} h</span> lagi`;
+
+          if (remainingHM <= 0 && actualHM > 0) {
+              statusRaw = 'OVERDUE';
+              statusBadge = '<span class="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-[9px] font-black tracking-widest border border-red-300 shadow-sm animate-pulse">OVERDUE SERVICE!</span>';
+              remainingText = `<span class="text-red-600 font-black ml-1">Lewat ${Math.abs(remainingHM).toFixed(1)} h</span>`;
+          } else if (remainingHM <= 50 && remainingHM > 0 && actualHM > 0) {
+              statusRaw = 'MENDEKATI';
+              statusBadge = '<span class="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-[9px] font-black tracking-widest border border-amber-300 shadow-sm">MENDEKATI</span>';
+              remainingText = `<span class="text-amber-600 font-black ml-1">${remainingHM.toFixed(1)} h</span> lagi`;
+          } else if (actualHM === 0) {
+              statusRaw = 'WAITING';
+              statusBadge = '<span class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black tracking-widest border border-slate-300 shadow-sm">WAITING HM</span>';
+              remainingText = `<span class="text-slate-400 font-bold ml-1">Menunggu Input HM</span>`;
+          }
+
+          if (statusFilter !== 'ALL' && statusRaw !== statusFilter) return;
+
+          count++;
+          html += `<tr class="border-b hover:bg-slate-50 transition-colors">
+             <td class="p-4 md:p-5">
+                 <div class="font-black uppercase text-slate-800 text-xs md:text-sm tracking-tight">${unitNo}</div>
+                 <div class="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase mt-1 line-clamp-1">${p.model || '-'}</div>
+             </td>
+             <td class="p-4 md:p-5 text-center border-l border-slate-100">
+                 <div class="font-black text-theme-accent text-base md:text-lg">${p.plan_hours_per_month}<span class="text-[9px] md:text-[10px] text-slate-400 ml-1">h/Bln</span></div>
+                 <div class="text-[8px] md:text-[9px] font-bold text-blue-400 mt-1 uppercase tracking-widest">${p.plan_pa || 85}% TARGET PA</div>
+             </td>
+             <td class="p-4 md:p-5 text-center border-l border-slate-100">
+                 <div class="font-black text-slate-700 text-xs">${lastDate}</div>
+                 <div class="text-[9px] md:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">HM: ${lastHM}</div>
+             </td>
+             <td class="p-4 md:p-5 text-center border-l border-slate-100">
+                 <div class="font-black text-amber-600 text-lg md:text-xl tracking-tight">${nextHM}</div>
+                 <div class="text-[9px] text-slate-500 mt-1">Sisa: ${remainingText}</div>
+             </td>
+             <td class="p-4 md:p-5 text-center border-l border-slate-100">
+                 <div class="mb-3">${statusBadge}</div>
+                 <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest">HM Aktual: <span class="text-theme-main font-black">${actualHM > 0 ? actualHM : '-'}</span></div>
+             </td>
+          </tr>`;
+      });
+
+      if (count === 0) {
+          pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Tidak ada data yang sesuai filter.</td></tr>';
+      } else {
+          pb.innerHTML = html;
+      }
     }
 
     function renderDailyHMTable() {
@@ -1429,7 +1761,6 @@ async function loadERPData(){
         
         const q = (document.getElementById('filterHM')?.value || '').toLowerCase();
         
-        // Urutkan HM dari yang paling baru
         let sortedHM = [...(masterCache.dailyHM || [])].sort((a,b) => {
             let da = new Date(a.tanggal || 0);
             let db = new Date(b.tanggal || 0);
@@ -1455,16 +1786,16 @@ async function loadERPData(){
         }
         
         tbody.innerHTML = paged.map(h => `<tr class="border-b hover:bg-slate-50 transition-colors">
-            <td class="p-5 font-bold text-slate-500 text-xs">${h.tanggal}</td>
-            <td class="p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
-            <td class="p-5 text-right font-mono">${h.hm_awal}</td>
-            <td class="p-5 text-right font-mono">${h.hm_akhir}</td>
-            <td class="p-5 text-right font-black text-theme-accent">${h.total_hm} h</td>
+            <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${h.tanggal}</td>
+            <td class="p-4 md:p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
+            <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_awal}</td>
+            <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_akhir}</td>
+            <td class="p-4 md:p-5 text-right font-black text-theme-accent text-xs md:text-sm">${h.total_hm} h</td>
         </tr>`).join('');
     }
 
     // -------------------------------------------------------------------
-    // FORM HANDLERS (Equip, Part, Plan, Daily HM)
+    // FORM HANDLERS (Equip, Part, Plan, Daily HM, Component)
     // -------------------------------------------------------------------
     function handleSaveEquip(e) {
       e.preventDefault();
@@ -1482,17 +1813,25 @@ async function loadERPData(){
       google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('partMasterForm').reset(); globalDataSync(); } }).saveMaster('parts', payload);
     }
 
+    function handleSaveComponent(e) {
+      e.preventDefault();
+      const payload = [ document.getElementById('m_comp_major').value.toUpperCase(), document.getElementById('m_comp_minor').value.toUpperCase() ];
+      startLoading("SAVING COMPONENT...");
+      if(typeof google === 'undefined'){ endLoading(); return; }
+      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).saveMaster('component', payload);
+    }
+
     function handleSavePlan(e) {
       e.preventDefault();
       const payload = [ 
           document.getElementById('m_plan_equip').value.toUpperCase(), 
           document.getElementById('m_plan_model').value.toUpperCase(), 
           document.getElementById('m_plan_hours').value,
-          "", // Current HM placeholder
-          "", // Next PM placeholder
-          document.getElementById('m_plan_pa').value // Index 5: Plan PA
+          document.getElementById('m_plan_pa').value,
+          document.getElementById('m_plan_last_date').value,
+          document.getElementById('m_plan_last_hm').value
       ];
-      startLoading("SAVING PLAN...");
+      startLoading("SAVING PLAN & SERVICE...");
       if(typeof google === 'undefined'){ endLoading(); return; }
       google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).saveMaster('plan', payload);
     }
@@ -1523,6 +1862,75 @@ async function loadERPData(){
     }
 
     // -------------------------------------------------------------------
+    // MECHANIC ACTIVITY LOG
+    // -------------------------------------------------------------------
+    function prefillActivityForm() {
+        if(currentUser && document.getElementById('act_mekanik')) {
+            const mekSel = document.getElementById('act_mekanik');
+            // Coba pre-select mekanik yang sedang login
+            for(let i=0; i<mekSel.options.length; i++) {
+                if(mekSel.options[i].value.toLowerCase() === currentUser.nama.toLowerCase()) {
+                    mekSel.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        document.getElementById('act_tgl').value = new Date().toISOString().split('T')[0];
+    }
+
+    function handleSaveActivity(e) {
+        e.preventDefault();
+        const payload = {
+            tanggal: document.getElementById('act_tgl').value,
+            no_wo: document.getElementById('act_wo').value,
+            mekanik: document.getElementById('act_mekanik').value,
+            aktifitas: document.getElementById('act_desc').value,
+            jam_mulai: document.getElementById('act_start').value,
+            jam_selesai: document.getElementById('act_end').value
+        };
+        startLoading("SAVING ACTIVITY...");
+        if(typeof google === 'undefined') {
+            setTimeout(() => { endLoading(); Swal.fire('Sukses', 'Simulasi Aktifitas Disimpan', 'success'); }, 800);
+            return;
+        }
+        google.script.run.withSuccessHandler(res => {
+            endLoading();
+            if(res.success) {
+                Swal.fire('Sukses', res.message, 'success');
+                document.getElementById('activityForm').reset();
+                prefillActivityForm();
+                globalDataSync();
+            } else { Swal.fire('Error', res.message, 'error'); }
+        }).saveActivityLog(payload);
+    }
+
+    function renderActivityTable() {
+        const tbody = document.getElementById('activityTableBody');
+        if(!tbody) return;
+        
+        let acts = [...(masterCache.activities || [])].reverse(); // newest first
+        if (currentUser && currentUser.role === 'Mekanik') {
+            // Mekanik hanya lihat aktifitasnya sendiri
+            acts = acts.filter(a => a.mekanik === currentUser.nama);
+        }
+
+        if(acts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada riwayat aktifitas.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = acts.map(a => `<tr class="border-b hover:bg-slate-50 transition-colors">
+            <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${a.tanggal}</td>
+            <td class="p-4 md:p-5 font-black uppercase text-theme-accent">${a.no_wo}</td>
+            <td class="p-4 md:p-5 font-bold text-slate-800">${a.mekanik}</td>
+            <td class="p-4 md:p-5 text-xs md:text-sm text-slate-600">${a.aktifitas}</td>
+            <td class="p-4 md:p-5 text-center font-mono text-xs md:text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block shadow-sm border border-slate-200">
+                ${a.jam_mulai} - ${a.jam_selesai}
+            </td>
+        </tr>`).join('');
+    }
+
+    // -------------------------------------------------------------------
     // BACKLOG MANAGEMENT
     // -------------------------------------------------------------------
     function handleSaveBacklog(e) {
@@ -1543,7 +1951,7 @@ async function loadERPData(){
             if(res.success) {
                 Swal.fire('Sukses', res.message, 'success');
                 document.getElementById('backlogForm').reset();
-                globalDataSync(); // Akan fetch ulang dan re-render table
+                globalDataSync(); 
             } else {
                 Swal.fire('Error', res.message, 'error');
             }
@@ -1571,18 +1979,18 @@ async function loadERPData(){
         tbody.innerHTML = filtered.map(b => {
             const stCol = b.status === 'OPEN' ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-emerald-100 text-emerald-700 border border-emerald-300";
             return `<tr class="hover:bg-slate-50 transition-colors border-b">
-                <td class="p-6">
+                <td class="p-4 md:p-6">
                     <div class="font-black text-slate-800 tracking-tight text-xs">${b.id}</div>
                     <div class="text-[9px] font-bold text-slate-400 mt-1">${b.tanggal}</div>
                 </td>
-                <td class="p-6 font-black uppercase text-theme-accent">${b.equip_no}</td>
-                <td class="p-6">
-                    <div class="font-medium text-slate-700 text-sm mb-1">${b.deskripsi_backlog}</div>
-                    <div class="text-[10px] text-slate-500 font-bold"><i class="fas fa-tools mr-1 opacity-50"></i> Rencana: ${b.rencana_eksekusi || '-'}</div>
+                <td class="p-4 md:p-6 font-black uppercase text-theme-accent">${b.equip_no}</td>
+                <td class="p-4 md:p-6">
+                    <div class="font-medium text-slate-700 text-xs md:text-sm mb-1">${b.deskripsi_backlog}</div>
+                    <div class="text-[9px] md:text-[10px] text-slate-500 font-bold"><i class="fas fa-tools mr-1 opacity-50"></i> Rencana: ${b.rencana_eksekusi || '-'}</div>
                 </td>
-                <td class="p-6 text-center"><span class="px-4 py-1.5 rounded-lg text-[9px] font-black shadow-sm cursor-pointer ${stCol}" onclick="updateBacklogStatus('${b.id}')" title="Klik untuk ubah status">${b.status || 'OPEN'}</span></td>
-                <td class="p-6 text-right">
-                    <button onclick="deleteBacklog('${b.id}')" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors mx-auto" title="Hapus Backlog"><i class="fas fa-trash"></i></button>
+                <td class="p-4 md:p-6 text-center"><span class="px-4 py-1.5 rounded-lg text-[9px] font-black shadow-sm cursor-pointer ${stCol}" onclick="updateBacklogStatus('${b.id}')" title="Klik untuk ubah status">${b.status || 'OPEN'}</span></td>
+                <td class="p-4 md:p-6 text-right">
+                    <button onclick="deleteBacklog('${b.id}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors ml-auto" title="Hapus Backlog"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
         }).join('');
@@ -1672,14 +2080,8 @@ async function loadERPData(){
       tbody.innerHTML = paged.map(i => {
         const unitNo = (i.equip_no || '').toUpperCase();
         
-        let actualHM = "N/A";
-        const unitHMRecords = (masterCache.dailyHM || []).filter(hm => (hm.equip_no || '').toUpperCase() === unitNo);
-        if(unitHMRecords.length > 0) {
-            const maxHM = Math.max(...unitHMRecords.map(hm => parseFloat(hm.hm_akhir) || 0));
-            actualHM = maxHM.toString();
-        } else if (i.hm_km) {
-            actualHM = i.hm_km;
-        }
+        let actualHM = getActualHM(unitNo);
+        if(actualHM === 0) actualHM = i.hm_km || "N/A"; // fallback
 
         const pendingBacklogs = (backlogCache || []).filter(b => (b.equip_no || '').toUpperCase() === unitNo && b.status === 'OPEN');
         let backlogBadge = '';
@@ -1691,20 +2093,20 @@ async function loadERPData(){
         let actionButtons = "";
         const canUpdate = isPlanner || isPlant;
 
-        actionButtons += `<button onclick="printWO('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-900 hover:text-white transition-all" title="Cetak WO"><i class="fas fa-print"></i></button>`;
-        if (canUpdate) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg transition-colors" title="Update Status"><i class="fas fa-tasks"></i></button>`;
-        if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors" title="Hapus WO"><i class="fas fa-trash"></i></button>`;
+        actionButtons += `<button onclick="printWO('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-900 hover:text-white transition-all" title="Cetak WO"><i class="fas fa-print text-xs md:text-sm"></i></button>`;
+        if (canUpdate) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg transition-colors" title="Update Status"><i class="fas fa-tasks text-xs md:text-sm"></i></button>`;
+        if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors" title="Hapus WO"><i class="fas fa-trash text-xs md:text-sm"></i></button>`;
         
         return `<tr class="hover:bg-slate-50 transition-colors border-b">
-          <td class="p-6 font-black text-slate-900 tracking-tight text-sm">${i.no_wo}</td>
-          <td class="p-6">
-              <div class="font-black text-lg text-theme-accent uppercase">${unitNo}</div>
-              <div class="text-[10px] font-bold text-slate-500 mt-1 uppercase"><i class="fas fa-tachometer-alt mr-1"></i> HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>
+          <td class="p-4 md:p-6 font-black text-slate-900 tracking-tight text-xs md:text-sm">${i.no_wo}</td>
+          <td class="p-4 md:p-6">
+              <div class="font-black text-base md:text-lg text-theme-accent uppercase">${unitNo}</div>
+              <div class="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase"><i class="fas fa-tachometer-alt mr-1"></i> HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>
               ${backlogBadge}
           </td>
-          <td class="p-6 text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-xs"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td>
-          <td class="p-6 text-center"><span class="px-4 py-2 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td>
-          <td class="p-6 text-right space-x-2 flex justify-end">${actionButtons}</td>
+          <td class="p-4 md:p-6 text-xs md:text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px] md:text-xs"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td>
+          <td class="p-4 md:p-6 text-center"><span class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td>
+          <td class="p-4 md:p-6 text-right space-x-1 md:space-x-2 flex justify-end">${actionButtons}</td>
         </tr>`;
       }).join('');
     }
@@ -1744,8 +2146,8 @@ async function loadERPData(){
          kendala: document.getElementById('issue').value,
          failure_reason: document.getElementById('failure_reason').value,
          parts: partsData,
-         tech: document.getElementById('tech').value,
-         reported_by: document.getElementById('reported_by').value
+         tech: document.getElementById('tech').value, // Tech sekarang dikirim dari dropdown User
+         reported_by: document.getElementById('reported_by').value // Reported By dikirim dari dropdown User
        };
 
        startLoading("SAVING WO...");
@@ -1758,13 +2160,13 @@ async function loadERPData(){
       if(!tbody) return;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="py-4 text-center font-black text-slate-300 text-[10px]">${tbody.children.length + 1}</td>
-        <td class="py-4 pr-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent shadow-sm" placeholder="Ketik P/N"></td>
-        <td class="py-4 pr-2"><input type="text" class="part-desc w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px] shadow-sm" placeholder="Otomatis terisi"></td>
-        <td class="py-4 pr-2"><input type="number" class="part-qty w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold shadow-sm" value="1"></td>
-        <td class="py-4 pr-2"><input type="text" class="part-uom w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold shadow-sm" placeholder="UNIT"></td>
-        <td class="py-4 pr-2"><input type="text" class="part-rem w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px] shadow-sm" placeholder="-"></td>
-        <td class="py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>
+        <td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tbody.children.length + 1}</td>
+        <td class="py-3 md:py-4 pr-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent shadow-sm" placeholder="Ketik P/N"></td>
+        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="Otomatis"></td>
+        <td class="py-3 md:py-4 pr-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold shadow-sm" value="1"></td>
+        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold shadow-sm text-[10px] md:text-xs" placeholder="UNIT"></td>
+        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="-"></td>
+        <td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>
       `;
       tbody.appendChild(tr);
     }
@@ -1775,23 +2177,35 @@ async function loadERPData(){
       const no = noInput.value.trim().toUpperCase();
       const t = woDataCache.find(i => i.no_wo.toString().toUpperCase() === no);
       if(t) {
-        ['equip_no','brand','unit_type','hm_km','pm_service','major_comp','minor_comp','sch_unsch','reported_by','tech','tgl_rusak','issue','failure_reason'].forEach(k => { const el = document.getElementById(k); if(el) el.value = t[k]||""; });
+        ['equip_no','brand','unit_type','hm_km','pm_service','sch_unsch','tgl_rusak','issue','failure_reason'].forEach(k => { const el = document.getElementById(k); if(el) el.value = t[k]||""; });
         if (t.jam_rusak && t.jam_rusak.includes(':')) { const [h, m] = t.jam_rusak.split(':'); document.getElementById('jam_rusak_hh').value = h; document.getElementById('jam_rusak_mm').value = m; }
         if (t.jam_selesai && t.jam_selesai.includes(':')) { const [h, m] = t.jam_selesai.split(':'); document.getElementById('jam_selesai_hh').value = h; document.getElementById('jam_selesai_mm').value = m; }
         if (t.tgl_selesai) document.getElementById('tgl_selesai').value = t.tgl_selesai;
+
+        // Set Dropdowns manually to avoid overwriting un-populated select options
+        if(document.getElementById('reported_by') && t.reported_by) document.getElementById('reported_by').value = t.reported_by;
+        if(document.getElementById('tech') && t.tech) document.getElementById('tech').value = t.tech;
+        
+        if(document.getElementById('major_comp') && t.major_comp) {
+            document.getElementById('major_comp').value = t.major_comp;
+            updateMinorComp(); // Refresh the minor component options
+        }
+        if(document.getElementById('minor_comp') && t.minor_comp) {
+            document.getElementById('minor_comp').value = t.minor_comp;
+        }
 
         const tb = document.getElementById('partTableBody'); if(tb) tb.innerHTML = '';
         if(t.parts_json) { 
            try { 
               JSON.parse(t.parts_json).forEach(p => {
                  const tr = document.createElement('tr');
-                 tr.innerHTML = `<td class="py-4 text-center font-black text-slate-300 text-[10px]">${tb.children.length + 1}</td>
-                  <td class="py-4 px-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent" value="${p.no||''}"></td>
-                  <td class="py-4 px-2"><input type="text" class="part-desc w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px]" value="${p.desc||''}"></td>
-                  <td class="py-4 px-2"><input type="number" class="part-qty w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold" value="${p.qty||'1'}"></td>
-                  <td class="py-4 px-2"><input type="text" class="part-uom w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold" value="${p.uom||''}"></td>
-                  <td class="py-4 px-2"><input type="text" class="part-rem w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-[12px]" value="${p.rem||''}"></td>
-                  <td class="py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
+                 tr.innerHTML = `<td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tb.children.length + 1}</td>
+                  <td class="py-3 md:py-4 px-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent" value="${p.no||''}"></td>
+                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.desc||''}"></td>
+                  <td class="py-3 md:py-4 px-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold" value="${p.qty||'1'}"></td>
+                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold text-[10px] md:text-xs" value="${p.uom||''}"></td>
+                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.rem||''}"></td>
+                  <td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
                  tb.appendChild(tr);
               }); 
            } catch(e) {} 
@@ -1854,7 +2268,7 @@ async function loadERPData(){
       const tbody = document.getElementById('userTableBody');
       if(!tbody) return;
       if (!allUsersCache || allUsersCache.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
-      tbody.innerHTML = allUsersCache.map(u => `<tr class="hover:bg-slate-50 transition-colors border-b"><td class="p-6 font-black text-slate-800">${u.username}</td><td class="p-6 font-medium">${u.nama}</td><td class="p-6"><span class="px-4 py-2 bg-theme-main/10 text-theme-main rounded-xl font-black text-[9px] uppercase tracking-widest">${u.role}</span></td><td class="p-6 text-right"><button onclick="deleteUserAccount('${u.username}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+      tbody.innerHTML = allUsersCache.map(u => `<tr class="hover:bg-slate-50 transition-colors border-b"><td class="p-4 md:p-6 font-black text-slate-800">${u.username}</td><td class="p-4 md:p-6 font-medium">${u.nama}</td><td class="p-4 md:p-6"><span class="px-3 py-1.5 md:px-4 md:py-2 bg-theme-main/10 text-theme-main rounded-lg md:rounded-xl font-black text-[9px] uppercase tracking-widest">${u.role}</span></td><td class="p-4 md:p-6 text-right"><button onclick="deleteUserAccount('${u.username}')" class="w-8 h-8 md:w-10 md:h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors ml-auto flex items-center justify-center"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     
     function deleteUserAccount(username) {
