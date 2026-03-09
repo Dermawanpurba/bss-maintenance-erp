@@ -501,6 +501,7 @@
                     <th class="p-4 md:p-5 text-right">HM AWAL</th>
                     <th class="p-4 md:p-5 text-right">HM AKHIR</th>
                     <th class="p-4 md:p-5 text-right text-theme-accent">TOTAL HM</th>
+                    <th class="p-4 md:p-5 text-center">DEVIASI</th>
                   </tr>
                 </thead>
                 <tbody id="dailyHmTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
@@ -1761,7 +1762,28 @@
         
         const q = (document.getElementById('filterHM')?.value || '').toLowerCase();
         
-        let sortedHM = [...(masterCache.dailyHM || [])].sort((a,b) => {
+        // 1. Urutkan berdasarkan tanggal terlama ke terbaru untuk melacak riwayat HM aktual
+        let allHM = [...(masterCache.dailyHM || [])].sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal));
+        
+        let equipLastHMAkhir = {};
+        let hmWithDeviation = allHM.map(h => {
+            let eq = (h.equip_no || '').toUpperCase();
+            let deviasi = 0;
+            let hasPrev = false;
+            
+            // Jika unit sudah pernah diinput sebelumnya, hitung selisih HM Awal saat ini dengan HM Akhir sebelumnya
+            if(equipLastHMAkhir[eq] !== undefined) {
+                deviasi = parseFloat(h.hm_awal) - equipLastHMAkhir[eq];
+                hasPrev = true;
+            }
+            
+            // Simpan HM Akhir hari ini sebagai acuan untuk hari berikutnya
+            equipLastHMAkhir[eq] = parseFloat(h.hm_akhir);
+            return { ...h, deviasi: hasPrev ? deviasi : null };
+        });
+
+        // 2. Balikkan kembali urutan menjadi yang terbaru di paling atas untuk UI
+        let sortedHM = hmWithDeviation.sort((a,b) => {
             let da = new Date(a.tanggal || 0);
             let db = new Date(b.tanggal || 0);
             return db - da;
@@ -1781,17 +1803,35 @@
         if(pageInfo) pageInfo.innerText = `${currentHmPage} / ${totalPages} (${filtered.length} Data)`;
         
         if(paged.length === 0) { 
-            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Data riwayat HM kosong.</td></tr>'; 
+            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">Data riwayat HM kosong.</td></tr>'; 
             return; 
         }
         
-        tbody.innerHTML = paged.map(h => `<tr class="border-b hover:bg-slate-50 transition-colors">
-            <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${h.tanggal}</td>
-            <td class="p-4 md:p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
-            <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_awal}</td>
-            <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_akhir}</td>
-            <td class="p-4 md:p-5 text-right font-black text-theme-accent text-xs md:text-sm">${h.total_hm} h</td>
-        </tr>`).join('');
+        tbody.innerHTML = paged.map(h => {
+            let devBadge = '-';
+            if(h.deviasi !== null) {
+                let d = h.deviasi;
+                // Logika Status Anomali
+                if(d === 0) {
+                    devBadge = `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-black border border-emerald-200">AKURAT</span>`;
+                } else if(d > 0) {
+                    devBadge = `<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[9px] font-black border border-amber-200" title="HM Gantung (Ada jam yang tidak diinput)">+${d.toFixed(1)}</span>`;
+                } else {
+                    devBadge = `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-md text-[9px] font-black animate-pulse border border-red-200" title="Anomali (HM Mundur)">${d.toFixed(1)}</span>`;
+                }
+            } else {
+                devBadge = `<span class="text-slate-300 text-[9px] font-bold">Data Awal</span>`;
+            }
+
+            return `<tr class="border-b hover:bg-slate-50 transition-colors">
+                <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${h.tanggal}</td>
+                <td class="p-4 md:p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
+                <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_awal}</td>
+                <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_akhir}</td>
+                <td class="p-4 md:p-5 text-right font-black text-theme-accent text-xs md:text-sm">${h.total_hm} h</td>
+                <td class="p-4 md:p-5 text-center">${devBadge}</td>
+            </tr>`;
+        }).join('');
     }
 
     // -------------------------------------------------------------------
@@ -1838,15 +1878,49 @@
 
     function handleSaveDailyHM(e) {
       e.preventDefault();
+      
+      const eq = document.getElementById('hm_equip_no').value.toUpperCase();
+      const hmAwal = parseFloat(document.getElementById('hm_awal').value);
+      const hmAkhir = parseFloat(document.getElementById('hm_akhir').value);
+
+      if(hmAkhir < hmAwal) {
+          return Swal.fire('Error', 'HM Akhir tidak boleh lebih kecil dari HM Awal!', 'error');
+      }
+
+      // Deteksi dini Anomali HM (Mundur) sebelum data dikirim ke server
+      let allEqHM = (masterCache.dailyHM || [])
+          .filter(h => h.equip_no.toUpperCase() === eq)
+          .sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+      if(allEqHM.length > 0) {
+          let lastHmAkhir = parseFloat(allEqHM[0].hm_akhir);
+          if (hmAwal < lastHmAkhir) {
+              Swal.fire({
+                  title: 'Peringatan Anomali HM!',
+                  html: `HM Akhir unit <b>${eq}</b> hari sebelumnya tercatat <b class="text-red-500">${lastHmAkhir}</b>.<br>Saat ini Anda menginput HM Awal <b class="text-theme-accent">${hmAwal}</b>.<br><br>Ini terdeteksi sebagai HM Mundur (Anomali). Tetap lanjutkan?`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#ef4444',
+                  confirmButtonText: 'Ya, Abaikan Anomali',
+                  cancelButtonText: 'Batal'
+              }).then((result) => {
+                  if(result.isConfirmed) processSaveDailyHM();
+              });
+              return; 
+          }
+      }
+      
+      processSaveDailyHM();
+    }
+
+    function processSaveDailyHM() {
       const payload = { 
           tanggal: document.getElementById('hm_tanggal').value, 
           equip_no: document.getElementById('hm_equip_no').value.toUpperCase(),
           hm_awal: document.getElementById('hm_awal').value,
           hm_akhir: document.getElementById('hm_akhir').value
       };
-      if(parseFloat(payload.hm_akhir) < parseFloat(payload.hm_awal)) {
-          return Swal.fire('Error', 'HM Akhir tidak boleh lebih kecil dari HM Awal!', 'error');
-      }
+      
       startLoading("SAVING HM...");
       if(typeof google === 'undefined'){ endLoading(); return; }
       google.script.run.withSuccessHandler(res => { 
