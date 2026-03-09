@@ -880,7 +880,49 @@
     let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [] };
     let partsDictCache = []; 
     let allUsersCache = [];
-   
+
+    /* =========================LOAD DATA FROM API========================= */
+async function loadERPData(){
+
+  try{
+
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        action:"getOptimizedData"
+      })
+    });
+
+    const data = await res.json();
+
+    console.log("DATA ERP:",data);
+
+    if(data.success){
+
+      mockDB = data.wo || [];
+      backlogCache = data.backlog || [];
+      masterCache = {
+        equip:data.equip || [],
+        parts:data.parts || [],
+        planAlat:data.planAlat || [],
+        dailyHM:data.dailyHM || []
+      };
+
+      console.log("ERP Loaded");
+
+    }
+
+  }catch(err){
+
+    console.error("ERROR LOAD ERP:",err);
+
+  }
+
+}
+    
     // Pagination Config
     let currentMonPage = 1;
     let currentEqPage = 1;
