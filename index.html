@@ -881,38 +881,6 @@
     let partsDictCache = []; 
     let allUsersCache = [];
    
-    /* TEST KONEKSI API */
-async function testAPI(){
-
-  try{
-
-    let res = await fetch(API_URL,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        action:"ping"
-      })
-    });
-
-    let data = await res.json();
-
-    console.log("API RESPONSE:",data);
-
-  }catch(err){
-
-    console.error("API ERROR:",err);
-
-  }
-
-}
-
-let data = await res.json();
-
-console.log("API RESPONSE:",data);
-
-}
     // Pagination Config
     let currentMonPage = 1;
     let currentEqPage = 1;
