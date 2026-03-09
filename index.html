@@ -1023,38 +1023,47 @@
   </div>
 
   <script>
+    // =========================================================
+    // KONFIGURASI API (UBAH URL INI DENGAN WEB APP URL ANDA)
+    // =========================================================
+    const GAS_API_URL = https://script.google.com/macros/s/AKfycbw79QxMSp1lCYbsGqfCy71Mb58r3BI9tETH-vFxtMBWErA7JcwVpWjL39h_6pfBSt6a/exec; 
+
+    // Fungsi Fetch pengganti google.script.run
+    async function fetchGAS(actionName, payloadData = {}) {
+      try {
+        const response = await fetch(GAS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: actionName, data: payloadData })
+        });
+        return await response.json();
+      } catch (error) {
+        console.error("API Error:", error);
+        throw new Error("Gagal terhubung ke server backend");
+      }
+    }
+    // =========================================================
+
     let currentUser = null;
-    let mockDB = [];
     let woDataCache = [];
     let backlogCache = []; 
-    // ADDED: components, usersData, activities
     let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [], components: [], usersData: [], mekanikList: [], pelaporList: [], activities: [] };
     let partsDictCache = []; 
     let allUsersCache = [];
     
     // Pagination Config
-    let currentMonPage = 1;
-    let currentEqPage = 1;
-    let currentPtPage = 1;
-    let currentHmPage = 1;
+    let currentMonPage = 1; let currentEqPage = 1; let currentPtPage = 1; let currentHmPage = 1;
     const ITEMS_PER_PAGE = 50;
 
     // KPI Charts
-    let statusChartInstance = null;
-    let equipChartInstance = null;
-    let serviceChartInstance = null; // New Chart for Predictive Service
+    let statusChartInstance = null; let equipChartInstance = null; let serviceChartInstance = null;
 
-    // -------------------------------------------------------------------
     // INIT & AUTH
-    // -------------------------------------------------------------------
     window.onload = () => {
       loadSettings();
       const session = localStorage.getItem('bss_session_v18'); 
       if (session) {
-        try {
-           currentUser = JSON.parse(session);
-           showApp();
-        } catch(e) { showLogin(); }
+        try { currentUser = JSON.parse(session); showApp(); } catch(e) { showLogin(); }
       } else { showLogin(); }
       
       if(document.getElementById('conf_color')) {
@@ -1066,17 +1075,15 @@
 
     function loadSettings() {
         const localLogo = localStorage.getItem('bss_logo');
-        if(typeof google === 'undefined') { 
-            applyTheme({CompanyName: 'PT. BSS (Simulasi)', ThemeColor: '#0f172a', CompanyLogo: localLogo || ''}); 
-            return; 
-        }
-        google.script.run.withSuccessHandler(res => {
+        fetchGAS('getSettings').then(res => {
             if(res.success) {
-                // Gunakan logo dari localStorage jika ada sbg fallback instant UI
                 if(!res.data.CompanyLogo && localLogo) res.data.CompanyLogo = localLogo;
                 applyTheme(res.data);
             }
-        }).getSettings();
+        }).catch(e => {
+            console.warn("Loading local settings as fallback");
+            applyTheme({CompanyName: 'PT. BSS (Simulasi)', ThemeColor: '#0f172a', CompanyLogo: localLogo || ''}); 
+        });
     }
 
     function applyTheme(config) {
@@ -1089,16 +1096,14 @@
             document.querySelectorAll('.company-display-name').forEach(el => el.innerText = config.CompanyName);
             if(document.getElementById('conf_company')) document.getElementById('conf_company').value = config.CompanyName;
         }
-        // Handle Custom Logo (Jika URL Diisi)
         if(config.CompanyLogo !== undefined) {
             const logoWrappers = document.querySelectorAll('.dynamic-logo-wrapper');
             logoWrappers.forEach(el => {
                 if(config.CompanyLogo && config.CompanyLogo.trim() !== '') {
                     el.innerHTML = `<img src="${config.CompanyLogo}" class="w-full h-full object-contain rounded-lg" alt="Logo" onerror="this.outerHTML='<i class=\\'fas fa-industry text-white text-xl md:text-3xl dynamic-logo-icon\\'></i>'">`;
                     el.classList.remove('bg-theme-main', 'bg-white/10');
-                    el.classList.add('bg-white'); // Beri background putih agar logo PNG terlihat jelas
+                    el.classList.add('bg-white');
                 } else {
-                    // Fallback to default icon
                     const isBig = el.closest('#authContainer') ? 'text-3xl' : (el.closest('#sidebar') ? 'text-xl' : 'text-sm');
                     el.innerHTML = `<i class="fas fa-industry text-white ${isBig} dynamic-logo-icon"></i>`;
                     el.classList.add(el.closest('#authContainer') ? 'bg-theme-main' : 'bg-white/10');
@@ -1117,13 +1122,13 @@
                 ThemeColor: document.getElementById('conf_color').value,
                 CompanyLogo: document.getElementById('conf_logo').value
             };
-            
-            // Simpan Logo di LocalStorage agar Instan Render di Frontend 
             localStorage.setItem('bss_logo', conf.CompanyLogo);
             applyTheme(conf);
-            
-            Swal.fire('Berhasil', 'Konfigurasi Sistem Diperbarui', 'success');
-            if(typeof google !== 'undefined') google.script.run.saveSettings(conf);
+            startLoading("MENYIMPAN...");
+            fetchGAS('saveSettings', conf).then(res => {
+                endLoading();
+                Swal.fire('Berhasil', 'Konfigurasi Sistem Diperbarui', 'success');
+            }).catch(e => { endLoading(); Swal.fire('Error', e.message, 'error'); });
         };
     }
 
@@ -1151,20 +1156,15 @@
       if (isMekanik) {
         if(document.getElementById('dashTitle')) document.getElementById('dashTitle').innerText = "Mechanic Area 👋";
         if(document.getElementById('dashDesc')) document.getElementById('dashDesc').innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
-        
-        // HIDE ALL UNNECESSARY SECTIONS FOR MEKANIK
         if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'none';
         if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = 'none';
         if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'none';
-        
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
         if(btnBuatWo) btnBuatWo.style.display = 'none';
-        
       } else {
         if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'block';
         if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = r.includes('PLANNER') ? 'block' : 'none';
         if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'block';
-        
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
         if(btnBuatWo) btnBuatWo.style.display = 'flex';
       }
@@ -1178,21 +1178,11 @@
       e.preventDefault();
       const fd = { username: this.username.value, password: this.password.value };
       startLoading("VERIFIKASI AKUN...");
-      if (typeof google === 'undefined') {
-        setTimeout(() => {
-          endLoading();
-          let r = fd.username === 'planner' ? 'SPV Planner' : (fd.username === 'mekanik' ? 'Mekanik' : 'Admin Plant');
-          currentUser = { username: fd.username, nama: fd.username.toUpperCase(), role: r };
-          localStorage.setItem('bss_session_v18', JSON.stringify(currentUser));
-          showApp();
-        }, 800);
-      } else {
-        google.script.run.withSuccessHandler(res => { 
+      fetchGAS("login", fd).then(res => {
           endLoading(); 
           if(res.success){ currentUser = res.user; localStorage.setItem('bss_session_v18', JSON.stringify(currentUser)); showApp(); } 
           else { Swal.fire('Gagal', res.message, 'error'); } 
-        }).withFailureHandler(err => { endLoading(); Swal.fire('Error', err, 'error'); }).loginUser(fd);
-      }
+      }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error'); });
     };
 
     function handleLogout() { localStorage.removeItem('bss_session_v18'); location.reload(); }
@@ -1204,11 +1194,9 @@
           const overlay = document.getElementById('sidebarOverlay');
           if (overlay) overlay.classList.remove('active'); 
       }
-      
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const target = document.getElementById('page-' + id);
       if (target) target.classList.add('active');
-      
       document.querySelectorAll('.nav-btn').forEach(b => {
         const isActive = b.dataset.page === id;
         b.classList.toggle('active', isActive);
@@ -1244,24 +1232,10 @@
     function startLoading(t) { document.getElementById('loadingText').innerText = t || "Processing..."; document.getElementById('loadingOverlay').classList.remove('hidden'); }
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
-    // -------------------------------------------------------------------
-    // OPTIMIZED SYNC (Single-trip backend fetching)
-    // -------------------------------------------------------------------
+    // OPTIMIZED SYNC (CLOUD FETCH)
     function globalDataSync() {
-      if(typeof google === 'undefined') {
-          woDataCache = [...mockDB];
-          populateDependentDropdowns();
-          populateMonthFilter();
-          renderWOTable();
-          renderBacklogTable();
-          renderDailyHMTable();
-          renderActivityTable();
-          calculateKPIFrontEnd();
-          if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
-          return;
-      }
       startLoading("OPTIMIZED SYNC...");
-      google.script.run.withSuccessHandler(res => {
+      fetchGAS("getOptimizedData").then(res => {
           endLoading();
           if (res && res.success) {
               masterCache.equip = res.equip || [];
@@ -1274,46 +1248,35 @@
               masterCache.pelaporList = res.pelaporList || [];
               masterCache.activities = res.activities || [];
               
-              allUsersCache = res.usersData || []; // Fix for Manage User Blank Load
+              allUsersCache = res.usersData || []; 
 
               woDataCache = res.wo || [];
               backlogCache = res.backlog || [];
               partsDictCache = res.parts || [];
               
-              // Populate Datalists
               const le = document.getElementById('listEquip');
               if(le) le.innerHTML = masterCache.equip.map(e => `<option value="${e.equip_no}">${e.brand} - ${e.unit_type}</option>`).join('');
-              
               const lp = document.getElementById('listParts');
               if(lp) lp.innerHTML = masterCache.parts.map(p => `<option value="${p.part_number}">${p.description}</option>`).join('');
               
               populateDependentDropdowns();
               populateMonthFilter();
               calculateKPIFrontEnd();
-              renderWOTable();
-              renderBacklogTable();
-              renderDailyHMTable();
-              renderMasterEquipTable();
-              renderMasterPartsTable();
-              renderMasterCompTable();
-              renderActivityTable();
-              prefillActivityForm();
+              renderWOTable(); renderBacklogTable(); renderDailyHMTable(); renderMasterEquipTable(); renderMasterPartsTable(); renderMasterCompTable(); renderActivityTable(); prefillActivityForm();
               if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
           } else {
               Swal.fire('Error', res.message || 'Gagal sinkronisasi.', 'error');
           }
-      }).withFailureHandler(err => {
+      }).catch(err => {
           endLoading();
           Swal.fire('Error Fatal', err.toString(), 'error');
-      }).getOptimizedData();
+      });
     }
     
-    // Alias untuk fallback jika fungsi lama dipanggil di tag HTML
     function syncMasterData() { globalDataSync(); }
     function loadWOData() { globalDataSync(); }
 
-    // Helper untuk cari Actual HM dari Daily HM Log
     function getActualHM(equipNo) {
         if(!equipNo) return 0;
         const hms = (masterCache.dailyHM || []).filter(h => String(h.equip_no).toUpperCase() === equipNo.toUpperCase());
@@ -1321,11 +1284,7 @@
         return Math.max(...hms.map(h => parseFloat(h.hm_akhir) || 0));
     }
 
-    // -------------------------------------------------------------------
-    // DEPENDENT DROPDOWNS (Komponen & Users)
-    // -------------------------------------------------------------------
     function populateDependentDropdowns() {
-        // Populate Major Components safely
         const majors = [...new Set((masterCache.components || []).map(c => c.major_component).filter(Boolean))];
         const majSel = document.getElementById('major_comp');
         if(majSel) {
@@ -1334,7 +1293,6 @@
             if(majors.includes(currentMaj)) majSel.value = currentMaj; 
         }
 
-        // Populate Reported By (Dari MasterPelapor)
         const repSel = document.getElementById('reported_by');
         if(repSel && masterCache.pelaporList) {
             const currentRep = repSel.value;
@@ -1342,7 +1300,6 @@
             if(masterCache.pelaporList.some(u => u.nama_pelapor === currentRep)) repSel.value = currentRep;
         }
 
-        // Populate Tech (Dari MasterMekanik)
         const techSel = document.getElementById('tech');
         if(techSel && masterCache.mekanikList) {
             const currentTech = techSel.value;
@@ -1350,7 +1307,6 @@
             if(masterCache.mekanikList.some(u => u.nama_mekanik === currentTech)) techSel.value = currentTech;
         }
 
-        // Populate Mekanik di Laporan Aktifitas
         const actMekSel = document.getElementById('act_mekanik');
         if(actMekSel && masterCache.mekanikList) {
             const currentActMek = actMekSel.value;
@@ -1358,11 +1314,9 @@
             if(masterCache.mekanikList.some(u => u.nama_mekanik === currentActMek)) actMekSel.value = currentActMek;
         }
 
-        // Populate WO List di Laporan Aktifitas
         const actWoSel = document.getElementById('act_wo');
         if(actWoSel && woDataCache) {
             let activeWOs = woDataCache.filter(w => w.status !== 'CLOSED');
-            // Jika role mekanik, opsional bisa di filter berdasarkan tech nya
             actWoSel.innerHTML = '<option value="">Pilih Work Order</option>' + activeWOs.map(w => `<option value="${w.no_wo}">${w.no_wo} - ${w.equip_no}</option>`).join('');
         }
     }
@@ -1377,24 +1331,15 @@
         minors.forEach(m => { minorSel.innerHTML += `<option value="${m}">${m}</option>`; });
     }
 
-    // -------------------------------------------------------------------
-    // KPI MODULE (Dynamic Plan PA & Dashboard Chessboard)
-    // -------------------------------------------------------------------
     function populateMonthFilter() {
       const select = document.getElementById('kpiMonthFilter');
       const selectMob = document.getElementById('kpiMonthFilterMobile');
       if(!select || !selectMob) return;
-      
       const months = new Set();
-      (woDataCache || []).forEach(d => {
-         let dateStr = d.tgl_rusak || d.tgl_input;
-         if(dateStr && dateStr.length >= 7) { months.add(dateStr.substring(0, 7)); }
-      });
-      
+      (woDataCache || []).forEach(d => { let dateStr = d.tgl_rusak || d.tgl_input; if(dateStr && dateStr.length >= 7) { months.add(dateStr.substring(0, 7)); } });
       const sortedMonths = Array.from(months).sort().reverse();
       let html = `<option value="ALL">ALL TIME / SEMUA BULAN</option>`;
       sortedMonths.forEach(m => { html += `<option value="${m}">${m}</option>`; });
-      
       const currentVal = select.value;
       select.innerHTML = html; selectMob.innerHTML = html;
       if(sortedMonths.includes(currentVal)) { select.value = currentVal; selectMob.value = currentVal; }
@@ -1403,15 +1348,10 @@
     function calculateKPIFrontEnd() {
       const monthFilter = document.getElementById('kpiMonthFilter') ? document.getElementById('kpiMonthFilter').value : 'ALL';
       let data = woDataCache || [];
-
-      if (monthFilter !== 'ALL') {
-          data = data.filter(d => (d.tgl_rusak || '').startsWith(monthFilter) || (d.tgl_input || '').startsWith(monthFilter));
-      }
+      if (monthFilter !== 'ALL') data = data.filter(d => (d.tgl_rusak || '').startsWith(monthFilter) || (d.tgl_input || '').startsWith(monthFilter));
 
       let validEquipSet = new Set();
-      let totalPlanHours = 0;
-      let targetPAWeight = 0; 
-      
+      let totalPlanHours = 0; let targetPAWeight = 0; 
       let countAman = 0, countMendekati = 0, countOverdue = 0, countWaiting = 0;
 
       if (masterCache.planAlat && masterCache.planAlat.length > 0) {
@@ -1421,8 +1361,6 @@
                   validEquipSet.add(unitNo); 
                   totalPlanHours += parseInt(p.plan_hours_per_month) || 720; 
                   targetPAWeight += parseFloat(p.plan_pa) || 85;
-
-                  // Perhitungan untuk Chart Predictive Service
                   const lastHM = parseFloat(p.last_service_hm) || 0;
                   const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
                   const actualHM = getActualHM(unitNo);
@@ -1448,7 +1386,6 @@
       
       if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `>${avgTargetPA}%`;
 
-      // Kalkulasi Aktual HM Operation (Akumulasi nilai Total_HM dari sheet DailyHM)
       let actualOperatingHours = 0;
       if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
           masterCache.dailyHM.forEach(hm => {
@@ -1477,9 +1414,7 @@
 
       const totalDowntime = downtimeUnsch + downtimeSch;
       const totalBreakdowns = countUnsch + countSch;
-
       const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : (totalPlanHours - totalDowntime);
-
       const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
       const mtbf = countUnsch > 0 ? (uptimeHours / countUnsch).toFixed(1) : 0; 
       
@@ -1504,33 +1439,16 @@
       if(document.getElementById('kpi-progress-wo')) document.getElementById('kpi-progress-wo').innerText = totalProg;
       if(document.getElementById('kpi-wait-wo')) document.getElementById('kpi-wait-wo').innerText = totalWait;
 
-      // Update Charts
       const ctxStatus = document.getElementById('statusChart');
       if(ctxStatus) {
           if(statusChartInstance) statusChartInstance.destroy();
-          statusChartInstance = new Chart(ctxStatus.getContext('2d'), {
-              type: 'doughnut',
-              data: { labels: ['OPEN', 'PROGRESS', 'WAITING PART', 'CLOSED'], datasets: [{ data: [totalOpen, totalProg, totalWait, totalClosed], backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'], borderWidth: 0 }] },
-              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 10, family: 'Plus Jakarta Sans'} } } } }
-          });
+          statusChartInstance = new Chart(ctxStatus.getContext('2d'), { type: 'doughnut', data: { labels: ['OPEN', 'PROGRESS', 'WAITING PART', 'CLOSED'], datasets: [{ data: [totalOpen, totalProg, totalWait, totalClosed], backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 10, family: 'Plus Jakarta Sans'} } } } } });
       }
 
-      // NEW CHART: Service Prediction Chart
       const ctxService = document.getElementById('serviceChart');
       if(ctxService) {
           if(serviceChartInstance) serviceChartInstance.destroy();
-          serviceChartInstance = new Chart(ctxService.getContext('2d'), {
-              type: 'pie',
-              data: { 
-                  labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], 
-                  datasets: [{ 
-                      data: [countAman, countMendekati, countOverdue, countWaiting], 
-                      backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], 
-                      borderWidth: 2, borderColor: '#ffffff'
-                  }] 
-              },
-              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } }
-          });
+          serviceChartInstance = new Chart(ctxService.getContext('2d'), { type: 'pie', data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } } });
       }
 
       const ctxEquip = document.getElementById('equipChart');
@@ -1538,112 +1456,52 @@
           let equipCount = {};
           data.forEach(d => { if(d.equip_no) { equipCount[d.equip_no] = (equipCount[d.equip_no] || 0) + 1; } });
           let sortedEquip = Object.entries(equipCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
           if(equipChartInstance) equipChartInstance.destroy();
           const themeColor = document.documentElement.style.getPropertyValue('--theme-main') || '#0f172a';
-          equipChartInstance = new Chart(ctxEquip.getContext('2d'), {
-              type: 'bar',
-              data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] },
-              options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } }
-          });
+          equipChartInstance = new Chart(ctxEquip.getContext('2d'), { type: 'bar', data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } } });
       }
 
-      // Render Unit Status Board (NEW GRID / KANBAN STYLE)
       const detailBody = document.getElementById('detailBoardBody');
-
       if (masterCache.planAlat) {
           const boardData = {}; 
-
           masterCache.planAlat.forEach(p => {
               const unitNo = (p.equip_no || '').toUpperCase();
               let model = p.model ? p.model.toUpperCase() : 'OTHERS';
               if(!unitNo) return;
-
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
-
               const activeWOs = (woDataCache || []).filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.status !== 'CLOSED');
-              
-              if (activeWOs.length > 0) {
-                  boardData[model].bd.push(unitNo);
-              } else {
-                  boardData[model].rfu.push(unitNo);
-              }
+              if (activeWOs.length > 0) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
           });
-
-          let detailHTML = '';
-          let totalRFU = 0;
-          let totalBD = 0;
-
+          let detailHTML = ''; let totalRFU = 0; let totalBD = 0;
           const models = Object.keys(boardData).sort();
-
           models.forEach(model => {
               const rfuList = boardData[model].rfu.sort();
               const bdList = boardData[model].bd.sort();
-              const rfuCount = rfuList.length;
-              const bdCount = bdList.length;
-
-              totalRFU += rfuCount;
-              totalBD += bdCount;
-
-              detailHTML += `
-              <div class="bg-slate-50 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                  <h4 class="font-black text-slate-700 uppercase tracking-widest text-xs md:text-sm mb-3 md:mb-4 border-b border-slate-200 pb-2">${model}</h4>
-                  <div class="mb-3 md:mb-4">
-                      <div class="text-[9px] md:text-[10px] font-bold text-emerald-600 mb-1.5 uppercase tracking-widest flex items-center justify-between">
-                          <span>Ready For Use</span> <span class="bg-emerald-100 px-2 py-0.5 rounded-md">${rfuCount}</span>
-                      </div>
-                      <div class="flex flex-wrap gap-1.5">
-                          ${rfuList.length > 0 ? rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}
-                      </div>
-                  </div>
-                  <div>
-                      <div class="text-[9px] md:text-[10px] font-bold text-red-600 mb-1.5 uppercase tracking-widest flex items-center justify-between">
-                          <span>Breakdown</span> <span class="bg-red-100 px-2 py-0.5 rounded-md">${bdCount}</span>
-                      </div>
-                      <div class="flex flex-wrap gap-1.5">
-                          ${bdList.length > 0 ? bdList.map(u => `<span class="px-2 py-1 bg-red-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold animate-pulse tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}
-                      </div>
-                  </div>
-              </div>`;
+              totalRFU += rfuList.length; totalBD += bdList.length;
+              detailHTML += `<div class="bg-slate-50 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow"><h4 class="font-black text-slate-700 uppercase tracking-widest text-xs md:text-sm mb-3 md:mb-4 border-b border-slate-200 pb-2">${model}</h4><div class="mb-3 md:mb-4"><div class="text-[9px] md:text-[10px] font-bold text-emerald-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Ready For Use</span> <span class="bg-emerald-100 px-2 py-0.5 rounded-md">${rfuList.length}</span></div><div class="flex flex-wrap gap-1.5">${rfuList.length > 0 ? rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div><div><div class="text-[9px] md:text-[10px] font-bold text-red-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Breakdown</span> <span class="bg-red-100 px-2 py-0.5 rounded-md">${bdList.length}</span></div><div class="flex flex-wrap gap-1.5">${bdList.length > 0 ? bdList.map(u => `<span class="px-2 py-1 bg-red-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold animate-pulse tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div></div>`;
           });
-
-          if (models.length === 0) {
-              detailHTML = `<div class="col-span-full p-6 text-center text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">Silakan daftarkan unit di Master Plan Alat terlebih dahulu.</div>`;
-          }
-
+          if (models.length === 0) detailHTML = `<div class="col-span-full p-6 text-center text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">Silakan daftarkan unit di Master Plan Alat terlebih dahulu.</div>`;
           if(document.getElementById('totalRfuCount')) document.getElementById('totalRfuCount').innerText = `${totalRFU} RFU`;
           if(document.getElementById('totalBdCount')) document.getElementById('totalBdCount').innerText = `${totalBD} B/D`;
           if(detailBody) detailBody.innerHTML = detailHTML;
       }
     }
 
-    // -------------------------------------------------------------------
-    // MASTER DATA RENDERER (Equip, Parts, Comp, Plan, Daily HM)
-    // -------------------------------------------------------------------
     function changeEqPage(dir) { currentEqPage += dir; renderMasterEquipTable(); }
     function changePtPage(dir) { currentPtPage += dir; renderMasterPartsTable(); }
     function changeHmPage(dir) { currentHmPage += dir; renderDailyHMTable(); }
-    
-    function resetPagination(type) { 
-        if(type==='equip') currentEqPage=1; 
-        if(type==='parts') currentPtPage=1; 
-        if(type==='hm') currentHmPage=1;
-    }
+    function resetPagination(type) { if(type==='equip') currentEqPage=1; if(type==='parts') currentPtPage=1; if(type==='hm') currentHmPage=1; }
 
     function renderMasterEquipTable() {
       const eBody = document.getElementById('masterEquipBody');
       if(!eBody) return;
       const qE = document.getElementById('filterEquip')?.value.toLowerCase() || '';
       let filteredE = (masterCache.equip || []).filter(e => String(e.equip_no||'').toLowerCase().includes(qE) || String(e.brand||'').toLowerCase().includes(qE));
-      
       const totalPages = Math.ceil(filteredE.length / ITEMS_PER_PAGE) || 1;
-      if(currentEqPage > totalPages) currentEqPage = totalPages;
-      if(currentEqPage < 1) currentEqPage = 1;
+      if(currentEqPage > totalPages) currentEqPage = totalPages; if(currentEqPage < 1) currentEqPage = 1;
       const paged = filteredE.slice((currentEqPage - 1) * ITEMS_PER_PAGE, currentEqPage * ITEMS_PER_PAGE);
-      
       const pageInfo = document.getElementById('equipPageInfo');
       if(pageInfo) pageInfo.innerText = `${currentEqPage} / ${totalPages} (${filteredE.length} Data)`;
-      
       if(paged.length === 0) { eBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
       eBody.innerHTML = paged.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black uppercase text-slate-800">${e.equip_no}</td><td class="p-4 md:p-6 uppercase">${e.brand}</td><td class="p-4 md:p-6 uppercase text-theme-accent font-bold">${e.unit_type}</td></tr>`).join('');
     }
@@ -1653,15 +1511,11 @@
       if(!pBody) return;
       const qP = document.getElementById('filterParts')?.value.toLowerCase() || '';
       let filteredP = (masterCache.parts || []).filter(p => String(p.part_number||'').toLowerCase().includes(qP) || String(p.description||'').toLowerCase().includes(qP));
-      
       const totalPages = Math.ceil(filteredP.length / ITEMS_PER_PAGE) || 1;
-      if(currentPtPage > totalPages) currentPtPage = totalPages;
-      if(currentPtPage < 1) currentPtPage = 1;
+      if(currentPtPage > totalPages) currentPtPage = totalPages; if(currentPtPage < 1) currentPtPage = 1;
       const paged = filteredP.slice((currentPtPage - 1) * ITEMS_PER_PAGE, currentPtPage * ITEMS_PER_PAGE);
-      
       const pageInfo = document.getElementById('partPageInfo');
       if(pageInfo) pageInfo.innerText = `${currentPtPage} / ${totalPages} (${filteredP.length} Data)`;
-      
       if(paged.length === 0) { pBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
       pBody.innerHTML = paged.map(pt => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black uppercase text-slate-800">${pt.part_number}</td><td class="p-4 md:p-6">${pt.description}</td><td class="p-4 md:p-6 font-black text-theme-accent uppercase">${pt.uom}</td></tr>`).join('');
     }
@@ -1669,38 +1523,24 @@
     function renderMasterCompTable() {
       const cBody = document.getElementById('masterCompBody');
       if(!cBody) return;
-      if(!masterCache.components || masterCache.components.length === 0) {
-          cBody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400 font-bold">Data komponen kosong.</td></tr>';
-          return;
-      }
+      if(!masterCache.components || masterCache.components.length === 0) { cBody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400 font-bold">Data komponen kosong.</td></tr>'; return; }
       cBody.innerHTML = masterCache.components.map(c => `<tr class="border-b hover:bg-slate-50"><td class="p-4 md:p-6 font-black text-slate-800">${c.major_component}</td><td class="p-4 md:p-6 font-bold text-theme-accent">${c.minor_component}</td></tr>`).join('');
     }
 
-    // UPDATED: Logic perhitungan pintar membandingkan Actual HM vs Next Service dengan Filtering
     function renderMasterPlanTable() {
       const pb = document.getElementById('masterPlanBody');
       if(!pb) return;
-      if(!masterCache.planAlat || masterCache.planAlat.length === 0) {
-          pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Plan Alat terdaftar.</td></tr>';
-          return;
-      }
-
+      if(!masterCache.planAlat || masterCache.planAlat.length === 0) { pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Plan Alat terdaftar.</td></tr>'; return; }
       const q = (document.getElementById('filterPlan')?.value || '').toLowerCase();
       const statusFilter = document.getElementById('filterStatusPlan')?.value || 'ALL';
-      
-      let html = '';
-      let count = 0;
-
+      let html = ''; let count = 0;
       masterCache.planAlat.forEach(p => {
           const unitNo = (p.equip_no || '').toUpperCase();
           const model = (p.model || '').toUpperCase();
-          
           if (q && !unitNo.toLowerCase().includes(q) && !model.toLowerCase().includes(q)) return;
-
           const lastDate = p.last_service_date || '-';
           const lastHM = parseFloat(p.last_service_hm) || 0;
           const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
-          
           const actualHM = getActualHM(unitNo);
           const remainingHM = nextHM - actualHM;
           
@@ -1708,245 +1548,112 @@
           let statusBadge = '<span class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-[9px] font-black tracking-widest border border-emerald-300 shadow-sm">AMAN</span>';
           let remainingText = `<span class="text-emerald-600 font-black ml-1">${remainingHM.toFixed(1)} h</span> lagi`;
 
-          if (remainingHM <= 0 && actualHM > 0) {
-              statusRaw = 'OVERDUE';
-              statusBadge = '<span class="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-[9px] font-black tracking-widest border border-red-300 shadow-sm animate-pulse">OVERDUE SERVICE!</span>';
-              remainingText = `<span class="text-red-600 font-black ml-1">Lewat ${Math.abs(remainingHM).toFixed(1)} h</span>`;
-          } else if (remainingHM <= 50 && remainingHM > 0 && actualHM > 0) {
-              statusRaw = 'MENDEKATI';
-              statusBadge = '<span class="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-[9px] font-black tracking-widest border border-amber-300 shadow-sm">MENDEKATI</span>';
-              remainingText = `<span class="text-amber-600 font-black ml-1">${remainingHM.toFixed(1)} h</span> lagi`;
-          } else if (actualHM === 0) {
-              statusRaw = 'WAITING';
-              statusBadge = '<span class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black tracking-widest border border-slate-300 shadow-sm">WAITING HM</span>';
-              remainingText = `<span class="text-slate-400 font-bold ml-1">Menunggu Input HM</span>`;
-          }
+          if (remainingHM <= 0 && actualHM > 0) { statusRaw = 'OVERDUE'; statusBadge = '<span class="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-[9px] font-black tracking-widest border border-red-300 shadow-sm animate-pulse">OVERDUE SERVICE!</span>'; remainingText = `<span class="text-red-600 font-black ml-1">Lewat ${Math.abs(remainingHM).toFixed(1)} h</span>`; } 
+          else if (remainingHM <= 50 && remainingHM > 0 && actualHM > 0) { statusRaw = 'MENDEKATI'; statusBadge = '<span class="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-[9px] font-black tracking-widest border border-amber-300 shadow-sm">MENDEKATI</span>'; remainingText = `<span class="text-amber-600 font-black ml-1">${remainingHM.toFixed(1)} h</span> lagi`; } 
+          else if (actualHM === 0) { statusRaw = 'WAITING'; statusBadge = '<span class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black tracking-widest border border-slate-300 shadow-sm">WAITING HM</span>'; remainingText = `<span class="text-slate-400 font-bold ml-1">Menunggu Input HM</span>`; }
 
           if (statusFilter !== 'ALL' && statusRaw !== statusFilter) return;
-
           count++;
-          html += `<tr class="border-b hover:bg-slate-50 transition-colors">
-             <td class="p-4 md:p-5">
-                 <div class="font-black uppercase text-slate-800 text-xs md:text-sm tracking-tight">${unitNo}</div>
-                 <div class="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase mt-1 line-clamp-1">${p.model || '-'}</div>
-             </td>
-             <td class="p-4 md:p-5 text-center border-l border-slate-100">
-                 <div class="font-black text-theme-accent text-base md:text-lg">${p.plan_hours_per_month}<span class="text-[9px] md:text-[10px] text-slate-400 ml-1">h/Bln</span></div>
-                 <div class="text-[8px] md:text-[9px] font-bold text-blue-400 mt-1 uppercase tracking-widest">${p.plan_pa || 85}% TARGET PA</div>
-             </td>
-             <td class="p-4 md:p-5 text-center border-l border-slate-100">
-                 <div class="font-black text-slate-700 text-xs">${lastDate}</div>
-                 <div class="text-[9px] md:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">HM: ${lastHM}</div>
-             </td>
-             <td class="p-4 md:p-5 text-center border-l border-slate-100">
-                 <div class="font-black text-amber-600 text-lg md:text-xl tracking-tight">${nextHM}</div>
-                 <div class="text-[9px] text-slate-500 mt-1">Sisa: ${remainingText}</div>
-             </td>
-             <td class="p-4 md:p-5 text-center border-l border-slate-100">
-                 <div class="mb-3">${statusBadge}</div>
-                 <div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest">HM Aktual: <span class="text-theme-main font-black">${actualHM > 0 ? actualHM : '-'}</span></div>
-             </td>
-          </tr>`;
+          html += `<tr class="border-b hover:bg-slate-50 transition-colors"><td class="p-4 md:p-5"><div class="font-black uppercase text-slate-800 text-xs md:text-sm tracking-tight">${unitNo}</div><div class="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase mt-1 line-clamp-1">${p.model || '-'}</div></td><td class="p-4 md:p-5 text-center border-l border-slate-100"><div class="font-black text-theme-accent text-base md:text-lg">${p.plan_hours_per_month}<span class="text-[9px] md:text-[10px] text-slate-400 ml-1">h/Bln</span></div><div class="text-[8px] md:text-[9px] font-bold text-blue-400 mt-1 uppercase tracking-widest">${p.plan_pa || 85}% TARGET PA</div></td><td class="p-4 md:p-5 text-center border-l border-slate-100"><div class="font-black text-slate-700 text-xs">${lastDate}</div><div class="text-[9px] md:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">HM: ${lastHM}</div></td><td class="p-4 md:p-5 text-center border-l border-slate-100"><div class="font-black text-amber-600 text-lg md:text-xl tracking-tight">${nextHM}</div><div class="text-[9px] text-slate-500 mt-1">Sisa: ${remainingText}</div></td><td class="p-4 md:p-5 text-center border-l border-slate-100"><div class="mb-3">${statusBadge}</div><div class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest">HM Aktual: <span class="text-theme-main font-black">${actualHM > 0 ? actualHM : '-'}</span></div></td></tr>`;
       });
-
-      if (count === 0) {
-          pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Tidak ada data yang sesuai filter.</td></tr>';
-      } else {
-          pb.innerHTML = html;
-      }
+      if (count === 0) pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Tidak ada data yang sesuai filter.</td></tr>'; else pb.innerHTML = html;
     }
 
     function renderDailyHMTable() {
-        const tbody = document.getElementById('dailyHmTableBody');
-        if(!tbody) return;
-        
-        const q = (document.getElementById('filterHM')?.value || '').toLowerCase();
-        
-        // 1. Urutkan berdasarkan tanggal terlama ke terbaru untuk melacak riwayat HM aktual
-        let allHM = [...(masterCache.dailyHM || [])].sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal));
-        
-        let equipLastHMAkhir = {};
-        let hmWithDeviation = allHM.map(h => {
-            let eq = (h.equip_no || '').toUpperCase();
-            let deviasi = 0;
-            let hasPrev = false;
-            
-            // Jika unit sudah pernah diinput sebelumnya, hitung selisih HM Awal saat ini dengan HM Akhir sebelumnya
-            if(equipLastHMAkhir[eq] !== undefined) {
-                deviasi = parseFloat(h.hm_awal) - equipLastHMAkhir[eq];
-                hasPrev = true;
-            }
-            
-            // Simpan HM Akhir hari ini sebagai acuan untuk hari berikutnya
-            equipLastHMAkhir[eq] = parseFloat(h.hm_akhir);
-            return { ...h, deviasi: hasPrev ? deviasi : null };
-        });
-
-        // 2. Balikkan kembali urutan menjadi yang terbaru di paling atas untuk UI
-        let sortedHM = hmWithDeviation.sort((a,b) => {
-            let da = new Date(a.tanggal || 0);
-            let db = new Date(b.tanggal || 0);
-            return db - da;
-        });
-
-        let filtered = sortedHM.filter(h => 
-            String(h.equip_no||'').toLowerCase().includes(q) || 
-            String(h.tanggal||'').toLowerCase().includes(q)
-        );
-        
-        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
-        if(currentHmPage > totalPages) currentHmPage = totalPages;
-        if(currentHmPage < 1) currentHmPage = 1;
-        const paged = filtered.slice((currentHmPage - 1) * ITEMS_PER_PAGE, currentHmPage * ITEMS_PER_PAGE);
-        
-        const pageInfo = document.getElementById('hmPageInfo');
-        if(pageInfo) pageInfo.innerText = `${currentHmPage} / ${totalPages} (${filtered.length} Data)`;
-        
-        if(paged.length === 0) { 
-            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">Data riwayat HM kosong.</td></tr>'; 
-            return; 
-        }
-        
-        tbody.innerHTML = paged.map(h => {
-            let devBadge = '-';
-            if(h.deviasi !== null) {
-                let d = h.deviasi;
-                // Logika Status Anomali
-                if(d === 0) {
-                    devBadge = `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-black border border-emerald-200">AKURAT</span>`;
-                } else if(d > 0) {
-                    devBadge = `<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[9px] font-black border border-amber-200" title="HM Gantung (Ada jam yang tidak diinput)">+${d.toFixed(1)}</span>`;
-                } else {
-                    devBadge = `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-md text-[9px] font-black animate-pulse border border-red-200" title="Anomali (HM Mundur)">${d.toFixed(1)}</span>`;
-                }
-            } else {
-                devBadge = `<span class="text-slate-300 text-[9px] font-bold">Data Awal</span>`;
-            }
-
-            return `<tr class="border-b hover:bg-slate-50 transition-colors">
-                <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${h.tanggal}</td>
-                <td class="p-4 md:p-5 font-black uppercase text-slate-800">${h.equip_no}</td>
-                <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_awal}</td>
-                <td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_akhir}</td>
-                <td class="p-4 md:p-5 text-right font-black text-theme-accent text-xs md:text-sm">${h.total_hm} h</td>
-                <td class="p-4 md:p-5 text-center">${devBadge}</td>
-            </tr>`;
-        }).join('');
+      const tbody = document.getElementById('dailyHmTableBody');
+      if(!tbody) return;
+      const q = (document.getElementById('filterHM')?.value || '').toLowerCase();
+      let allHM = [...(masterCache.dailyHM || [])].sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal));
+      let equipLastHMAkhir = {};
+      let hmWithDeviation = allHM.map(h => {
+          let eq = (h.equip_no || '').toUpperCase();
+          let deviasi = 0; let hasPrev = false;
+          if(equipLastHMAkhir[eq] !== undefined) { deviasi = parseFloat(h.hm_awal) - equipLastHMAkhir[eq]; hasPrev = true; }
+          equipLastHMAkhir[eq] = parseFloat(h.hm_akhir);
+          return { ...h, deviasi: hasPrev ? deviasi : null };
+      });
+      let sortedHM = hmWithDeviation.sort((a,b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+      let filtered = sortedHM.filter(h => String(h.equip_no||'').toLowerCase().includes(q) || String(h.tanggal||'').toLowerCase().includes(q));
+      
+      const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+      if(currentHmPage > totalPages) currentHmPage = totalPages; if(currentHmPage < 1) currentHmPage = 1;
+      const paged = filtered.slice((currentHmPage - 1) * ITEMS_PER_PAGE, currentHmPage * ITEMS_PER_PAGE);
+      const pageInfo = document.getElementById('hmPageInfo');
+      if(pageInfo) pageInfo.innerText = `${currentHmPage} / ${totalPages} (${filtered.length} Data)`;
+      
+      if(paged.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">Data riwayat HM kosong.</td></tr>'; return; }
+      
+      tbody.innerHTML = paged.map(h => {
+          let devBadge = '-';
+          if(h.deviasi !== null) {
+              let d = h.deviasi;
+              if(d === 0) devBadge = `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-black border border-emerald-200">AKURAT</span>`;
+              else if(d > 0) devBadge = `<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[9px] font-black border border-amber-200" title="HM Gantung">+${d.toFixed(1)}</span>`;
+              else devBadge = `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-md text-[9px] font-black animate-pulse border border-red-200" title="Anomali (HM Mundur)">${d.toFixed(1)}</span>`;
+          } else { devBadge = `<span class="text-slate-300 text-[9px] font-bold">Data Awal</span>`; }
+          return `<tr class="border-b hover:bg-slate-50 transition-colors"><td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${h.tanggal}</td><td class="p-4 md:p-5 font-black uppercase text-slate-800">${h.equip_no}</td><td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_awal}</td><td class="p-4 md:p-5 text-right font-mono text-xs md:text-sm">${h.hm_akhir}</td><td class="p-4 md:p-5 text-right font-black text-theme-accent text-xs md:text-sm">${h.total_hm} h</td><td class="p-4 md:p-5 text-center">${devBadge}</td></tr>`;
+      }).join('');
     }
 
-    // -------------------------------------------------------------------
-    // FORM HANDLERS (Equip, Part, Plan, Daily HM, Component)
-    // -------------------------------------------------------------------
     function handleSaveEquip(e) {
       e.preventDefault();
       const payload = [ document.getElementById('m_equip_no').value.toUpperCase(), document.getElementById('m_brand').value.toUpperCase(), document.getElementById('m_equip_type').value.toUpperCase() ];
       startLoading("SAVING EQUIP...");
-      if(typeof google === 'undefined'){ endLoading(); return; }
-      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('equipForm').reset(); globalDataSync(); } }).saveMaster('equip', payload);
+      fetchGAS("saveMaster", { type: 'equip', payload: payload }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('equipForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSavePart(e) {
       e.preventDefault();
       const payload = [ document.getElementById('m_part_no').value.toUpperCase(), document.getElementById('m_part_desc').value, document.getElementById('m_part_uom').value.toUpperCase() ];
       startLoading("SAVING PART...");
-      if(typeof google === 'undefined'){ endLoading(); return; }
-      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('partMasterForm').reset(); globalDataSync(); } }).saveMaster('parts', payload);
+      fetchGAS("saveMaster", { type: 'parts', payload: payload }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('partMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSaveComponent(e) {
       e.preventDefault();
       const payload = [ document.getElementById('m_comp_major').value.toUpperCase(), document.getElementById('m_comp_minor').value.toUpperCase() ];
       startLoading("SAVING COMPONENT...");
-      if(typeof google === 'undefined'){ endLoading(); return; }
-      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).saveMaster('component', payload);
+      fetchGAS("saveMaster", { type: 'component', payload: payload }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSavePlan(e) {
       e.preventDefault();
-      const payload = [ 
-          document.getElementById('m_plan_equip').value.toUpperCase(), 
-          document.getElementById('m_plan_model').value.toUpperCase(), 
-          document.getElementById('m_plan_hours').value,
-          document.getElementById('m_plan_pa').value,
-          document.getElementById('m_plan_last_date').value,
-          document.getElementById('m_plan_last_hm').value
-      ];
+      const payload = [ document.getElementById('m_plan_equip').value.toUpperCase(), document.getElementById('m_plan_model').value.toUpperCase(), document.getElementById('m_plan_hours').value, document.getElementById('m_plan_pa').value, document.getElementById('m_plan_last_date').value, document.getElementById('m_plan_last_hm').value ];
       startLoading("SAVING PLAN & SERVICE...");
-      if(typeof google === 'undefined'){ endLoading(); return; }
-      google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).saveMaster('plan', payload);
+      fetchGAS("saveMaster", { type: 'plan', payload: payload }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSaveDailyHM(e) {
       e.preventDefault();
-      
       const eq = document.getElementById('hm_equip_no').value.toUpperCase();
       const hmAwal = parseFloat(document.getElementById('hm_awal').value);
       const hmAkhir = parseFloat(document.getElementById('hm_akhir').value);
 
-      if(hmAkhir < hmAwal) {
-          return Swal.fire('Error', 'HM Akhir tidak boleh lebih kecil dari HM Awal!', 'error');
-      }
+      if(hmAkhir < hmAwal) return Swal.fire('Error', 'HM Akhir tidak boleh lebih kecil dari HM Awal!', 'error');
 
-      // Deteksi dini Anomali HM (Mundur) sebelum data dikirim ke server
-      let allEqHM = (masterCache.dailyHM || [])
-          .filter(h => h.equip_no.toUpperCase() === eq)
-          .sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+      let allEqHM = (masterCache.dailyHM || []).filter(h => h.equip_no.toUpperCase() === eq).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
       if(allEqHM.length > 0) {
           let lastHmAkhir = parseFloat(allEqHM[0].hm_akhir);
           if (hmAwal < lastHmAkhir) {
-              Swal.fire({
-                  title: 'Peringatan Anomali HM!',
-                  html: `HM Akhir unit <b>${eq}</b> hari sebelumnya tercatat <b class="text-red-500">${lastHmAkhir}</b>.<br>Saat ini Anda menginput HM Awal <b class="text-theme-accent">${hmAwal}</b>.<br><br>Ini terdeteksi sebagai HM Mundur (Anomali). Tetap lanjutkan?`,
-                  icon: 'warning',
-                  showCancelButton: true,
-                  confirmButtonColor: '#ef4444',
-                  confirmButtonText: 'Ya, Abaikan Anomali',
-                  cancelButtonText: 'Batal'
-              }).then((result) => {
-                  if(result.isConfirmed) processSaveDailyHM();
-              });
+              Swal.fire({ title: 'Peringatan Anomali HM!', html: `HM Akhir unit <b>${eq}</b> hari sebelumnya tercatat <b class="text-red-500">${lastHmAkhir}</b>.<br>Saat ini Anda menginput HM Awal <b class="text-theme-accent">${hmAwal}</b>.<br><br>Ini terdeteksi sebagai HM Mundur (Anomali). Tetap lanjutkan?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Abaikan Anomali', cancelButtonText: 'Batal' })
+              .then((result) => { if(result.isConfirmed) processSaveDailyHM(); });
               return; 
           }
       }
-      
       processSaveDailyHM();
     }
 
     function processSaveDailyHM() {
-      const payload = { 
-          tanggal: document.getElementById('hm_tanggal').value, 
-          equip_no: document.getElementById('hm_equip_no').value.toUpperCase(),
-          hm_awal: document.getElementById('hm_awal').value,
-          hm_akhir: document.getElementById('hm_akhir').value
-      };
-      
+      const payload = { tanggal: document.getElementById('hm_tanggal').value, equip_no: document.getElementById('hm_equip_no').value.toUpperCase(), hm_awal: document.getElementById('hm_awal').value, hm_akhir: document.getElementById('hm_akhir').value };
       startLoading("SAVING HM...");
-      if(typeof google === 'undefined'){ endLoading(); return; }
-      google.script.run.withSuccessHandler(res => { 
-          endLoading(); 
-          if(res.success) { 
-              Swal.fire('Sukses', res.message, 'success'); 
-              document.getElementById('dailyHmForm').reset(); 
-              globalDataSync(); 
-          } else {
-              Swal.fire('Error', res.message, 'error');
-          }
-      }).saveDailyHM(payload);
+      fetchGAS("saveDailyHM", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('dailyHmForm').reset(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
-    // -------------------------------------------------------------------
-    // MECHANIC ACTIVITY LOG
-    // -------------------------------------------------------------------
     function prefillActivityForm() {
         if(currentUser && document.getElementById('act_mekanik')) {
             const mekSel = document.getElementById('act_mekanik');
-            // Coba pre-select mekanik yang sedang login
             for(let i=0; i<mekSel.options.length; i++) {
-                if(mekSel.options[i].value.toLowerCase() === currentUser.nama.toLowerCase()) {
-                    mekSel.selectedIndex = i;
-                    break;
-                }
+                if(mekSel.options[i].value.toLowerCase() === currentUser.nama.toLowerCase()) { mekSel.selectedIndex = i; break; }
             }
         }
         document.getElementById('act_tgl').value = new Date().toISOString().split('T')[0];
@@ -1954,119 +1661,43 @@
 
     function handleSaveActivity(e) {
         e.preventDefault();
-        const payload = {
-            tanggal: document.getElementById('act_tgl').value,
-            no_wo: document.getElementById('act_wo').value,
-            mekanik: document.getElementById('act_mekanik').value,
-            aktifitas: document.getElementById('act_desc').value,
-            jam_mulai: document.getElementById('act_start').value,
-            jam_selesai: document.getElementById('act_end').value
-        };
+        const payload = { tanggal: document.getElementById('act_tgl').value, no_wo: document.getElementById('act_wo').value, mekanik: document.getElementById('act_mekanik').value, aktifitas: document.getElementById('act_desc').value, jam_mulai: document.getElementById('act_start').value, jam_selesai: document.getElementById('act_end').value };
         startLoading("SAVING ACTIVITY...");
-        if(typeof google === 'undefined') {
-            setTimeout(() => { endLoading(); Swal.fire('Sukses', 'Simulasi Aktifitas Disimpan', 'success'); }, 800);
-            return;
-        }
-        google.script.run.withSuccessHandler(res => {
-            endLoading();
-            if(res.success) {
-                Swal.fire('Sukses', res.message, 'success');
-                document.getElementById('activityForm').reset();
-                prefillActivityForm();
-                globalDataSync();
-            } else { Swal.fire('Error', res.message, 'error'); }
-        }).saveActivityLog(payload);
+        fetchGAS("saveActivityLog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('activityForm').reset(); prefillActivityForm(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function renderActivityTable() {
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
-        
-        let acts = [...(masterCache.activities || [])].reverse(); // newest first
-        if (currentUser && currentUser.role === 'Mekanik') {
-            // Mekanik hanya lihat aktifitasnya sendiri
-            acts = acts.filter(a => a.mekanik === currentUser.nama);
-        }
-
-        if(acts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada riwayat aktifitas.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = acts.map(a => `<tr class="border-b hover:bg-slate-50 transition-colors">
-            <td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${a.tanggal}</td>
-            <td class="p-4 md:p-5 font-black uppercase text-theme-accent">${a.no_wo}</td>
-            <td class="p-4 md:p-5 font-bold text-slate-800">${a.mekanik}</td>
-            <td class="p-4 md:p-5 text-xs md:text-sm text-slate-600">${a.aktifitas}</td>
-            <td class="p-4 md:p-5 text-center font-mono text-xs md:text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block shadow-sm border border-slate-200">
-                ${a.jam_mulai} - ${a.jam_selesai}
-            </td>
-        </tr>`).join('');
+        let acts = [...(masterCache.activities || [])].reverse(); 
+        if (currentUser && currentUser.role === 'Mekanik') acts = acts.filter(a => a.mekanik === currentUser.nama);
+        if(acts.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada riwayat aktifitas.</td></tr>'; return; }
+        tbody.innerHTML = acts.map(a => `<tr class="border-b hover:bg-slate-50 transition-colors"><td class="p-4 md:p-5 font-bold text-slate-500 text-[10px] md:text-xs">${a.tanggal}</td><td class="p-4 md:p-5 font-black uppercase text-theme-accent">${a.no_wo}</td><td class="p-4 md:p-5 font-bold text-slate-800">${a.mekanik}</td><td class="p-4 md:p-5 text-xs md:text-sm text-slate-600">${a.aktifitas}</td><td class="p-4 md:p-5 text-center font-mono text-xs md:text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block shadow-sm border border-slate-200">${a.jam_mulai} - ${a.jam_selesai}</td></tr>`).join('');
     }
 
-    // -------------------------------------------------------------------
-    // BACKLOG MANAGEMENT
-    // -------------------------------------------------------------------
     function handleSaveBacklog(e) {
         e.preventDefault();
-        const payload = {
-            equip_no: document.getElementById('bl_equip').value.toUpperCase(),
-            tanggal: document.getElementById('bl_tanggal').value,
-            deskripsi: document.getElementById('bl_desc').value,
-            rencana: document.getElementById('bl_rencana').value || '-'
-        };
+        const payload = { equip_no: document.getElementById('bl_equip').value.toUpperCase(), tanggal: document.getElementById('bl_tanggal').value, deskripsi: document.getElementById('bl_desc').value, rencana: document.getElementById('bl_rencana').value || '-' };
         startLoading("SAVING BACKLOG...");
-        if(typeof google === 'undefined') {
-            setTimeout(() => { endLoading(); Swal.fire('Sukses', 'Simulasi Backlog Disimpan', 'success'); }, 800);
-            return;
-        }
-        google.script.run.withSuccessHandler(res => {
-            endLoading();
-            if(res.success) {
-                Swal.fire('Sukses', res.message, 'success');
-                document.getElementById('backlogForm').reset();
-                globalDataSync(); 
-            } else {
-                Swal.fire('Error', res.message, 'error');
-            }
-        }).saveBacklog(payload);
+        fetchGAS("saveBacklog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('backlogForm').reset(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function renderBacklogTable() {
         const tbody = document.getElementById('backlogTableBody');
         if(!tbody) return;
-        
         const q = (document.getElementById('filterBacklog')?.value || '').toLowerCase();
         const statusFilter = document.getElementById('filterStatusBacklog')?.value || 'ALL';
-        
         let filtered = (backlogCache || []).filter(b => {
             const matchQuery = String(b.equip_no||'').toLowerCase().includes(q) || String(b.id||'').toLowerCase().includes(q) || String(b.deskripsi_backlog||'').toLowerCase().includes(q);
             const matchStatus = statusFilter === 'ALL' || b.status === statusFilter;
             return matchQuery && matchStatus;
         });
 
-        if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Data Backlog tidak ditemukan.</td></tr>';
-            return;
-        }
+        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Data Backlog tidak ditemukan.</td></tr>'; return; }
 
         tbody.innerHTML = filtered.map(b => {
             const stCol = b.status === 'OPEN' ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-emerald-100 text-emerald-700 border border-emerald-300";
-            return `<tr class="hover:bg-slate-50 transition-colors border-b">
-                <td class="p-4 md:p-6">
-                    <div class="font-black text-slate-800 tracking-tight text-xs">${b.id}</div>
-                    <div class="text-[9px] font-bold text-slate-400 mt-1">${b.tanggal}</div>
-                </td>
-                <td class="p-4 md:p-6 font-black uppercase text-theme-accent">${b.equip_no}</td>
-                <td class="p-4 md:p-6">
-                    <div class="font-medium text-slate-700 text-xs md:text-sm mb-1">${b.deskripsi_backlog}</div>
-                    <div class="text-[9px] md:text-[10px] text-slate-500 font-bold"><i class="fas fa-tools mr-1 opacity-50"></i> Rencana: ${b.rencana_eksekusi || '-'}</div>
-                </td>
-                <td class="p-4 md:p-6 text-center"><span class="px-4 py-1.5 rounded-lg text-[9px] font-black shadow-sm cursor-pointer ${stCol}" onclick="updateBacklogStatus('${b.id}')" title="Klik untuk ubah status">${b.status || 'OPEN'}</span></td>
-                <td class="p-4 md:p-6 text-right">
-                    <button onclick="deleteBacklog('${b.id}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors ml-auto" title="Hapus Backlog"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
+            return `<tr class="hover:bg-slate-50 transition-colors border-b"><td class="p-4 md:p-6"><div class="font-black text-slate-800 tracking-tight text-xs">${b.id}</div><div class="text-[9px] font-bold text-slate-400 mt-1">${b.tanggal}</div></td><td class="p-4 md:p-6 font-black uppercase text-theme-accent">${b.equip_no}</td><td class="p-4 md:p-6"><div class="font-medium text-slate-700 text-xs md:text-sm mb-1">${b.deskripsi_backlog}</div><div class="text-[9px] md:text-[10px] text-slate-500 font-bold"><i class="fas fa-tools mr-1 opacity-50"></i> Rencana: ${b.rencana_eksekusi || '-'}</div></td><td class="p-4 md:p-6 text-center"><span class="px-4 py-1.5 rounded-lg text-[9px] font-black shadow-sm cursor-pointer ${stCol}" onclick="updateBacklogStatus('${b.id}')" title="Klik untuk ubah status">${b.status || 'OPEN'}</span></td><td class="p-4 md:p-6 text-right"><button onclick="deleteBacklog('${b.id}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors ml-auto" title="Hapus Backlog"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
 
@@ -2074,12 +1705,7 @@
         const { value: status } = await Swal.fire({ title: 'Update Status Backlog', input: 'select', inputOptions: { 'OPEN': 'OPEN', 'CLOSED': 'CLOSED' }, showCancelButton: true });
         if (status) { 
             startLoading("UPDATING..."); 
-            if(typeof google === 'undefined') return;
-            google.script.run.withSuccessHandler(res => { 
-                endLoading(); 
-                if(res.success) { Swal.fire('Sukses',res.message,'success'); globalDataSync(); }
-                else { Swal.fire('Error',res.message,'error'); }
-            }).updateBacklogStatus(id, status); 
+            fetchGAS("updateBacklogStatus", { id: id, status: status }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses',res.message,'success'); globalDataSync(); } else { Swal.fire('Error',res.message,'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
         }
     }
 
@@ -2087,26 +1713,17 @@
         Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => {
             if(r.isConfirmed) { 
                 startLoading("DELETING..."); 
-                if(typeof google === 'undefined') return;
-                google.script.run.withSuccessHandler(res => { 
-                    endLoading(); 
-                    if(res.success) { globalDataSync(); }
-                }).deleteBacklog(id); 
+                fetchGAS("deleteBacklog", { id: id }).then(res => { endLoading(); if(res.success) { globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
             }
         });
     }
 
-    // -------------------------------------------------------------------
-    // WORK ORDER & MONITORING SERVICE LOGIC
-    // -------------------------------------------------------------------
     function autoFillEquip(val) {
       if(!val) return;
       const unit = (masterCache.equip || []).find(e => String(e.equip_no).trim().toUpperCase() === String(val).trim().toUpperCase());
       if (unit) {
-        const bd = document.getElementById('brand');
-        const ut = document.getElementById('unit_type');
-        if(bd) bd.value = unit.brand || '';
-        if(ut) ut.value = unit.unit_type || '';
+        const bd = document.getElementById('brand'); const ut = document.getElementById('unit_type');
+        if(bd) bd.value = unit.brand || ''; if(ut) ut.value = unit.unit_type || '';
       }
     }
 
@@ -2117,10 +1734,8 @@
       if (p) {
         const tr = input.closest('tr');
         if(tr) {
-            const descEl = tr.querySelector('.part-desc');
-            const uomEl = tr.querySelector('.part-uom');
-            if(descEl) descEl.value = p.description || '';
-            if(uomEl) uomEl.value = p.uom || '';
+            const descEl = tr.querySelector('.part-desc'); const uomEl = tr.querySelector('.part-uom');
+            if(descEl) descEl.value = p.description || ''; if(uomEl) uomEl.value = p.uom || '';
         }
       }
     }
@@ -2130,7 +1745,6 @@
     function renderWOTable() {
       const tbody = document.getElementById('woTableBody');
       if(!tbody) return;
-      
       const filterInput = document.getElementById('filterMonitoring');
       const q = filterInput ? filterInput.value.toLowerCase() : '';
       const isPlanner = currentUser.role.toUpperCase().includes('PLANNER');
@@ -2139,109 +1753,54 @@
       let filtered = (woDataCache || []).filter(i => String(i.no_wo||'').toLowerCase().includes(q) || String(i.equip_no||'').toLowerCase().includes(q));
       
       const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
-      if(currentMonPage > totalPages) currentMonPage = totalPages;
-      if(currentMonPage < 1) currentMonPage = 1;
+      if(currentMonPage > totalPages) currentMonPage = totalPages; if(currentMonPage < 1) currentMonPage = 1;
       const paged = filtered.slice((currentMonPage - 1) * ITEMS_PER_PAGE, currentMonPage * ITEMS_PER_PAGE);
       
       const pageInfo = document.getElementById('monPageInfo');
       if(pageInfo) pageInfo.innerText = `${currentMonPage} / ${totalPages} (${filtered.length} WO)`;
 
-      if (paged.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Work Order ditemukan.</td></tr>';
-         return;
-      }
+      if (paged.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada Work Order ditemukan.</td></tr>'; return; }
 
       tbody.innerHTML = paged.map(i => {
         const unitNo = (i.equip_no || '').toUpperCase();
-        
-        let actualHM = getActualHM(unitNo);
-        if(actualHM === 0) actualHM = i.hm_km || "N/A"; // fallback
+        let actualHM = getActualHM(unitNo); if(actualHM === 0) actualHM = i.hm_km || "N/A";
 
         const pendingBacklogs = (backlogCache || []).filter(b => (b.equip_no || '').toUpperCase() === unitNo && b.status === 'OPEN');
         let backlogBadge = '';
-        if(pendingBacklogs.length > 0) {
-            backlogBadge = `<div class="mt-2 inline-block px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg text-[9px] font-black cursor-pointer shadow-sm animate-pulse hover:bg-amber-200" onclick="navigate('backlog'); document.getElementById('filterBacklog').value='${unitNo}'; renderBacklogTable();"><i class="fas fa-exclamation-triangle mr-1"></i> ${pendingBacklogs.length} Backlog Pending!</div>`;
-        }
+        if(pendingBacklogs.length > 0) backlogBadge = `<div class="mt-2 inline-block px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg text-[9px] font-black cursor-pointer shadow-sm animate-pulse hover:bg-amber-200" onclick="navigate('backlog'); document.getElementById('filterBacklog').value='${unitNo}'; renderBacklogTable();"><i class="fas fa-exclamation-triangle mr-1"></i> ${pendingBacklogs.length} Backlog Pending!</div>`;
 
         const stCol = i.status === 'PROGRESS' ? "bg-amber-50 text-amber-600 border border-amber-200" : (i.status === 'CLOSED' ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : (i.status === 'WAITING PART' ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"));
-        let actionButtons = "";
-        const canUpdate = isPlanner || isPlant;
-
-        actionButtons += `<button onclick="printWO('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-900 hover:text-white transition-all" title="Cetak WO"><i class="fas fa-print text-xs md:text-sm"></i></button>`;
-        if (canUpdate) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg transition-colors" title="Update Status"><i class="fas fa-tasks text-xs md:text-sm"></i></button>`;
+        let actionButtons = `<button onclick="printWO('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-900 hover:text-white transition-all" title="Cetak WO"><i class="fas fa-print text-xs md:text-sm"></i></button>`;
+        if (isPlanner || isPlant) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg transition-colors" title="Update Status"><i class="fas fa-tasks text-xs md:text-sm"></i></button>`;
         if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-colors" title="Hapus WO"><i class="fas fa-trash text-xs md:text-sm"></i></button>`;
         
-        return `<tr class="hover:bg-slate-50 transition-colors border-b">
-          <td class="p-4 md:p-6 font-black text-slate-900 tracking-tight text-xs md:text-sm">${i.no_wo}</td>
-          <td class="p-4 md:p-6">
-              <div class="font-black text-base md:text-lg text-theme-accent uppercase">${unitNo}</div>
-              <div class="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase"><i class="fas fa-tachometer-alt mr-1"></i> HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>
-              ${backlogBadge}
-          </td>
-          <td class="p-4 md:p-6 text-xs md:text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px] md:text-xs"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td>
-          <td class="p-4 md:p-6 text-center"><span class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td>
-          <td class="p-4 md:p-6 text-right space-x-1 md:space-x-2 flex justify-end">${actionButtons}</td>
-        </tr>`;
+        return `<tr class="hover:bg-slate-50 transition-colors border-b"><td class="p-4 md:p-6 font-black text-slate-900 tracking-tight text-xs md:text-sm">${i.no_wo}</td><td class="p-4 md:p-6"><div class="font-black text-base md:text-lg text-theme-accent uppercase">${unitNo}</div><div class="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase"><i class="fas fa-tachometer-alt mr-1"></i> HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>${backlogBadge}</td><td class="p-4 md:p-6 text-xs md:text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px] md:text-xs"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td><td class="p-4 md:p-6 text-center"><span class="px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td><td class="p-4 md:p-6 text-right space-x-1 md:space-x-2 flex justify-end">${actionButtons}</td></tr>`;
       }).join('');
     }
 
     function handleSaveWO(e) {
        e.preventDefault();
        const partsData = [];
-       const rows = document.querySelectorAll('#partTableBody tr');
-       rows.forEach(tr => {
+       document.querySelectorAll('#partTableBody tr').forEach(tr => {
           const noInput = tr.querySelector('.part-no');
           if(noInput && noInput.value.trim() !== '') {
-             partsData.push({
-                no: noInput.value.trim().toUpperCase(),
-                desc: tr.querySelector('.part-desc') ? tr.querySelector('.part-desc').value : '',
-                qty: tr.querySelector('.part-qty') ? tr.querySelector('.part-qty').value : '',
-                uom: tr.querySelector('.part-uom') ? tr.querySelector('.part-uom').value : '',
-                rem: tr.querySelector('.part-rem') ? tr.querySelector('.part-rem').value : ''
-             });
+             partsData.push({ no: noInput.value.trim().toUpperCase(), desc: tr.querySelector('.part-desc') ? tr.querySelector('.part-desc').value : '', qty: tr.querySelector('.part-qty') ? tr.querySelector('.part-qty').value : '', uom: tr.querySelector('.part-uom') ? tr.querySelector('.part-uom').value : '', rem: tr.querySelector('.part-rem') ? tr.querySelector('.part-rem').value : '' });
           }
        });
 
        const payload = {
-         no_wo: document.getElementById('no_wo').value.toUpperCase(),
-         equip_no: document.getElementById('equip_no').value.toUpperCase(),
-         brand: document.getElementById('brand').value,
-         unit_type: document.getElementById('unit_type').value,
-         hm_km: document.getElementById('hm_km').value,
-         pm_service: document.getElementById('pm_service').value,
-         major_comp: document.getElementById('major_comp').value,
-         minor_comp: document.getElementById('minor_comp').value,
-         sch_unsch: document.getElementById('sch_unsch').value,
-         pelanggan: document.getElementById('equip_no').value,
-         tgl_rusak: document.getElementById('tgl_rusak').value,
-         jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value,
-         tgl_selesai: document.getElementById('tgl_selesai').value,
-         jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '',
-         kendala: document.getElementById('issue').value,
-         failure_reason: document.getElementById('failure_reason').value,
-         parts: partsData,
-         tech: document.getElementById('tech').value, // Tech sekarang dikirim dari dropdown User
-         reported_by: document.getElementById('reported_by').value // Reported By dikirim dari dropdown User
+         no_wo: document.getElementById('no_wo').value.toUpperCase(), equip_no: document.getElementById('equip_no').value.toUpperCase(), brand: document.getElementById('brand').value, unit_type: document.getElementById('unit_type').value, hm_km: document.getElementById('hm_km').value, pm_service: document.getElementById('pm_service').value, major_comp: document.getElementById('major_comp').value, minor_comp: document.getElementById('minor_comp').value, sch_unsch: document.getElementById('sch_unsch').value, pelanggan: document.getElementById('equip_no').value, tgl_rusak: document.getElementById('tgl_rusak').value, jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value, tgl_selesai: document.getElementById('tgl_selesai').value, jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '', kendala: document.getElementById('issue').value, failure_reason: document.getElementById('failure_reason').value, parts: partsData, tech: document.getElementById('tech').value, reported_by: document.getElementById('reported_by').value
        };
 
        startLoading("SAVING WO...");
-       if (typeof google === 'undefined') { setTimeout(() => { endLoading(); mockDB.unshift({...payload, status: 'OPEN'}); woDataCache=[...mockDB]; Swal.fire('Sukses', 'Saved!', 'success'); navigate('list-wo'); }, 1000); }
-       else { google.script.run.withSuccessHandler(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); globalDataSync(); navigate('list-wo'); } else { Swal.fire('Error', res.message, 'error'); } }).saveWorkOrder(payload); }
+       fetchGAS("saveWorkOrder", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); globalDataSync(); navigate('list-wo'); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function addPartRow() {
       const tbody = document.getElementById('partTableBody');
       if(!tbody) return;
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tbody.children.length + 1}</td>
-        <td class="py-3 md:py-4 pr-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent shadow-sm" placeholder="Ketik P/N"></td>
-        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="Otomatis"></td>
-        <td class="py-3 md:py-4 pr-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold shadow-sm" value="1"></td>
-        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold shadow-sm text-[10px] md:text-xs" placeholder="UNIT"></td>
-        <td class="py-3 md:py-4 pr-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="-"></td>
-        <td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>
-      `;
+      tr.innerHTML = `<td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tbody.children.length + 1}</td><td class="py-3 md:py-4 pr-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent shadow-sm" placeholder="Ketik P/N"></td><td class="py-3 md:py-4 pr-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="Otomatis"></td><td class="py-3 md:py-4 pr-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold shadow-sm" value="1"></td><td class="py-3 md:py-4 pr-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold shadow-sm text-[10px] md:text-xs" placeholder="UNIT"></td><td class="py-3 md:py-4 pr-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px] shadow-sm" placeholder="-"></td><td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
       tbody.appendChild(tr);
     }
 
@@ -2256,30 +1815,18 @@
         if (t.jam_selesai && t.jam_selesai.includes(':')) { const [h, m] = t.jam_selesai.split(':'); document.getElementById('jam_selesai_hh').value = h; document.getElementById('jam_selesai_mm').value = m; }
         if (t.tgl_selesai) document.getElementById('tgl_selesai').value = t.tgl_selesai;
 
-        // Set Dropdowns manually to avoid overwriting un-populated select options
         if(document.getElementById('reported_by') && t.reported_by) document.getElementById('reported_by').value = t.reported_by;
         if(document.getElementById('tech') && t.tech) document.getElementById('tech').value = t.tech;
         
-        if(document.getElementById('major_comp') && t.major_comp) {
-            document.getElementById('major_comp').value = t.major_comp;
-            updateMinorComp(); // Refresh the minor component options
-        }
-        if(document.getElementById('minor_comp') && t.minor_comp) {
-            document.getElementById('minor_comp').value = t.minor_comp;
-        }
+        if(document.getElementById('major_comp') && t.major_comp) { document.getElementById('major_comp').value = t.major_comp; updateMinorComp(); }
+        if(document.getElementById('minor_comp') && t.minor_comp) { document.getElementById('minor_comp').value = t.minor_comp; }
 
         const tb = document.getElementById('partTableBody'); if(tb) tb.innerHTML = '';
         if(t.parts_json) { 
            try { 
               JSON.parse(t.parts_json).forEach(p => {
                  const tr = document.createElement('tr');
-                 tr.innerHTML = `<td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tb.children.length + 1}</td>
-                  <td class="py-3 md:py-4 px-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent" value="${p.no||''}"></td>
-                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.desc||''}"></td>
-                  <td class="py-3 md:py-4 px-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold" value="${p.qty||'1'}"></td>
-                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold text-[10px] md:text-xs" value="${p.uom||''}"></td>
-                  <td class="py-3 md:py-4 px-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.rem||''}"></td>
-                  <td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
+                 tr.innerHTML = `<td class="py-3 md:py-4 text-center font-black text-slate-300 text-[10px]">${tb.children.length + 1}</td><td class="py-3 md:py-4 px-2"><input type="text" list="listParts" onchange="autoFillPart(this)" class="part-no w-full px-3 py-2 md:px-4 md:py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-[11px] md:text-[13px] uppercase outline-none focus:ring-2 focus:ring-theme-accent" value="${p.no||''}"></td><td class="py-3 md:py-4 px-2"><input type="text" class="part-desc w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.desc||''}"></td><td class="py-3 md:py-4 px-2"><input type="number" class="part-qty w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center font-bold" value="${p.qty||'1'}"></td><td class="py-3 md:py-4 px-2"><input type="text" class="part-uom w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-center uppercase font-bold text-[10px] md:text-xs" value="${p.uom||''}"></td><td class="py-3 md:py-4 px-2"><input type="text" class="part-rem w-full px-3 py-2 md:px-4 md:py-3 bg-white border border-slate-200 rounded-xl outline-none text-[10px] md:text-[12px]" value="${p.rem||''}"></td><td class="py-3 md:py-4 text-right"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 transition-colors px-2"><i class="fas fa-trash"></i></button></td>`;
                  tb.appendChild(tr);
               }); 
            } catch(e) {} 
@@ -2295,8 +1842,7 @@
       const { value: status } = await Swal.fire({ title: 'Update Status WO', input: 'select', inputOptions: { 'OPEN': 'OPEN', 'PROGRESS': 'PROGRESS', 'WAITING PART': 'WAITING PART', 'CLOSED': 'CLOSED' }, showCancelButton: true });
       if (status) { 
           startLoading("UPDATING..."); 
-          if(typeof google === 'undefined') { return; }
-          else { google.script.run.withSuccessHandler(() => { endLoading(); Swal.fire('Sukses','Status diperbarui','success'); globalDataSync(); }).updateWOStatus(noWo, status); }
+          fetchGAS("updateWOStatus", { no_wo: noWo, status: status }).then(res => { endLoading(); Swal.fire('Sukses','Status diperbarui','success'); globalDataSync(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
       }
     }
 
@@ -2304,8 +1850,7 @@
       Swal.fire({ title: 'Hapus WO?', text: noWo, icon: 'warning', showCancelButton: true }).then(r => {
         if(r.isConfirmed) { 
             startLoading("DELETING..."); 
-            if(typeof google === 'undefined') return;
-            google.script.run.withSuccessHandler(() => { endLoading(); globalDataSync(); }).deleteWO(noWo); 
+            fetchGAS("deleteWO", { no_wo: noWo }).then(res => { endLoading(); globalDataSync(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
         }
       });
     }
@@ -2319,23 +1864,15 @@
         if(wsd) wsd.innerText = 'STATUS: NEW'; 
     }
 
-    // -------------------------------------------------------------------
-    // USER MANAGEMENT
-    // -------------------------------------------------------------------
     function loadUsers() {
-      if(typeof google === 'undefined') return;
       startLoading("LOADING USERS...");
-      google.script.run.withSuccessHandler(res => { 
+      fetchGAS("getUsersList").then(res => { 
           endLoading(); 
-          if (res && res.success && res.payload) { 
-              try { allUsersCache = JSON.parse(res.payload); } catch(e) {} 
-          } else if (res && res.payload) {
-              try { allUsersCache = JSON.parse(res.payload); } catch(e) {}
-          } else if (res && res.data) {
-              allUsersCache = res.data;
-          }
+          if (res && res.success && res.payload) { try { allUsersCache = JSON.parse(res.payload); } catch(e) {} } 
+          else if (res && res.payload) { try { allUsersCache = JSON.parse(res.payload); } catch(e) {} } 
+          else if (res && res.data) { allUsersCache = res.data; }
           renderUserTable(); 
-      }).getUsersList();
+      }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
     
     function renderUserTable() {
@@ -2347,7 +1884,7 @@
     
     function deleteUserAccount(username) {
       if(username === currentUser.username) return Swal.fire('Error', 'Tidak bisa menghapus akun sendiri!', 'error');
-      Swal.fire({ title: 'Hapus User?', text: `User ${username} akan dihapus`, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); google.script.run.withSuccessHandler(() => { endLoading(); loadUsers(); }).deleteUser(username); } });
+      Swal.fire({ title: 'Hapus User?', text: `User ${username} akan dihapus`, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); fetchGAS("deleteUser", { username: username }).then(res => { endLoading(); loadUsers(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); } });
     }
 
     if(document.getElementById('userForm')) {
@@ -2355,13 +1892,10 @@
         e.preventDefault();
         const fd = { username: document.getElementById('u_username').value, password: document.getElementById('u_password').value, nama: document.getElementById('u_nama').value, role: document.getElementById('u_role').value };
         startLoading("SAVING USER...");
-        google.script.run.withSuccessHandler(res => { endLoading(); if(res.success){ Swal.fire('Success', res.message, 'success'); this.reset(); loadUsers(); } else { Swal.fire('Error', res.message, 'error'); } }).saveUser(fd);
+        fetchGAS("saveUser", fd).then(res => { endLoading(); if(res.success){ Swal.fire('Success', res.message, 'success'); document.getElementById('userForm').reset(); loadUsers(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
       };
     }
 
-    // -------------------------------------------------------------------
-    // PRINT REPLICATION A4
-    // -------------------------------------------------------------------
     function printWO(noWo) {
        const item = woDataCache.find(i => i.no_wo === noWo);
        if(!item) return;
@@ -2386,10 +1920,7 @@
        const pa = document.getElementById('printArea');
        if(pa) {
            pa.classList.remove('hidden');
-           setTimeout(() => { 
-               window.print(); 
-               pa.classList.add('hidden'); 
-           }, 500);
+           setTimeout(() => { window.print(); pa.classList.add('hidden'); }, 500);
        }
     }
   </script>
