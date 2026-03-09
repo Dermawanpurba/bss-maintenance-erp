@@ -883,16 +883,19 @@
    
     /* TEST KONEKSI API */
 async function testAPI(){
+  let res = await fetch(API_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      action:"ping"
+    })
+  });
 
-let res = await fetch(API_URL,{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-action:"ping"
-})
-});
+  let data = await res.json();
+  console.log(data);
+}
 
 let data = await res.json();
 
