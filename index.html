@@ -1273,16 +1273,16 @@
     function startLoading(t) { document.getElementById('loadingText').innerText = t || "Processing..."; document.getElementById('loadingOverlay').classList.remove('hidden'); }
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
-    // OPTIMIZED SYNC (CLOUD FETCH)
+// OPTIMIZED SYNC (Hanya untuk Master Data dari Google Sheets)
     function globalDataSync() {
       startLoading("OPTIMIZED SYNC...");
       fetchGAS("getOptimizedData").then(res => {
           endLoading();
           if (res && res.success) {
+              // HANYA ambil Master Data dari Sheets, sisanya dari Firebase!
               masterCache.equip = res.equip || [];
               masterCache.parts = res.parts || [];
               masterCache.planAlat = res.planAlat || [];
-              masterCache.dailyHM = res.dailyHM || [];
               masterCache.components = res.components || [];
               masterCache.usersData = res.usersData || [];
               masterCache.mekanikList = res.mekanikList || [];
@@ -1290,9 +1290,6 @@
               masterCache.activities = res.activities || [];
               
               allUsersCache = res.usersData || []; 
-
-              woDataCache = res.wo || [];
-              backlogCache = res.backlog || [];
               partsDictCache = res.parts || [];
               
               const le = document.getElementById('listEquip');
@@ -1301,20 +1298,112 @@
               if(lp) lp.innerHTML = masterCache.parts.map(p => `<option value="${p.part_number}">${p.description}</option>`).join('');
               
               populateDependentDropdowns();
-              populateMonthFilter();
-              calculateKPIFrontEnd();
-              renderWOTable(); renderBacklogTable(); renderDailyHMTable(); renderMasterEquipTable(); renderMasterPartsTable(); renderMasterCompTable(); renderActivityTable(); prefillActivityForm();
+              renderMasterEquipTable(); 
+              renderMasterPartsTable(); 
+              renderMasterCompTable(); 
+              renderActivityTable(); 
+              prefillActivityForm();
+              
               if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
           } else {
-              Swal.fire('Error', res.message || 'Gagal sinkronisasi.', 'error');
+              Swal.fire('Error', res.message || 'Gagal sinkronisasi master data.', 'error');
           }
       }).catch(err => {
           endLoading();
           Swal.fire('Error Fatal', err.toString(), 'error');
       });
     }
-    
+
+    // ==========================================
+    // FIREBASE REAL-TIME LISTENERS (Data Operasional)
+    // ==========================================
+    function initFirebaseListeners() {
+      
+      // 1. DENGARKAN WORK ORDERS
+      db.ref('work_orders').on('value', (snapshot) => {
+        if (snapshot.exists()) {
+          const fbData = snapshot.val();
+          
+          // Ubah Object Firebase menjadi Array
+          woDataCache = Object.keys(fbData).map(key => {
+             return {
+                no_wo: key,
+                equip_no: fbData[key].equip_no || '',
+                brand: fbData[key].brand || '',
+                unit_type: fbData[key].unit_type || '',
+                hm_km: fbData[key].hm_km || 0,
+                status: fbData[key].status || 'OPEN',
+                tgl_rusak: fbData[key].tgl_rusak || '',
+                jam_rusak: fbData[key].jam_rusak || '',
+                tgl_selesai: fbData[key].tgl_selesai || '',
+                jam_selesai: fbData[key].jam_selesai || ''
+             };
+          });
+          
+          populateMonthFilter();
+          calculateKPIFrontEnd();
+          if(document.getElementById('page-list-wo').classList.contains('active')) {
+              renderWOTable();
+          }
+        }
+      });
+
+      // 2. DENGARKAN BACKLOGS
+      db.ref('backlogs').on('value', (snapshot) => {
+        if (snapshot.exists()) {
+           const fbData = snapshot.val();
+           
+           backlogCache = Object.keys(fbData).map(key => {
+               return {
+                  id: key,
+                  equip_no: fbData[key].equip_no || '',
+                  tanggal: fbData[key].tanggal || '',
+                  deskripsi_backlog: fbData[key].deskripsi || '',
+                  status: fbData[key].status || 'OPEN',
+                  rencana_eksekusi: fbData[key].rencana_eksekusi || '-'
+               };
+           });
+           
+           if(document.getElementById('page-backlog').classList.contains('active')) {
+               renderBacklogTable();
+           }
+           // Update list WO karena ada badge Backlog
+           if(document.getElementById('page-list-wo').classList.contains('active')) {
+               renderWOTable();
+           }
+           calculateKPIFrontEnd(); // Update KPI Pending Backlog
+        }
+      });
+
+      // 3. DENGARKAN DAILY HM (Agar MTBF dan Sisa HM Service Real-Time)
+      db.ref('daily_hm').on('value', (snapshot) => {
+        if (snapshot.exists()) {
+           const fbData = snapshot.val();
+           
+           masterCache.dailyHM = Object.keys(fbData).map(key => {
+               return {
+                  id: key,
+                  tanggal: fbData[key].tanggal || '',
+                  equip_no: fbData[key].equip_no || '',
+                  hm_awal: fbData[key].hm_awal || 0,
+                  hm_akhir: fbData[key].hm_akhir || 0,
+                  total_hm: fbData[key].total_hm || 0
+               };
+           });
+           
+           if(document.getElementById('page-daily-hm').classList.contains('active')) {
+               renderDailyHMTable();
+           }
+           if(document.getElementById('page-master-plan').classList.contains('active')) {
+               renderMasterPlanTable(); // Update Sisa HM
+           }
+           calculateKPIFrontEnd(); // Update MTBF
+        }
+      });
+
+    }
+    // ==========================================    
     function showApp() {
   // ... kode lama di atasnya ...
 
