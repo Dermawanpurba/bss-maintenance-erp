@@ -1022,6 +1022,27 @@
     develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
   </div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <script>
+    // Ganti dengan firebaseConfig milik Anda dari Firebase Console
+    const firebaseConfig = {
+      apiKey: "AIzaSyAyfvwSnamOx06PI9CehFjifKg00uBEKoE",
+      authDomain: "webapps-73d07.firebaseapp.com",
+      databaseURL: "https://webapps-73d07-default-rtdb.firebaseio.com",
+      projectId: "webapps-73d07",
+      storageBucket: "webapps-73d07.appspot.com",
+      messagingSenderId: "649461053263",
+      appId: "1:649461053263:web:3d53d8628245b189c8b73a"
+    };
+
+    // Inisialisasi Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database(); // Kita akan pakai variabel 'db' ini untuk tarik data
+  </script>
   <script>
     // =========================================================
     // KONFIGURASI API (UBAH URL INI DENGAN WEB APP URL ANDA)
