@@ -1211,7 +1211,8 @@
       }
 
       initTimeSelectors();
-      globalDataSync(); 
+      globalDataSync();
+      initFirebaseListeners(); // <--- TAMBAHKAN BARIS INI SAJA
       navigate('dashboard');
     }
 
@@ -1404,20 +1405,7 @@
 
     }
     // ==========================================    
-    function showApp() {
-  // ... kode lama di atasnya ...
-
-  initTimeSelectors();
-  
-  // Ambil master data lambat dari Sheets (Equip, Parts, User, dll)
-  globalDataSync(); 
-  
-  // AKTIFKAN MODE REAL-TIME FIREBASE (WO & Backlog)
-  initFirebaseListeners(); 
-  
-  navigate('dashboard');
-    }
-    
+   
     function syncMasterData() { globalDataSync(); }
     function loadWOData() { globalDataSync(); }
 
