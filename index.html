@@ -285,7 +285,7 @@
         <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
         <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-                <div class="text-[10px] md:text-xs font-bold text-slate-500">Total Periode Terpilih: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
+                <div class="text-[10px] md:text-xs font-bold text-slate-500">Status "As Of" End Date: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
                 <div class="flex gap-3 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-2 px-4 rounded-xl border border-slate-100 w-full md:w-auto justify-center">
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> RFU</div>
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500 shadow-sm animate-pulse"></span> BD</div>
@@ -298,7 +298,7 @@
             </div>
         </div>
 
-        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview</h3>
+        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview (Inside Filter)</h3>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
            <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-shadow">
              <div><p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total WO</p><h3 class="text-2xl md:text-3xl font-black text-slate-800" id="kpi-total-wo">0</h3></div>
@@ -775,7 +775,6 @@
         <div class="max-w-3xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
             <h2 class="text-xl md:text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
             <p class="text-xs md:text-sm font-medium text-slate-500 mb-8 md:mb-10 border-b pb-6">Ubah identitas, logo, dan warna tema aplikasi agar sesuai dengan branding perusahaan Anda.</p>
-            <!-- FIX BUG 1: Tambahkan onsubmit handler -->
             <form id="settingsForm" onsubmit="handleSaveSettings(event)" class="space-y-6 md:space-y-8">
                 <div>
                     <label class="block text-[10px] md:text-[11px] font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest">Nama Perusahaan (Kop Cetak & Navbar)</label>
@@ -1212,7 +1211,6 @@
       fetchGAS("getOptimizedData").then(res => {
           endLoading();
           if (res && res.success) {
-              // 1. Ambil SEMUA data pondasi dari Sheets
               masterCache.equip = res.equip || [];
               masterCache.parts = res.parts || [];
               masterCache.planAlat = res.planAlat || [];
@@ -1228,7 +1226,6 @@
               partsDictCache = res.parts || [];
               allUsersCache = res.usersData || []; 
 
-              // 2. Render Dropdown & Tabel Awal
               const le = document.getElementById('listEquip');
               if(le) le.innerHTML = masterCache.equip.map(e => `<option value="${e.equip_no}">${e.brand} - ${e.unit_type}</option>`).join('');
               const lp = document.getElementById('listParts');
@@ -1242,9 +1239,7 @@
               if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
 
-              // 3. AKTIFKAN FIREBASE UNTUK UPDATE STATUS REALTIME
               initFirebaseListeners();
-
           } else {
               Swal.fire('Error', res.message || 'Gagal sinkronisasi.', 'error');
           }
@@ -1257,17 +1252,15 @@
       if(isFirebaseListening) return; 
       isFirebaseListening = true;
 
-      // Listener WO
       db.ref('work_orders').on('value', (snapshot) => {
         if (snapshot.exists()) {
           const fbData = snapshot.val();
           Object.keys(fbData).forEach(key => {
              let idx = woDataCache.findIndex(w => w.no_wo === key);
              if(idx > -1) {
-                 // Gabungkan data (Timpa status dari Firebase ke data Sheets)
                  woDataCache[idx] = { ...woDataCache[idx], ...fbData[key] }; 
              } else {
-                 woDataCache.unshift(fbData[key]); // WO Baru
+                 woDataCache.unshift(fbData[key]); 
              }
           });
           calculateKPIFrontEnd();
@@ -1275,7 +1268,6 @@
         }
       });
 
-      // Listener Backlog
       db.ref('backlogs').on('value', (snapshot) => {
         if (snapshot.exists()) {
            const fbData = snapshot.val();
@@ -1290,7 +1282,6 @@
         }
       });
 
-      // Listener Daily HM
       db.ref('daily_hm').on('value', (snapshot) => {
         if (snapshot.exists()) {
            const fbData = snapshot.val();
@@ -1346,7 +1337,7 @@
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
     // ==========================================
-    // 7. DASHBOARD & KPI LOGIC
+    // 7. DASHBOARD & KPI LOGIC (ADVANCED & STRICT)
     // ==========================================
     function getActualHM(equipNo) {
         if(!equipNo) return 0;
@@ -1356,22 +1347,29 @@
     }
 
     function calculateKPIFrontEnd() {
-      // Logic Weekly / Date Range Filter
-      let startDate = document.getElementById('kpiStartDate') ? document.getElementById('kpiStartDate').value : '';
-      let endDate = document.getElementById('kpiEndDate') ? document.getElementById('kpiEndDate').value : '';
+      let startDateStr = document.getElementById('kpiStartDate') ? document.getElementById('kpiStartDate').value : '';
+      let endDateStr = document.getElementById('kpiEndDate') ? document.getElementById('kpiEndDate').value : '';
       
-      let data = woDataCache || [];
-      
-      // Filter WOs based on date range (Breakdown date OR Input Date)
-      if (startDate && endDate) {
-          data = data.filter(d => {
-              const dateVal = d.tgl_rusak || d.tgl_input;
-              return dateVal >= startDate && dateVal <= endDate;
-          });
+      // Fallback jika kosong
+      if(!startDateStr || !endDateStr) {
+          startDateStr = getFirstDateOfMonth();
+          endDateStr = getShiftDate();
       }
 
+      // Membentuk Time Boundaries yang tegas (Jam 00:00 hari mulai s/d 23:59 hari akhir)
+      const filterStart = new Date(startDateStr + 'T00:00:00');
+      const filterEnd = new Date(endDateStr + 'T23:59:59');
+      const now = new Date();
+      // Batas maksimal kalkulasi adalah hari ini jam sekarang, agar alat yang sedang rusak jamnya tidak melebihi masa depan
+      const actualEndBoundary = new Date(Math.min(filterEnd.getTime(), now.getTime()));
+
+      const msPerDay = 1000 * 60 * 60 * 24;
+      // Menghitung jumlah hari yang ada di dalam rentang filter yang Anda pilih
+      const daysInFilter = Math.max(1, Math.ceil((filterEnd.getTime() - filterStart.getTime() + 1000) / msPerDay));
+
       let validEquipSet = new Set();
-      let totalPlanHours = 0; let targetPAWeight = 0; 
+      let totalPlanHours = 0; 
+      let targetPAWeight = 0; 
       let countAman = 0, countMendekati = 0, countOverdue = 0, countWaiting = 0;
 
       if (masterCache.planAlat && masterCache.planAlat.length > 0) {
@@ -1379,7 +1377,12 @@
               const unitNo = (p.equip_no || '').toUpperCase();
               if(unitNo) { 
                   validEquipSet.add(unitNo); 
-                  totalPlanHours += parseInt(p.plan_hours_per_month) || 720; 
+                  
+                  // MENGHITUNG PLAN HOURS PROPORSIONAL DENGAN JUMLAH HARI FILTER
+                  const monthlyPlan = parseInt(p.plan_hours_per_month) || 720;
+                  const dailyPlan = monthlyPlan / 30; // Standar asumsi 1 bulan = 30 hari untuk target jam
+                  totalPlanHours += (dailyPlan * daysInFilter); 
+
                   targetPAWeight += parseFloat(p.plan_pa) || 85;
                   const lastHM = parseFloat(p.last_service_hm) || 0;
                   const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
@@ -1394,52 +1397,82 @@
           });
       }
 
+      let data = woDataCache || [];
       let kpiData = data;
       let avgTargetPA = 85;
+      
       if (validEquipSet.size > 0) {
           kpiData = data.filter(d => d.equip_no && validEquipSet.has(d.equip_no.toString().toUpperCase()));
           avgTargetPA = (targetPAWeight / validEquipSet.size).toFixed(1);
       } else {
           const uniqueEquipCount = new Set(data.filter(d => d.equip_no).map(d => d.equip_no.toString().toUpperCase())).size || 1;
-          totalPlanHours = uniqueEquipCount * 720;
+          totalPlanHours = uniqueEquipCount * 24 * daysInFilter; // Default jika master plan kosong
       }
       
       if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `>${avgTargetPA}%`;
 
+      // 1. Aktual Operating Hours dalam rentang untuk hitung MTBF
       let actualOperatingHours = 0;
       if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
           masterCache.dailyHM.forEach(hm => {
               if(hm.equip_no && validEquipSet.has(hm.equip_no.toString().toUpperCase())) {
-                  // Jika ada filter tanggal, aplikasikan ke Actual HM juga
-                  if((!startDate || !endDate) || (hm.tanggal >= startDate && hm.tanggal <= endDate)) {
+                  if(hm.tanggal >= startDateStr && hm.tanggal <= endDateStr) {
                       actualOperatingHours += parseFloat(hm.total_hm) || 0;
                   }
               }
           });
       }
 
+      // 2. MENGHITUNG DOWNTIME DENGAN STRICT BOUNDARY & RUNNING STATUS
       let downtimeUnsch = 0; let downtimeSch = 0; let countUnsch = 0; let countSch = 0;
-      const closedWOs = kpiData.filter(d => d.status === 'CLOSED' && d.tgl_rusak && d.tgl_selesai);
       
-      closedWOs.forEach(wo => {
+      kpiData.forEach(wo => {
           try {
+              if(!wo.tgl_rusak) return;
               const start = new Date(`${wo.tgl_rusak}T${wo.jam_rusak || '00:00'}`);
-              const end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
-              if (!isNaN(start) && !isNaN(end) && end > start) {
-                  const diffHours = (end - start) / (1000 * 60 * 60);
-                  if((wo.sch_unsch || '').toUpperCase() === 'UNSCH') { downtimeUnsch += diffHours; countUnsch++; }
-                  else { downtimeSch += diffHours; countSch++; }
+              if(isNaN(start.getTime())) return;
+
+              let end;
+              // Jika status sudah Selesai
+              if (wo.status === 'CLOSED' && wo.tgl_selesai) {
+                  end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
+              } else {
+                  // Jika masih OPEN/PROGRESS, potong batas waktu hitung sampai jam saat ini atau akhir filter
+                  end = actualEndBoundary;
+              }
+
+              if (!isNaN(end.getTime()) && end > start) {
+                  // Memastikan hanya rentang downtime yang berada di dalam TANGGAL FILTER yang dihitung
+                  const actualStart = new Date(Math.max(start.getTime(), filterStart.getTime()));
+                  const actualEnd = new Date(Math.min(end.getTime(), filterEnd.getTime(), now.getTime()));
+                  
+                  if (actualStart < actualEnd) {
+                      const diffHours = (actualEnd - actualStart) / (1000 * 60 * 60);
+                      
+                      if((wo.sch_unsch || '').toUpperCase() === 'UNSCH') { 
+                          downtimeUnsch += diffHours; 
+                          if(start >= filterStart && start <= filterEnd) countUnsch++; 
+                      } else { 
+                          downtimeSch += diffHours; 
+                          if(start >= filterStart && start <= filterEnd) countSch++; 
+                      }
+                  }
               }
           } catch(e) {}
       });
 
       const totalDowntime = downtimeUnsch + downtimeSch;
       const totalBreakdowns = countUnsch + countSch;
-      const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : (totalPlanHours - totalDowntime);
+      
+      const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : Math.max(0, totalPlanHours - totalDowntime);
       const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
       const mtbf = countUnsch > 0 ? (uptimeHours / countUnsch).toFixed(1) : 0; 
       
-      let pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
+      // 3. KALKULASI PA (LEBIH KEJAM & AKURAT)
+      let pa = 100;
+      if(totalPlanHours > 0) {
+          pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
+      }
       if(pa > 100) pa = 100; if(pa < 0 || isNaN(pa)) pa = 0;
 
       if(document.getElementById('kpi-pa')) document.getElementById('kpi-pa').innerHTML = `${pa}<span class="text-lg md:text-2xl text-slate-400">%</span>`;
@@ -1449,11 +1482,17 @@
       const openBacklogCount = (backlogCache || []).filter(b => b.status === 'OPEN').length;
       if(document.getElementById('kpi-pending-backlog')) document.getElementById('kpi-pending-backlog').innerText = openBacklogCount;
 
-      const totalWO = data.length;
-      const totalOpen = data.filter(d => d.status === 'OPEN' || !d.status).length;
-      const totalProg = data.filter(d => d.status === 'PROGRESS').length;
-      const totalWait = data.filter(d => d.status === 'WAITING PART').length;
-      const totalClosed = data.filter(d => d.status === 'CLOSED').length;
+      // Filter WOs purely for status charts & overview numbers (Based on Breakdowns happening within date range)
+      const filteredWOForCounts = data.filter(d => {
+          const dateVal = d.tgl_rusak || d.tgl_input;
+          return dateVal >= startDateStr && dateVal <= endDateStr;
+      });
+
+      const totalWO = filteredWOForCounts.length;
+      const totalOpen = filteredWOForCounts.filter(d => d.status === 'OPEN' || !d.status).length;
+      const totalProg = filteredWOForCounts.filter(d => d.status === 'PROGRESS').length;
+      const totalWait = filteredWOForCounts.filter(d => d.status === 'WAITING PART').length;
+      const totalClosed = filteredWOForCounts.filter(d => d.status === 'CLOSED').length;
 
       if(document.getElementById('kpi-total-wo')) document.getElementById('kpi-total-wo').innerText = totalWO;
       if(document.getElementById('kpi-open-wo')) document.getElementById('kpi-open-wo').innerText = totalOpen;
@@ -1475,14 +1514,14 @@
       const ctxEquip = document.getElementById('equipChart');
       if(ctxEquip) {
           let equipCount = {};
-          data.forEach(d => { if(d.equip_no) { equipCount[d.equip_no] = (equipCount[d.equip_no] || 0) + 1; } });
+          filteredWOForCounts.forEach(d => { if(d.equip_no) { equipCount[d.equip_no] = (equipCount[d.equip_no] || 0) + 1; } });
           let sortedEquip = Object.entries(equipCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
           if(equipChartInstance) equipChartInstance.destroy();
           const themeColor = document.documentElement.style.getPropertyValue('--theme-main') || '#0f172a';
           equipChartInstance = new Chart(ctxEquip.getContext('2d'), { type: 'bar', data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } } });
       }
 
-      // PAPAN CATUR (Menggunakan Data W/O yang sudah di-filter rentang waktunya saja)
+      // 4. PAPAN CATUR RFU/BD (STATUS TERAKHIR BERDASARKAN "AS OF" END DATE)
       const detailBody = document.getElementById('detailBoardBody');
       if (masterCache.planAlat) {
           const boardData = {}; 
@@ -1492,11 +1531,21 @@
               if(!unitNo) return;
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
               
-              // Cek status berdasarkan W/O aktif di rentang tanggal tersebut
-              const activeWOs = data.filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.status !== 'CLOSED');
+              // Cek semua WO pada unit ini yang mulai rusak sebelum atau tepat di EndDate
+              const wosAsOfEnd = data.filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.tgl_rusak && d.tgl_rusak <= endDateStr);
               
-              if (activeWOs.length > 0) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
+              // Anggap RFU secara default
+              let isBD = false;
+              // Jika ada 1 saja WO yang pada tanggal EndDate belum selesai (Status Bukan Closed ATAU Tgl Selesainya melewati EndDate), maka unit ditetapkan BD.
+              for(let w of wosAsOfEnd) {
+                  if (w.status !== 'CLOSED' || !w.tgl_selesai || w.tgl_selesai > endDateStr) {
+                      isBD = true; break;
+                  }
+              }
+              
+              if (isBD) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
           });
+          
           let detailHTML = ''; let totalRFU = 0; let totalBD = 0;
           const models = Object.keys(boardData).sort();
           models.forEach(model => {
