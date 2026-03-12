@@ -68,6 +68,13 @@
     /* Responsive Enhancements */
     .mobile-optim { padding: 1.5rem; border-radius: 1.5rem; }
     @media (min-width: 768px) { .mobile-optim { padding: 2.5rem; border-radius: 2.5rem; } }
+
+    /* Custom Checkbox for Mechanics */
+    .mech-checkbox:checked + div {
+      background-color: var(--theme-main);
+      color: white;
+      border-color: var(--theme-main);
+    }
   </style>
 </head>
 <body class="text-slate-800 flex flex-col min-h-screen">
@@ -106,7 +113,7 @@
   </div>
 
   <!-- APP CONTAINER -->
-  <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative">
+  <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative max-w-full">
     <!-- Mobile Header -->
     <div class="md:hidden bg-theme-main text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
       <div class="flex items-center space-x-3">
@@ -195,8 +202,9 @@
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative no-print h-screen bg-slate-50 pb-20">
+    <!-- MAIN CONTENT - Adjusted max-width for Cloudflare displays -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative no-print h-screen bg-slate-50 pb-20 w-full">
+      <div class="max-w-[1440px] mx-auto"> <!-- Wrapper agar tidak over-stretch -->
       
       <!-- PAGE: DASHBOARD KPI -->
       <section id="page-dashboard" class="page active pb-12">
@@ -208,12 +216,14 @@
                       <h2 class="text-2xl md:text-4xl font-black mb-2 tracking-tight text-white" id="dashTitle">Welcome back, <span id="dashName" class="text-theme-accent">Admin</span>! 👋</h2>
                       <p class="text-slate-300 font-medium text-xs md:text-sm max-w-md leading-relaxed" id="dashDesc">Pantau metrik KPI, WO Terbuka, Backlog, dan ketersediaan alat secara Real-Time.</p>
                   </div>
-                  <!-- Filter Bulan KPI -->
+                  <!-- Filter Bulan KPI -> Date Range (Weekly Support) -->
                   <div class="bg-white/10 p-3 md:p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden md:block shadow-inner w-full md:w-auto">
-                      <label class="block text-[9px] font-black uppercase tracking-widest text-blue-200 mb-2"><i class="fas fa-filter mr-1"></i> Filter Bulan KPI</label>
-                      <select id="kpiMonthFilter" onchange="calculateKPIFrontEnd()" class="w-full bg-slate-800 text-white border border-white/10 outline-none font-bold text-xs md:text-sm cursor-pointer rounded-xl px-4 py-2 hover:bg-slate-700 transition-colors">
-                          <option value="ALL">ALL TIME / SEMUA BULAN</option>
-                      </select>
+                      <label class="block text-[9px] font-black uppercase tracking-widest text-blue-200 mb-2"><i class="fas fa-filter mr-1"></i> Filter Periode KPI (Range)</label>
+                      <div class="flex gap-2 items-center">
+                          <input type="date" id="kpiStartDate" onchange="calculateKPIFrontEnd()" class="bg-slate-800 text-white border border-white/10 outline-none font-bold text-xs md:text-sm cursor-pointer rounded-xl px-3 py-2 hover:bg-slate-700 transition-colors shadow-sm">
+                          <span class="text-white/50 font-black text-xs">SD</span>
+                          <input type="date" id="kpiEndDate" onchange="calculateKPIFrontEnd()" class="bg-slate-800 text-white border border-white/10 outline-none font-bold text-xs md:text-sm cursor-pointer rounded-xl px-3 py-2 hover:bg-slate-700 transition-colors shadow-sm">
+                      </div>
                   </div>
               </div>
               <div class="flex flex-wrap gap-3 mt-6 md:mt-8">
@@ -228,9 +238,11 @@
 
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 ml-2 gap-3">
             <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
-            <select id="kpiMonthFilterMobile" onchange="document.getElementById('kpiMonthFilter').value=this.value; calculateKPIFrontEnd();" class="md:hidden w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
-                <option value="ALL">SEMUA BULAN</option>
-            </select>
+            <!-- Mobile Date Range -->
+            <div class="md:hidden flex gap-2 w-full">
+                <input type="date" id="kpiStartDateMobile" onchange="document.getElementById('kpiStartDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+                <input type="date" id="kpiEndDateMobile" onchange="document.getElementById('kpiEndDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+            </div>
         </div>
 
         <!-- KPI METRICS GRID -->
@@ -273,7 +285,7 @@
         <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
         <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-                <div class="text-[10px] md:text-xs font-bold text-slate-500">Total Keseluruhan: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
+                <div class="text-[10px] md:text-xs font-bold text-slate-500">Total Periode Terpilih: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
                 <div class="flex gap-3 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-2 px-4 rounded-xl border border-slate-100 w-full md:w-auto justify-center">
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> RFU</div>
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500 shadow-sm animate-pulse"></span> BD</div>
@@ -328,7 +340,7 @@
           </div>
           
           <div class="bg-orange-50 border border-orange-200 p-4 md:p-5 rounded-2xl mb-8 text-orange-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
-              <i class="fas fa-info-circle text-orange-500 mr-1"></i> Form ini digunakan untuk melaporkan detail pekerjaan harian (Activity Log) yang terhubung langsung dengan Work Order.
+              <i class="fas fa-info-circle text-orange-500 mr-1"></i> Form ini digunakan untuk melaporkan detail pekerjaan harian (Activity Log). Team Leader dapat memilih lebih dari satu mekanik untuk menghemat waktu input (Bulk Input).
           </div>
 
           <form id="activityForm" onsubmit="handleSaveActivity(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
@@ -336,17 +348,19 @@
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tanggal</label>
                 <input type="date" id="act_tgl" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
             </div>
-            <div class="space-y-2 md:col-span-2">
+            <div class="space-y-2 md:col-span-3">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Pilih Work Order (Aktif)</label>
                 <select id="act_wo" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
                     <option value="">Pilih Work Order</option>
                 </select>
             </div>
-            <div class="space-y-2 md:col-span-1">
-                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Mekanik</label>
-                <select id="act_mekanik" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm cursor-pointer" required>
-                    <option value="">Pilih Mekanik</option>
-                </select>
+            
+            <!-- MULTI-SELECT MECHANICS (GRID CHECKBOX) -->
+            <div class="space-y-2 md:col-span-4">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Pilih Mekanik / Team (Bisa Lebih Dari 1)</label>
+                <div id="act_mekanik_container" class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-xl p-4 max-h-48 overflow-y-auto shadow-sm">
+                    <!-- Checkboxes rendered via JS -->
+                </div>
             </div>
             
             <div class="space-y-2 md:col-span-4">
@@ -364,7 +378,7 @@
             </div>
 
             <div class="md:col-span-4 mt-2">
-                <button type="submit" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-orange-600">SIMPAN LAPORAN AKTIFITAS</button>
+                <button type="submit" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-orange-600">SIMPAN LAPORAN AKTIFITAS TEAM</button>
             </div>
           </form>
 
@@ -761,7 +775,8 @@
         <div class="max-w-3xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
             <h2 class="text-xl md:text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
             <p class="text-xs md:text-sm font-medium text-slate-500 mb-8 md:mb-10 border-b pb-6">Ubah identitas, logo, dan warna tema aplikasi agar sesuai dengan branding perusahaan Anda.</p>
-            <form id="settingsForm" class="space-y-6 md:space-y-8">
+            <!-- FIX BUG 1: Tambahkan onsubmit handler -->
+            <form id="settingsForm" onsubmit="handleSaveSettings(event)" class="space-y-6 md:space-y-8">
                 <div>
                     <label class="block text-[10px] md:text-[11px] font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest">Nama Perusahaan (Kop Cetak & Navbar)</label>
                     <input type="text" id="conf_company" class="w-full px-4 py-3 md:px-5 md:py-4 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-base md:text-lg outline-none focus:ring-4 focus:ring-theme-accent/20 transition-shadow shadow-sm" required>
@@ -813,7 +828,6 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">HM (Hour Meter)</label><input type="text" id="hm_km" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" required placeholder="Angka HM"></div>
               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">PM Service</label><input type="text" id="pm_service" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" placeholder="Misal: PS-1"></div>
-              <!-- CHANGED TO DROPDOWNS -->
               <div>
                   <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Major Component</label>
                   <select id="major_comp" onchange="updateMinorComp()" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm cursor-pointer bg-white">
@@ -853,7 +867,6 @@
                     <option value="SCH">SCH (Scheduled)</option>
                   </select>
                </div>
-               <!-- CHANGED TO DROPDOWNS POPULATED FROM USERS -->
                <div>
                   <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Reported By</label>
                   <select id="reported_by" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main text-sm cursor-pointer" required>
@@ -943,6 +956,7 @@
       <datalist id="listEquip"></datalist>
       <datalist id="listParts"></datalist>
 
+      </div> <!-- End of Max-width Wrapper -->
     </main>
   </div>
 
@@ -1022,7 +1036,7 @@
     develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
   </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   
   <script>
@@ -1069,6 +1083,23 @@
     }
 
     // ==========================================
+    // NEW: SHIFT DATE LOGIC
+    // ==========================================
+    function getShiftDate() {
+        const now = new Date();
+        // Jika jam belum melewati 07:00 pagi, maka dihitung hari kemarin (Shift 2)
+        if (now.getHours() < 7) {
+            now.setDate(now.getDate() - 1);
+        }
+        return now.toISOString().split('T')[0];
+    }
+    // Set First Date of Current Month
+    function getFirstDateOfMonth() {
+        const now = new Date(getShiftDate());
+        return new Date(now.getFullYear(), now.getMonth(), 2).toISOString().split('T')[0];
+    }
+
+    // ==========================================
     // 3. GLOBAL VARIABLES & STATE
     // ==========================================
     let currentUser = null;
@@ -1088,6 +1119,12 @@
     // ==========================================
     window.onload = () => {
       loadSettings();
+      // Set Default Dates using Shift Logic
+      if(document.getElementById('kpiStartDate')) document.getElementById('kpiStartDate').value = getFirstDateOfMonth();
+      if(document.getElementById('kpiEndDate')) document.getElementById('kpiEndDate').value = getShiftDate();
+      if(document.getElementById('kpiStartDateMobile')) document.getElementById('kpiStartDateMobile').value = getFirstDateOfMonth();
+      if(document.getElementById('kpiEndDateMobile')) document.getElementById('kpiEndDateMobile').value = getShiftDate();
+
       const session = localStorage.getItem('bss_session_v18'); 
       if (session) {
         try { currentUser = JSON.parse(session); showApp(); } catch(e) { showLogin(); }
@@ -1099,6 +1136,22 @@
           });
       }
     };
+
+    function loadSettings() {
+      // Logic load theme from localstorage/db (dijaga tetap eksisting jika ada sebelumnya)
+    }
+    
+    function applySettingsUI(payload) {
+       document.documentElement.style.setProperty('--theme-main', payload.ThemeColor);
+       document.querySelectorAll('.company-display-name').forEach(el => el.innerText = payload.CompanyName);
+       if(payload.CompanyLogo) {
+           document.querySelectorAll('.dynamic-logo-wrapper').forEach(el => {
+               el.innerHTML = `<img src="${payload.CompanyLogo}" class="w-full h-full object-contain">`;
+               el.classList.remove('p-1', 'p-1.5', 'p-2');
+               el.classList.add('bg-white');
+           });
+       }
+    }
 
     function showLogin() {
       document.getElementById('authContainer')?.classList.remove('hidden');
@@ -1182,7 +1235,6 @@
               if(lp) lp.innerHTML = masterCache.parts.map(p => `<option value="${p.part_number}">${p.description}</option>`).join('');
               
               populateDependentDropdowns();
-              populateMonthFilter();
               
               if(document.getElementById('page-list-wo').classList.contains('active')) renderWOTable();
               if(document.getElementById('page-dashboard').classList.contains('active')) calculateKPIFrontEnd();
@@ -1274,7 +1326,10 @@
       if(id === 'buat-wo') { prepareWOForm(); }
       if(id === 'backlog') { renderBacklogTable(); }
       if(id === 'aktifitas') { renderActivityTable(); prefillActivityForm(); }
-      if(id === 'daily-hm') { renderDailyHMTable(); }
+      if(id === 'daily-hm') { 
+          renderDailyHMTable(); 
+          if(document.getElementById('hm_tanggal')) document.getElementById('hm_tanggal').value = getShiftDate();
+      }
       if(id === 'master-equip') { currentEqPage=1; renderMasterEquipTable(); }
       if(id === 'master-parts') { currentPtPage=1; renderMasterPartsTable(); }
       if(id === 'master-comp') { renderMasterCompTable(); }
@@ -1300,24 +1355,20 @@
         return Math.max(...hms.map(h => parseFloat(h.hm_akhir) || 0));
     }
 
-    function populateMonthFilter() {
-      const select = document.getElementById('kpiMonthFilter');
-      const selectMob = document.getElementById('kpiMonthFilterMobile');
-      if(!select || !selectMob) return;
-      const months = new Set();
-      (woDataCache || []).forEach(d => { let dateStr = d.tgl_rusak || d.tgl_input; if(dateStr && dateStr.length >= 7) { months.add(dateStr.substring(0, 7)); } });
-      const sortedMonths = Array.from(months).sort().reverse();
-      let html = `<option value="ALL">ALL TIME / SEMUA BULAN</option>`;
-      sortedMonths.forEach(m => { html += `<option value="${m}">${m}</option>`; });
-      const currentVal = select.value;
-      select.innerHTML = html; selectMob.innerHTML = html;
-      if(sortedMonths.includes(currentVal)) { select.value = currentVal; selectMob.value = currentVal; }
-    }
-
     function calculateKPIFrontEnd() {
-      const monthFilter = document.getElementById('kpiMonthFilter') ? document.getElementById('kpiMonthFilter').value : 'ALL';
+      // Logic Weekly / Date Range Filter
+      let startDate = document.getElementById('kpiStartDate') ? document.getElementById('kpiStartDate').value : '';
+      let endDate = document.getElementById('kpiEndDate') ? document.getElementById('kpiEndDate').value : '';
+      
       let data = woDataCache || [];
-      if (monthFilter !== 'ALL') data = data.filter(d => (d.tgl_rusak || '').startsWith(monthFilter) || (d.tgl_input || '').startsWith(monthFilter));
+      
+      // Filter WOs based on date range (Breakdown date OR Input Date)
+      if (startDate && endDate) {
+          data = data.filter(d => {
+              const dateVal = d.tgl_rusak || d.tgl_input;
+              return dateVal >= startDate && dateVal <= endDate;
+          });
+      }
 
       let validEquipSet = new Set();
       let totalPlanHours = 0; let targetPAWeight = 0; 
@@ -1359,7 +1410,8 @@
       if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
           masterCache.dailyHM.forEach(hm => {
               if(hm.equip_no && validEquipSet.has(hm.equip_no.toString().toUpperCase())) {
-                  if(monthFilter === 'ALL' || (hm.tanggal && hm.tanggal.startsWith(monthFilter))) {
+                  // Jika ada filter tanggal, aplikasikan ke Actual HM juga
+                  if((!startDate || !endDate) || (hm.tanggal >= startDate && hm.tanggal <= endDate)) {
                       actualOperatingHours += parseFloat(hm.total_hm) || 0;
                   }
               }
@@ -1430,6 +1482,7 @@
           equipChartInstance = new Chart(ctxEquip.getContext('2d'), { type: 'bar', data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } } });
       }
 
+      // PAPAN CATUR (Menggunakan Data W/O yang sudah di-filter rentang waktunya saja)
       const detailBody = document.getElementById('detailBoardBody');
       if (masterCache.planAlat) {
           const boardData = {}; 
@@ -1438,7 +1491,10 @@
               let model = p.model ? p.model.toUpperCase() : 'OTHERS';
               if(!unitNo) return;
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
-              const activeWOs = (woDataCache || []).filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.status !== 'CLOSED');
+              
+              // Cek status berdasarkan W/O aktif di rentang tanggal tersebut
+              const activeWOs = data.filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.status !== 'CLOSED');
+              
               if (activeWOs.length > 0) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
           });
           let detailHTML = ''; let totalRFU = 0; let totalBD = 0;
@@ -1619,9 +1675,11 @@
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
         let acts = [...(masterCache.activities || [])].reverse(); 
-        if (currentUser && currentUser.role === 'Mekanik') acts = acts.filter(a => a.mekanik === currentUser.nama);
+        // Mekanik biasa hanya melihat datanya, SPV/Plant melihat semua
+        if (currentUser && currentUser.role === 'Mekanik') acts = acts.filter(a => a.mekanik.toLowerCase().includes(currentUser.nama.toLowerCase()));
+        
         if(acts.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada aktifitas.</td></tr>'; return; }
-        tbody.innerHTML = acts.map(a => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold text-slate-500 text-xs">${a.tanggal}</td><td class="p-4 font-black uppercase text-theme-accent">${a.no_wo}</td><td class="p-4 font-bold text-slate-800">${a.mekanik}</td><td class="p-4 text-sm text-slate-600">${a.aktifitas}</td><td class="p-4 text-center font-mono text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block">${a.jam_mulai} - ${a.jam_selesai}</td></tr>`).join('');
+        tbody.innerHTML = acts.map(a => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold text-slate-500 text-xs">${a.tanggal}</td><td class="p-4 font-black uppercase text-theme-accent">${a.no_wo}</td><td class="p-4 font-bold text-slate-800"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs break-words">${a.mekanik}</span></td><td class="p-4 text-sm text-slate-600">${a.aktifitas}</td><td class="p-4 text-center font-mono text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block">${a.jam_mulai} - ${a.jam_selesai}</td></tr>`).join('');
     }
 
     function loadUsers() {
@@ -1667,9 +1725,18 @@
             techSel.innerHTML = '<option value="">- Pilih Teknisi -</option>' + masterCache.mekanikList.map(u => `<option value="${u.nama_mekanik}">${u.nama_mekanik}</option>`).join('');
         }
 
-        const actMekSel = document.getElementById('act_mekanik');
-        if(actMekSel && masterCache.mekanikList) {
-            actMekSel.innerHTML = '<option value="">- Pilih Mekanik -</option>' + masterCache.mekanikList.map(u => `<option value="${u.nama_mekanik}">${u.nama_mekanik}</option>`).join('');
+        // Checkbox Grid untuk Laporan Aktifitas Team Leader
+        const actMekContainer = document.getElementById('act_mekanik_container');
+        if(actMekContainer && masterCache.mekanikList) {
+            let chkHtml = '';
+            masterCache.mekanikList.forEach((u, i) => {
+                chkHtml += `
+                <label class="relative cursor-pointer">
+                    <input type="checkbox" name="mechanic_check" value="${u.nama_mekanik}" class="mech-checkbox sr-only">
+                    <div class="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 transition-colors text-center hover:bg-slate-50">${u.nama_mekanik}</div>
+                </label>`;
+            });
+            actMekContainer.innerHTML = chkHtml;
         }
 
         const actWoSel = document.getElementById('act_wo');
@@ -1724,16 +1791,20 @@
         const ptb = document.getElementById('partTableBody');
         if(ptb) { ptb.innerHTML = ''; addPartRow(); }
         if(document.getElementById('wo_status_display')) document.getElementById('wo_status_display').innerText = 'STATUS: NEW'; 
+        // Auto Date
+        if(document.getElementById('tgl_rusak')) document.getElementById('tgl_rusak').value = getShiftDate();
     }
 
     function prefillActivityForm() {
-        if(currentUser && document.getElementById('act_mekanik')) {
-            const mekSel = document.getElementById('act_mekanik');
-            for(let i=0; i<mekSel.options.length; i++) {
-                if(mekSel.options[i].value.toLowerCase() === currentUser.nama.toLowerCase()) { mekSel.selectedIndex = i; break; }
-            }
+        if(currentUser) {
+            // Auto Select Checkbox jika mekanik bersangkutan yang login
+            const checkboxes = document.querySelectorAll('input[name="mechanic_check"]');
+            checkboxes.forEach(chk => {
+                if(chk.value.toLowerCase() === currentUser.nama.toLowerCase()) chk.checked = true;
+                else chk.checked = false;
+            });
         }
-        document.getElementById('act_tgl').value = new Date().toISOString().split('T')[0];
+        if(document.getElementById('act_tgl')) document.getElementById('act_tgl').value = getShiftDate();
     }
 
     function tarikDataWO() {
@@ -1768,6 +1839,26 @@
     }
 
     // SAVING FUNCTIONS
+    // FIX BUG 1: Fungsi Simpan Pengaturan Tema ditahan secara SPA
+    function handleSaveSettings(e) {
+        e.preventDefault();
+        const payload = {
+            CompanyName: document.getElementById('conf_company').value,
+            CompanyLogo: document.getElementById('conf_logo').value,
+            ThemeColor: document.getElementById('conf_color').value
+        };
+        startLoading("MENYIMPAN PENGATURAN...");
+        fetchGAS("saveSettings", payload).then(res => {
+            endLoading();
+            if(res.success) {
+                Swal.fire('Sukses', 'Pengaturan Tema berhasil diterapkan tanpa logout!', 'success');
+                applySettingsUI(payload); 
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error'); });
+    }
+
     function handleSaveWO(e) {
        e.preventDefault();
        const partsData = [];
@@ -1809,19 +1900,31 @@
     function processSaveDailyHM() {
       const payload = { tanggal: document.getElementById('hm_tanggal').value, equip_no: document.getElementById('hm_equip_no').value.toUpperCase(), hm_awal: document.getElementById('hm_awal').value, hm_akhir: document.getElementById('hm_akhir').value };
       startLoading("SAVING HM...");
-      fetchGAS("saveDailyHM", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('dailyHmForm').reset(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
+      fetchGAS("saveDailyHM", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('dailyHmForm').reset(); document.getElementById('hm_tanggal').value = getShiftDate(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSaveBacklog(e) {
         e.preventDefault();
         const payload = { equip_no: document.getElementById('bl_equip').value.toUpperCase(), tanggal: document.getElementById('bl_tanggal').value, deskripsi: document.getElementById('bl_desc').value, rencana: document.getElementById('bl_rencana').value || '-' };
         startLoading("SAVING BACKLOG...");
-        fetchGAS("saveBacklog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('backlogForm').reset(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
+        fetchGAS("saveBacklog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('backlogForm').reset(); document.getElementById('bl_tanggal').value = getShiftDate(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
     function handleSaveActivity(e) {
         e.preventDefault();
-        const payload = { tanggal: document.getElementById('act_tgl').value, no_wo: document.getElementById('act_wo').value, mekanik: document.getElementById('act_mekanik').value, aktifitas: document.getElementById('act_desc').value, jam_mulai: document.getElementById('act_start').value, jam_selesai: document.getElementById('act_end').value };
+        
+        // Ambil data checkbox mekanik (Bulk Input)
+        const checkedMechanics = Array.from(document.querySelectorAll('input[name="mechanic_check"]:checked')).map(cb => cb.value);
+        if(checkedMechanics.length === 0) return Swal.fire('Perhatian', 'Harap pilih minimal 1 mekanik yang melakukan aktifitas.', 'warning');
+
+        const payload = { 
+            tanggal: document.getElementById('act_tgl').value, 
+            no_wo: document.getElementById('act_wo').value, 
+            mekanik: checkedMechanics, // Mengirim sebagai Array ke Code.gs
+            aktifitas: document.getElementById('act_desc').value, 
+            jam_mulai: document.getElementById('act_start').value, 
+            jam_selesai: document.getElementById('act_end').value 
+        };
         startLoading("SAVING ACTIVITY...");
         fetchGAS("saveActivityLog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('activityForm').reset(); prefillActivityForm(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
@@ -1878,3 +1981,5 @@
        }
     }
   </script>
+</body>
+</html>
