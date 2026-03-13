@@ -314,20 +314,31 @@
            </div>
         </div>
 
-        <!-- Charts (GRID 3 KOLOM) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <!-- Charts (GRID 4 KOLOM) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Distribusi Status WO</h3>
                 <div class="relative h-48 md:h-64 w-full flex justify-center"><canvas id="statusChart"></canvas></div>
             </div>
-            <!-- NEW CHART: SERVICE PREDICTIONS -->
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Prediksi Service (Interval 250H)</h3>
                 <div class="relative h-48 md:h-64 w-full flex justify-center"><canvas id="serviceChart"></canvas></div>
             </div>
-            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 lg:col-span-1">
-                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown Alat</h3>
-                <div class="relative h-48 md:h-64 w-full"><canvas id="equipChart"></canvas></div>
+            
+            <!-- REVISED CHART: Top 5 Breakdown (DOM List 1: Frekuensi) -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Frekuensi)</h3>
+                <div id="topEquipFreqList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+            
+            <!-- REVISED CHART: Top 5 Breakdown (DOM List 2: Hours/Downtime) -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Hours)</h3>
+                <div id="topEquipHoursList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
+                    <!-- Injected via JS -->
+                </div>
             </div>
         </div>
       </section>
@@ -910,10 +921,18 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
           <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-laptop-medical mr-3"></i> Service Monitoring</h2>
           <div class="flex flex-col md:flex-row gap-3 w-full sm:w-auto">
-             <div class="relative w-full md:w-72">
+             <div class="relative w-full md:w-56">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                 <input type="text" id="filterMonitoring" onkeyup="resetPagination('monitoring'); renderWOTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-bold text-xs md:text-sm shadow-sm" placeholder="Cari WO / Unit...">
              </div>
+             <!-- ADDED STATUS FILTER -->
+             <select id="filterStatusMonitoring" onchange="resetPagination('monitoring'); renderWOTable()" class="w-full md:w-auto px-4 py-3 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-slate-600 shadow-sm outline-none focus:ring-2 focus:ring-theme-accent bg-white cursor-pointer">
+                 <option value="ALL">Semua Status</option>
+                 <option value="OPEN">OPEN</option>
+                 <option value="PROGRESS">PROGRESS</option>
+                 <option value="WAITING PART">WAITING PART</option>
+                 <option value="CLOSED">CLOSED</option>
+             </select>
              <div class="flex gap-2 justify-between">
                  <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
                    <button onclick="changeMonPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
@@ -1013,19 +1032,51 @@
         </table>
      </div>
 
-     <!-- TANDA TANGAN -->
-     <div class="grid grid-cols-3 text-center border-x border-b border-black h-sign uppercase font-black">
-        <div class="p-2 border-r border-black flex flex-col justify-between">
-          <span class="text-[8.5pt] tracking-tighter">Admin Plant / Planner</span>
-          <span id="prn-sign-admin" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+     <!-- DATE STAMP & TANDA TANGAN (NEW FORMAT) -->
+     <div class="flex justify-end w-full border-x border-black bg-white px-4 pt-2 pb-1 font-black text-[9pt]">
+        <span id="prn-print-date">Tengkapak &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -</span>
+     </div>
+     
+     <div class="grid grid-cols-3 text-center border-x border-b border-black uppercase font-black text-[8.5pt] pt-2 pb-4">
+        <!-- R1 -->
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI BUAT OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-admin" class="tracking-widest">ADMIN</span><span>]</span>
+            </div>
         </div>
-        <div class="p-2 border-r border-black flex flex-col justify-between">
-          <span class="text-[8.5pt] tracking-tighter">Mekanik</span>
-          <span id="prn-sign-mekanik" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI MINTA OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-mekanik1" class="tracking-widest">MEKANIK</span><span>]</span>
+            </div>
         </div>
-        <div class="p-2 flex flex-col justify-between">
-          <span class="text-[8.5pt] tracking-tighter">Spv Plant</span>
-          <span id="prn-sign-spv" class="border-t-2 border-black mx-2 pt-1 font-black text-[12pt]"></span>
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI PERIKSA OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-spv" class="tracking-widest">SPV PLANT</span><span>]</span>
+            </div>
+        </div>
+        <!-- Spacer Antar Baris -->
+        <div class="col-span-3 h-8"></div>
+        <!-- R2 -->
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI KETAHUI OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-head" class="tracking-widest">MAIN DEPT HEAD LOG</span><span>]</span>
+            </div>
+        </div>
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI SERAHKAN OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-logistik" class="tracking-widest">LOGISTIK</span><span>]</span>
+            </div>
+        </div>
+        <div class="flex flex-col justify-between items-center h-[55pt]">
+            <span>DI TERIMA OLEH</span>
+            <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
+                <span>[</span><span id="prn-sign-mekanik2" class="tracking-widest">MEKANIK</span><span>]</span>
+            </div>
         </div>
      </div>
   </div>
@@ -1086,13 +1137,11 @@
     // ==========================================
     function getShiftDate() {
         const now = new Date();
-        // Jika jam belum melewati 07:00 pagi, maka dihitung hari kemarin (Shift 2)
         if (now.getHours() < 7) {
             now.setDate(now.getDate() - 1);
         }
         return now.toISOString().split('T')[0];
     }
-    // Set First Date of Current Month
     function getFirstDateOfMonth() {
         const now = new Date(getShiftDate());
         return new Date(now.getFullYear(), now.getMonth(), 2).toISOString().split('T')[0];
@@ -1110,15 +1159,14 @@
     
     let currentMonPage = 1, currentEqPage = 1, currentPtPage = 1, currentHmPage = 1;
     const ITEMS_PER_PAGE = 50;
-    let statusChartInstance = null, equipChartInstance = null, serviceChartInstance = null;
-    let isFirebaseListening = false; // Mencegah double listener
+    let statusChartInstance = null, serviceChartInstance = null;
+    let isFirebaseListening = false; 
 
     // ==========================================
     // 4. INITIALIZATION & AUTH
     // ==========================================
     window.onload = () => {
       loadSettings();
-      // Set Default Dates using Shift Logic
       if(document.getElementById('kpiStartDate')) document.getElementById('kpiStartDate').value = getFirstDateOfMonth();
       if(document.getElementById('kpiEndDate')) document.getElementById('kpiEndDate').value = getShiftDate();
       if(document.getElementById('kpiStartDateMobile')) document.getElementById('kpiStartDateMobile').value = getFirstDateOfMonth();
@@ -1136,9 +1184,7 @@
       }
     };
 
-    function loadSettings() {
-      // Logic load theme from localstorage/db (dijaga tetap eksisting jika ada sebelumnya)
-    }
+    function loadSettings() { }
     
     function applySettingsUI(payload) {
        document.documentElement.style.setProperty('--theme-main', payload.ThemeColor);
@@ -1186,7 +1232,7 @@
       }
 
       initTimeSelectors();
-      globalDataSync(); // Panggil data dari Sheets
+      globalDataSync(); 
       navigate('dashboard');
     }
 
@@ -1204,7 +1250,7 @@
     function handleLogout() { localStorage.removeItem('bss_session_v18'); location.reload(); }
 
     // ==========================================
-    // 5. HYBRID DATA SYNC (SHEETS + FIREBASE)
+    // 5. HYBRID DATA SYNC
     // ==========================================
     function globalDataSync() {
       startLoading("OPTIMIZED SYNC...");
@@ -1257,11 +1303,8 @@
           const fbData = snapshot.val();
           Object.keys(fbData).forEach(key => {
              let idx = woDataCache.findIndex(w => w.no_wo === key);
-             if(idx > -1) {
-                 woDataCache[idx] = { ...woDataCache[idx], ...fbData[key] }; 
-             } else {
-                 woDataCache.unshift(fbData[key]); 
-             }
+             if(idx > -1) { woDataCache[idx] = { ...woDataCache[idx], ...fbData[key] }; } 
+             else { woDataCache.unshift(fbData[key]); }
           });
           calculateKPIFrontEnd();
           if(document.getElementById('page-list-wo').classList.contains('active')) renderWOTable();
@@ -1337,7 +1380,7 @@
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
     // ==========================================
-    // 7. DASHBOARD & KPI LOGIC (ADVANCED & STRICT)
+    // 7. DASHBOARD & KPI LOGIC 
     // ==========================================
     function getActualHM(equipNo) {
         if(!equipNo) return 0;
@@ -1350,26 +1393,17 @@
       let startDateStr = document.getElementById('kpiStartDate') ? document.getElementById('kpiStartDate').value : '';
       let endDateStr = document.getElementById('kpiEndDate') ? document.getElementById('kpiEndDate').value : '';
       
-      // Fallback jika kosong
-      if(!startDateStr || !endDateStr) {
-          startDateStr = getFirstDateOfMonth();
-          endDateStr = getShiftDate();
-      }
+      if(!startDateStr || !endDateStr) { startDateStr = getFirstDateOfMonth(); endDateStr = getShiftDate(); }
 
-      // Membentuk Time Boundaries yang tegas (Jam 00:00 hari mulai s/d 23:59 hari akhir)
       const filterStart = new Date(startDateStr + 'T00:00:00');
       const filterEnd = new Date(endDateStr + 'T23:59:59');
       const now = new Date();
-      // Batas maksimal kalkulasi adalah hari ini jam sekarang, agar alat yang sedang rusak jamnya tidak melebihi masa depan
       const actualEndBoundary = new Date(Math.min(filterEnd.getTime(), now.getTime()));
-
       const msPerDay = 1000 * 60 * 60 * 24;
-      // Menghitung jumlah hari yang ada di dalam rentang filter yang Anda pilih
       const daysInFilter = Math.max(1, Math.ceil((filterEnd.getTime() - filterStart.getTime() + 1000) / msPerDay));
 
       let validEquipSet = new Set();
-      let totalPlanHours = 0; 
-      let targetPAWeight = 0; 
+      let totalPlanHours = 0; let targetPAWeight = 0; 
       let countAman = 0, countMendekati = 0, countOverdue = 0, countWaiting = 0;
 
       if (masterCache.planAlat && masterCache.planAlat.length > 0) {
@@ -1377,12 +1411,9 @@
               const unitNo = (p.equip_no || '').toUpperCase();
               if(unitNo) { 
                   validEquipSet.add(unitNo); 
-                  
-                  // MENGHITUNG PLAN HOURS PROPORSIONAL DENGAN JUMLAH HARI FILTER
                   const monthlyPlan = parseInt(p.plan_hours_per_month) || 720;
-                  const dailyPlan = monthlyPlan / 30; // Standar asumsi 1 bulan = 30 hari untuk target jam
+                  const dailyPlan = monthlyPlan / 30; 
                   totalPlanHours += (dailyPlan * daysInFilter); 
-
                   targetPAWeight += parseFloat(p.plan_pa) || 85;
                   const lastHM = parseFloat(p.last_service_hm) || 0;
                   const nextHM = parseFloat(p.next_service_hm) || (lastHM + 250);
@@ -1406,55 +1437,48 @@
           avgTargetPA = (targetPAWeight / validEquipSet.size).toFixed(1);
       } else {
           const uniqueEquipCount = new Set(data.filter(d => d.equip_no).map(d => d.equip_no.toString().toUpperCase())).size || 1;
-          totalPlanHours = uniqueEquipCount * 24 * daysInFilter; // Default jika master plan kosong
+          totalPlanHours = uniqueEquipCount * 24 * daysInFilter; 
       }
-      
       if(document.getElementById('badgeTargetPA')) document.getElementById('badgeTargetPA').innerText = `>${avgTargetPA}%`;
 
-      // 1. Aktual Operating Hours dalam rentang untuk hitung MTBF
       let actualOperatingHours = 0;
       if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
           masterCache.dailyHM.forEach(hm => {
               if(hm.equip_no && validEquipSet.has(hm.equip_no.toString().toUpperCase())) {
-                  if(hm.tanggal >= startDateStr && hm.tanggal <= endDateStr) {
-                      actualOperatingHours += parseFloat(hm.total_hm) || 0;
-                  }
+                  if(hm.tanggal >= startDateStr && hm.tanggal <= endDateStr) actualOperatingHours += parseFloat(hm.total_hm) || 0;
               }
           });
       }
 
-      // 2. MENGHITUNG DOWNTIME DENGAN STRICT BOUNDARY & RUNNING STATUS
       let downtimeUnsch = 0; let downtimeSch = 0; let countUnsch = 0; let countSch = 0;
-      
+      let unitDowntime = {}; // Object untuk mentracking Downtime per Unit (Hours)
+
       kpiData.forEach(wo => {
           try {
               if(!wo.tgl_rusak) return;
               const start = new Date(`${wo.tgl_rusak}T${wo.jam_rusak || '00:00'}`);
               if(isNaN(start.getTime())) return;
-
               let end;
-              // Jika status sudah Selesai
-              if (wo.status === 'CLOSED' && wo.tgl_selesai) {
-                  end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
-              } else {
-                  // Jika masih OPEN/PROGRESS, potong batas waktu hitung sampai jam saat ini atau akhir filter
-                  end = actualEndBoundary;
-              }
+              if (wo.status === 'CLOSED' && wo.tgl_selesai) end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
+              else end = actualEndBoundary;
 
               if (!isNaN(end.getTime()) && end > start) {
-                  // Memastikan hanya rentang downtime yang berada di dalam TANGGAL FILTER yang dihitung
                   const actualStart = new Date(Math.max(start.getTime(), filterStart.getTime()));
                   const actualEnd = new Date(Math.min(end.getTime(), filterEnd.getTime(), now.getTime()));
-                  
                   if (actualStart < actualEnd) {
                       const diffHours = (actualEnd - actualStart) / (1000 * 60 * 60);
                       
+                      // General KPI Kalkulasi
                       if((wo.sch_unsch || '').toUpperCase() === 'UNSCH') { 
-                          downtimeUnsch += diffHours; 
-                          if(start >= filterStart && start <= filterEnd) countUnsch++; 
+                          downtimeUnsch += diffHours; if(start >= filterStart && start <= filterEnd) countUnsch++; 
                       } else { 
-                          downtimeSch += diffHours; 
-                          if(start >= filterStart && start <= filterEnd) countSch++; 
+                          downtimeSch += diffHours; if(start >= filterStart && start <= filterEnd) countSch++; 
+                      }
+                      
+                      // Akumulasi Jam Downtime per Unit untuk Top 5 Hours (Khusus yg ada di Plan Alat)
+                      const eq = wo.equip_no ? wo.equip_no.toUpperCase() : '';
+                      if (eq && validEquipSet.has(eq)) {
+                          unitDowntime[eq] = (unitDowntime[eq] || 0) + diffHours;
                       }
                   }
               }
@@ -1463,16 +1487,12 @@
 
       const totalDowntime = downtimeUnsch + downtimeSch;
       const totalBreakdowns = countUnsch + countSch;
-      
       const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : Math.max(0, totalPlanHours - totalDowntime);
       const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
       const mtbf = countUnsch > 0 ? (uptimeHours / countUnsch).toFixed(1) : 0; 
       
-      // 3. KALKULASI PA (LEBIH KEJAM & AKURAT)
       let pa = 100;
-      if(totalPlanHours > 0) {
-          pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
-      }
+      if(totalPlanHours > 0) pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
       if(pa > 100) pa = 100; if(pa < 0 || isNaN(pa)) pa = 0;
 
       if(document.getElementById('kpi-pa')) document.getElementById('kpi-pa').innerHTML = `${pa}<span class="text-lg md:text-2xl text-slate-400">%</span>`;
@@ -1482,7 +1502,6 @@
       const openBacklogCount = (backlogCache || []).filter(b => b.status === 'OPEN').length;
       if(document.getElementById('kpi-pending-backlog')) document.getElementById('kpi-pending-backlog').innerText = openBacklogCount;
 
-      // Filter WOs purely for status charts & overview numbers (Based on Breakdowns happening within date range)
       const filteredWOForCounts = data.filter(d => {
           const dateVal = d.tgl_rusak || d.tgl_input;
           return dateVal >= startDateStr && dateVal <= endDateStr;
@@ -1511,14 +1530,61 @@
           serviceChartInstance = new Chart(ctxService.getContext('2d'), { type: 'pie', data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } } });
       }
 
-      const ctxEquip = document.getElementById('equipChart');
-      if(ctxEquip) {
-          let equipCount = {};
-          filteredWOForCounts.forEach(d => { if(d.equip_no) { equipCount[d.equip_no] = (equipCount[d.equip_no] || 0) + 1; } });
-          let sortedEquip = Object.entries(equipCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
-          if(equipChartInstance) equipChartInstance.destroy();
-          const themeColor = document.documentElement.style.getPropertyValue('--theme-main') || '#0f172a';
-          equipChartInstance = new Chart(ctxEquip.getContext('2d'), { type: 'bar', data: { labels: sortedEquip.map(e => e[0]), datasets: [{ label: 'Total Breakdown', data: sortedEquip.map(e => e[1]), backgroundColor: themeColor, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} }, x: { grid: {display: false} } }, plugins: { legend: {display: false} } } });
+      // NEW: TOP 5 BREAKDOWN DOM PROGRESS BAR (2 TYPES: FREQ & HOURS)
+      const topEquipFreqContainer = document.getElementById('topEquipFreqList');
+      const topEquipHoursContainer = document.getElementById('topEquipHoursList');
+      
+      if(topEquipFreqContainer && topEquipHoursContainer) {
+          let equipFreq = {};
+          
+          filteredWOForCounts.forEach(d => { 
+              if(d.equip_no) { 
+                  const eq = d.equip_no.toUpperCase();
+                  if(validEquipSet.has(eq)) { // Constraint: Hanya yang terdaftar di Plan Alat
+                      equipFreq[eq] = (equipFreq[eq] || 0) + 1; 
+                  }
+              } 
+          });
+
+          // 1. Render By Frequency
+          let sortedFreq = Object.entries(equipFreq).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          if(sortedFreq.length === 0) {
+              topEquipFreqContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data breakdown</div>';
+          } else {
+              const maxValF = sortedFreq[0][1];
+              topEquipFreqContainer.innerHTML = sortedFreq.map((e, i) => {
+                  const pct = (e[1] / maxValF) * 100;
+                  return `<div class="mb-4">
+                            <div class="flex justify-between text-[10px] md:text-xs font-black text-slate-600 mb-1.5">
+                              <span>#${i+1} ${e[0]}</span>
+                              <span class="text-theme-accent">${e[1]}x Rusak</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2.5">
+                              <div class="bg-theme-main h-2.5 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                          </div>`;
+              }).join('');
+          }
+
+          // 2. Render By Hours (Downtime Durasi)
+          let sortedHours = Object.entries(unitDowntime).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          if(sortedHours.length === 0) {
+              topEquipHoursContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data downtime</div>';
+          } else {
+              const maxValH = sortedHours[0][1];
+              topEquipHoursContainer.innerHTML = sortedHours.map((e, i) => {
+                  const pct = (e[1] / maxValH) * 100;
+                  return `<div class="mb-4">
+                            <div class="flex justify-between text-[10px] md:text-xs font-black text-slate-600 mb-1.5">
+                              <span>#${i+1} ${e[0]}</span>
+                              <span class="text-red-500">${e[1].toFixed(1)} Jam</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2.5">
+                              <div class="bg-red-500 h-2.5 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                          </div>`;
+              }).join('');
+          }
       }
 
       // 4. PAPAN CATUR RFU/BD (STATUS TERAKHIR BERDASARKAN "AS OF" END DATE)
@@ -1530,19 +1596,13 @@
               let model = p.model ? p.model.toUpperCase() : 'OTHERS';
               if(!unitNo) return;
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
-              
-              // Cek semua WO pada unit ini yang mulai rusak sebelum atau tepat di EndDate
               const wosAsOfEnd = data.filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.tgl_rusak && d.tgl_rusak <= endDateStr);
-              
-              // Anggap RFU secara default
               let isBD = false;
-              // Jika ada 1 saja WO yang pada tanggal EndDate belum selesai (Status Bukan Closed ATAU Tgl Selesainya melewati EndDate), maka unit ditetapkan BD.
               for(let w of wosAsOfEnd) {
                   if (w.status !== 'CLOSED' || !w.tgl_selesai || w.tgl_selesai > endDateStr) {
                       isBD = true; break;
                   }
               }
-              
               if (isBD) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
           });
           
@@ -1674,10 +1734,17 @@
       const tbody = document.getElementById('woTableBody');
       if(!tbody) return;
       const q = document.getElementById('filterMonitoring') ? document.getElementById('filterMonitoring').value.toLowerCase() : '';
+      const statusFilter = document.getElementById('filterStatusMonitoring') ? document.getElementById('filterStatusMonitoring').value : 'ALL';
+
       const isPlanner = currentUser.role.toUpperCase().includes('PLANNER');
       const isPlant = currentUser.role === 'Admin Plant';
       
-      let filtered = (woDataCache || []).filter(i => String(i.no_wo||'').toLowerCase().includes(q) || String(i.equip_no||'').toLowerCase().includes(q));
+      let filtered = (woDataCache || []).filter(i => {
+          const matchQ = String(i.no_wo||'').toLowerCase().includes(q) || String(i.equip_no||'').toLowerCase().includes(q);
+          const matchS = statusFilter === 'ALL' || (i.status || 'OPEN') === statusFilter;
+          return matchQ && matchS;
+      });
+      
       const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
       if(currentMonPage > totalPages) currentMonPage = totalPages; if(currentMonPage < 1) currentMonPage = 1;
       const paged = filtered.slice((currentMonPage - 1) * ITEMS_PER_PAGE, currentMonPage * ITEMS_PER_PAGE);
@@ -1724,7 +1791,6 @@
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
         let acts = [...(masterCache.activities || [])].reverse(); 
-        // Mekanik biasa hanya melihat datanya, SPV/Plant melihat semua
         if (currentUser && currentUser.role === 'Mekanik') acts = acts.filter(a => a.mekanik.toLowerCase().includes(currentUser.nama.toLowerCase()));
         
         if(acts.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada aktifitas.</td></tr>'; return; }
@@ -1774,7 +1840,6 @@
             techSel.innerHTML = '<option value="">- Pilih Teknisi -</option>' + masterCache.mekanikList.map(u => `<option value="${u.nama_mekanik}">${u.nama_mekanik}</option>`).join('');
         }
 
-        // Checkbox Grid untuk Laporan Aktifitas Team Leader
         const actMekContainer = document.getElementById('act_mekanik_container');
         if(actMekContainer && masterCache.mekanikList) {
             let chkHtml = '';
@@ -1840,13 +1905,11 @@
         const ptb = document.getElementById('partTableBody');
         if(ptb) { ptb.innerHTML = ''; addPartRow(); }
         if(document.getElementById('wo_status_display')) document.getElementById('wo_status_display').innerText = 'STATUS: NEW'; 
-        // Auto Date
         if(document.getElementById('tgl_rusak')) document.getElementById('tgl_rusak').value = getShiftDate();
     }
 
     function prefillActivityForm() {
         if(currentUser) {
-            // Auto Select Checkbox jika mekanik bersangkutan yang login
             const checkboxes = document.querySelectorAll('input[name="mechanic_check"]');
             checkboxes.forEach(chk => {
                 if(chk.value.toLowerCase() === currentUser.nama.toLowerCase()) chk.checked = true;
@@ -1887,8 +1950,6 @@
       } else { Swal.fire('Info', 'Tidak ditemukan.', 'info'); }
     }
 
-    // SAVING FUNCTIONS
-    // FIX BUG 1: Fungsi Simpan Pengaturan Tema ditahan secara SPA
     function handleSaveSettings(e) {
         e.preventDefault();
         const payload = {
@@ -1961,15 +2022,13 @@
 
     function handleSaveActivity(e) {
         e.preventDefault();
-        
-        // Ambil data checkbox mekanik (Bulk Input)
         const checkedMechanics = Array.from(document.querySelectorAll('input[name="mechanic_check"]:checked')).map(cb => cb.value);
         if(checkedMechanics.length === 0) return Swal.fire('Perhatian', 'Harap pilih minimal 1 mekanik yang melakukan aktifitas.', 'warning');
 
         const payload = { 
             tanggal: document.getElementById('act_tgl').value, 
             no_wo: document.getElementById('act_wo').value, 
-            mekanik: checkedMechanics, // Mengirim sebagai Array ke Code.gs
+            mekanik: checkedMechanics, 
             aktifitas: document.getElementById('act_desc').value, 
             jam_mulai: document.getElementById('act_start').value, 
             jam_selesai: document.getElementById('act_end').value 
@@ -2005,14 +2064,25 @@
     function printWO(noWo) {
        const item = woDataCache.find(i => i.no_wo === noWo);
        if(!item) return;
-       const map = { 'prn-equip': 'equip_no', 'prn-wo': 'no_wo', 'prn-brand': 'brand', 'prn-hm': 'hm_km', 'prn-type': 'unit_type', 'prn-pm': 'pm_service', 'prn-major': 'major_comp', 'prn-minor': 'minor_comp', 'prn-sch': 'sch_unsch', 'prn-reported': 'reported_by', 'prn-tech': 'tech', 'prn-desc': 'kendala', 'prn-failure': 'failure_reason' };
+       
+       const map = { 'prn-equip': 'equip_no', 'prn-wo': 'no_wo', 'prn-brand': 'brand', 'prn-hm': 'hm_km', 'prn-type': 'unit_type', 'prn-pm': 'pm_service', 'prn-major': 'major_comp', 'prn-minor': 'minor_comp', 'prn-sch': 'sch_unsch', 'prn-desc': 'kendala', 'prn-failure': 'failure_reason' };
        Object.keys(map).forEach(id => { const el = document.getElementById(id); if(el) el.innerText = item[map[id]] || "-"; });
+       
        if(document.getElementById('prn-status')) document.getElementById('prn-status').innerText = item.status || "OPEN";
        if(document.getElementById('prn-dt-r')) document.getElementById('prn-dt-r').innerText = (item.tgl_rusak || "-") + " " + (item.jam_rusak || "");
        if(document.getElementById('prn-dt-s')) document.getElementById('prn-dt-s').innerText = (item.tgl_selesai || "-") + " " + (item.jam_selesai || "");
-       const formatSign = (name) => (name && name.trim() !== "" ? `( ${name.toUpperCase()} )` : "");
-       document.getElementById('prn-sign-admin').innerText = formatSign(item.reported_by);
-       document.getElementById('prn-sign-mekanik').innerText = formatSign(item.tech);
+       
+       // SET PRINT DATE & TIME
+       const now = new Date();
+       const pad = (n) => (n < 10 ? '0' + n : n);
+       const printDateString = `Tengkapak \u00A0\u00A0\u00A0\u00A0 ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} ${now.getHours()}:${pad(now.getMinutes())}`;
+       if(document.getElementById('prn-print-date')) document.getElementById('prn-print-date').innerHTML = printDateString;
+       
+       // SET SIGNATURE NAMES
+       const formatSign = (name, defaultRole) => (name && name.trim() !== "" ? name.toUpperCase() : defaultRole);
+       if(document.getElementById('prn-sign-admin')) document.getElementById('prn-sign-admin').innerText = formatSign(item.reported_by, "ADMIN");
+       if(document.getElementById('prn-sign-mekanik1')) document.getElementById('prn-sign-mekanik1').innerText = formatSign(item.tech, "MEKANIK");
+       if(document.getElementById('prn-sign-mekanik2')) document.getElementById('prn-sign-mekanik2').innerText = formatSign(item.tech, "MEKANIK");
        
        const parts = item.parts_json ? JSON.parse(item.parts_json) : [];
        const pb = document.getElementById('printArea').querySelector('#prn-parts-body'); 
@@ -2028,7 +2098,6 @@
            pa.classList.remove('hidden');
            setTimeout(() => { window.print(); pa.classList.add('hidden'); }, 500);
        }
-      
     }
   </script>
 </body>
