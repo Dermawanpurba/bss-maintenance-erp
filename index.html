@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WOSys ERP - PT. Benamakmur Selaras Sejahtera</title>
-  <!-- Modern UI dependencies -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -79,13 +78,11 @@
 </head>
 <body class="text-slate-800 flex flex-col min-h-screen">
 
-  <!-- LOADING OVERLAY -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/80 z-[9999] hidden flex flex-col items-center justify-center backdrop-blur-md transition-all">
     <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-14 w-14 mb-4"></div>
     <p id="loadingText" class="text-white font-black tracking-[0.2em] text-[10px] uppercase">Processing...</p>
   </div>
 
-  <!-- PREMIUM AUTH CONTAINER -->
   <div id="authContainer" class="flex-grow flex items-center justify-center p-4 relative overflow-hidden bg-slate-900">
     <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-float" style="animation-delay: 2s;"></div>
@@ -112,9 +109,7 @@
     </div>
   </div>
 
-  <!-- APP CONTAINER -->
   <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative max-w-full">
-    <!-- Mobile Header -->
     <div class="md:hidden bg-theme-main text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
       <div class="flex items-center space-x-3">
           <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden p-1 dynamic-logo-wrapper">
@@ -126,7 +121,6 @@
     </div>
     <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="w-72 md:w-64 bg-theme-main text-white flex-shrink-0 flex flex-col no-print shadow-2xl z-40 relative h-screen sticky top-0">
       <div class="hidden md:flex p-6 border-b border-white/10 items-center space-x-4">
         <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-1.5 dynamic-logo-wrapper">
@@ -202,12 +196,8 @@
       </div>
     </aside>
 
-    <!-- MAIN CONTENT - Adjusted max-width for Cloudflare displays -->
     <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative no-print h-screen bg-slate-50 pb-20 w-full">
-      <div class="max-w-[1440px] mx-auto"> <!-- Wrapper agar tidak over-stretch -->
-      
-      <!-- PAGE: DASHBOARD KPI -->
-      <section id="page-dashboard" class="page active pb-12">
+      <div class="max-w-[1440px] mx-auto"> <section id="page-dashboard" class="page active pb-12">
         <div id="banner-admin" class="bg-gradient-to-r from-slate-900 to-slate-800 mobile-optim mb-8 text-white shadow-2xl relative overflow-hidden">
           <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="w-full">
@@ -216,7 +206,6 @@
                       <h2 class="text-2xl md:text-4xl font-black mb-2 tracking-tight text-white" id="dashTitle">Welcome back, <span id="dashName" class="text-theme-accent">Admin</span>! 👋</h2>
                       <p class="text-slate-300 font-medium text-xs md:text-sm max-w-md leading-relaxed" id="dashDesc">Pantau metrik KPI, WO Terbuka, Backlog, dan ketersediaan alat secara Real-Time.</p>
                   </div>
-                  <!-- Filter Bulan KPI -> Date Range (Weekly Support) -->
                   <div class="bg-white/10 p-3 md:p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden md:block shadow-inner w-full md:w-auto">
                       <label class="block text-[9px] font-black uppercase tracking-widest text-blue-200 mb-2"><i class="fas fa-filter mr-1"></i> Filter Periode KPI (Range)</label>
                       <div class="flex gap-2 items-center">
@@ -238,14 +227,12 @@
 
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 ml-2 gap-3">
             <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
-            <!-- Mobile Date Range -->
             <div class="md:hidden flex gap-2 w-full">
                 <input type="date" id="kpiStartDateMobile" onchange="document.getElementById('kpiStartDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
                 <input type="date" id="kpiEndDateMobile" onchange="document.getElementById('kpiEndDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
             </div>
         </div>
 
-        <!-- KPI METRICS GRID -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
            <div class="kpi-card p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 flex flex-col relative overflow-hidden">
              <div class="flex justify-between items-start mb-3 md:mb-4 relative z-10">
@@ -281,7 +268,6 @@
            </div>
         </div>
 
-        <!-- NEW: PAPAN CATUR RFU vs BD (CARD KANBAN STYLE) -->
         <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
         <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
@@ -292,10 +278,8 @@
                 </div>
             </div>
             
-            <!-- Kanban Grid untuk Papan Catur -->
             <div id="detailBoardBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-                <!-- Di-render oleh JS -->
-            </div>
+                </div>
         </div>
 
         <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview (Inside Filter)</h3>
@@ -314,7 +298,6 @@
            </div>
         </div>
 
-        <!-- Charts (GRID 4 KOLOM) -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Distribusi Status WO</h3>
@@ -325,25 +308,20 @@
                 <div class="relative h-48 md:h-64 w-full flex justify-center"><canvas id="serviceChart"></canvas></div>
             </div>
             
-            <!-- REVISED CHART: Top 5 Breakdown (DOM List 1: Frekuensi) -->
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Frekuensi)</h3>
                 <div id="topEquipFreqList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
-                    <!-- Injected via JS -->
-                </div>
+                    </div>
             </div>
             
-            <!-- REVISED CHART: Top 5 Breakdown (DOM List 2: Hours/Downtime) -->
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Hours)</h3>
                 <div id="topEquipHoursList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
-                    <!-- Injected via JS -->
-                </div>
+                    </div>
             </div>
         </div>
       </section>
 
-      <!-- PAGE: LAPORAN AKTIFITAS (NEW) -->
       <section id="page-aktifitas" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
@@ -366,12 +344,10 @@
                 </select>
             </div>
             
-            <!-- MULTI-SELECT MECHANICS (GRID CHECKBOX) -->
             <div class="space-y-2 md:col-span-4">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Pilih Mekanik / Team (Bisa Lebih Dari 1)</label>
                 <div id="act_mekanik_container" class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-xl p-4 max-h-48 overflow-y-auto shadow-sm">
-                    <!-- Checkboxes rendered via JS -->
-                </div>
+                    </div>
             </div>
             
             <div class="space-y-2 md:col-span-4">
@@ -411,7 +387,6 @@
         </div>
       </section>
 
-      <!-- PAGE: BACKLOG MANAGEMENT -->
       <section id="page-backlog" class="page pb-12">
         <div class="max-w-6xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
@@ -444,7 +419,6 @@
             </div>
           </form>
 
-          <!-- Backlog Table -->
           <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -468,7 +442,6 @@
         </div>
       </section>
 
-      <!-- PAGE: INPUT DAILY HM -->
       <section id="page-daily-hm" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-6 border-b pb-6">
@@ -500,7 +473,6 @@
             </div>
           </form>
 
-          <!-- Daily HM Table / History view -->
           <div class="mt-8 md:mt-12">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 border-t pt-6 md:pt-8 border-slate-200">
               <h3 class="text-base md:text-lg font-black text-theme-main uppercase tracking-widest"><i class="fas fa-history mr-2"></i> Riwayat Input HM</h3>
@@ -536,7 +508,6 @@
         </div>
       </section>
 
-      <!-- PAGE: MASTER PLAN ALAT & SERVICE -->
       <section id="page-master-plan" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-6 gap-4">
@@ -569,7 +540,6 @@
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Target PA (%)</label>
                 <input type="number" step="0.1" id="m_plan_pa" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Contoh: 85" required value="85">
             </div>
-            <!-- NEW FIELDS: Service History -->
             <div class="space-y-2 md:col-span-2">
                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tgl Service Terakhir</label>
                 <input type="date" id="m_plan_last_date" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" required>
@@ -584,7 +554,6 @@
             </div>
           </form>
           
-          <!-- Plan Alat Filters -->
           <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -616,7 +585,6 @@
         </div>
       </section>
 
-      <!-- PAGE: MASTER EQUIP -->
       <section id="page-master-equip" class="page pb-12">
         <div class="max-w-4xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
@@ -659,7 +627,6 @@
         </div>
       </section>
 
-      <!-- PAGE: MASTER PARTS -->
       <section id="page-master-parts" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
@@ -698,7 +665,7 @@
           <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
             <table class="w-full text-left text-sm min-w-[600px]">
               <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
-                <tr><th class="p-4 md:p-6 w-1/4">PART NO</th><th class="p-4 md:p-6 w-1/2">DESCRIPTION</th><th class="p-4 md:p-6 w-1/4">UOM</th></tr>
+                <tr><th class="p-4 md:p-6 w-1/4">PART NO</th><th class="p-4 md:p-6 w-1/2">DESCRIPTION</th><th class="p-4 md:p-6 w-1/4">UOM</th><th class="p-4 md:p-6 text-right">AKSI</th></tr>
               </thead>
               <tbody id="masterPartsBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
             </table>
@@ -706,7 +673,6 @@
         </div>
       </section>
 
-      <!-- PAGE: MASTER COMPONENT (NEW) -->
       <section id="page-master-comp" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
@@ -740,7 +706,6 @@
         </div>
       </section>
 
-      <!-- PAGE: MANAGE USERS -->
       <section id="page-manage-users" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-8 border-b pb-6">
@@ -781,7 +746,6 @@
         </div>
       </section>
 
-      <!-- PAGE: PENGATURAN TEMA -->
       <section id="page-pengaturan" class="page pb-12">
         <div class="max-w-3xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
             <h2 class="text-xl md:text-2xl font-black mb-2 text-theme-main uppercase tracking-tighter"><i class="fas fa-paint-roller mr-3"></i> Konfigurasi Sistem</h2>
@@ -813,26 +777,31 @@
         </div>
       </section>
 
-      <!-- PAGE: FORM WO -->
       <section id="page-buat-wo" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-10 border-b pb-6">
+          <div class="flex justify-between items-center mb-6 border-b pb-6">
             <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-file-contract mr-3"></i> Work Order Form</h2>
             <div id="wo_status_display" class="px-4 py-2 bg-theme-main/10 text-theme-main rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest border border-theme-main/20">STATUS: NEW</div>
           </div>
           
-          <form id="woForm" class="space-y-6 md:space-y-8" onsubmit="handleSaveWO(event)">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              <div class="sm:col-span-2 md:col-span-1">
-                <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">WO Number</label>
-                <div class="flex gap-2">
-                  <input type="text" id="no_wo" class="flex-1 px-4 py-3 md:py-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm" required placeholder="Ex: 12-0797">
-                  <button type="button" onclick="tarikDataWO()" class="px-4 md:px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90"><i class="fas fa-search"></i></button>
-                </div>
+          <div class="bg-blue-50/50 p-4 md:p-6 rounded-2xl border border-blue-100 mb-8 flex flex-col md:flex-row items-end md:items-center gap-4">
+              <div class="w-full md:w-1/2">
+                  <label class="block text-[10px] font-black text-blue-800 mb-2 uppercase tracking-widest"><i class="fas fa-search mr-1"></i> Tarik / Update Data WO Lama</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="no_wo" class="flex-1 px-4 py-3 bg-white border border-blue-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" required placeholder="Ketik No WO (Ex: 12-0797)">
+                    <button type="button" onclick="tarikDataWO()" class="px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90 font-black text-[11px] uppercase tracking-widest flex items-center justify-center whitespace-nowrap"><i class="fas fa-cloud-download-alt mr-2"></i> Tarik Data</button>
+                  </div>
               </div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent text-sm" placeholder="Kode Unit" required></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm" readonly></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm" readonly></div>
+              <div class="w-full md:w-1/2 text-[10px] md:text-xs font-bold text-blue-600/70 border-l-0 md:border-l-2 border-blue-200 pl-0 md:pl-4">
+                  * Masukkan Nomor WO lalu klik tombol tarik data untuk memuat form secara otomatis. Biarkan kosong jika ingin membuat WO baru.
+              </div>
+          </div>
+          
+          <form id="woForm" class="space-y-6 md:space-y-8" onsubmit="handleSaveWO(event)">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" placeholder="Kode Unit" required></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm shadow-sm" readonly></div>
+              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm shadow-sm" readonly></div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
@@ -916,7 +885,38 @@
         </div>
       </section>
 
-      <!-- PAGE: LIST WO / MONITORING SERVICE -->
+      <script>
+        // NEW FUNCTION: ADD PART TO WO FROM MASTER PARTS PAGE
+        window.addPartToWO = function(partNo, partDesc, partUom) {
+            navigate('buat-wo');
+            const tbody = document.getElementById('partTableBody');
+            if(!tbody) return;
+
+            // Cari baris kosong pertama
+            let emptyRow = null;
+            const rows = tbody.querySelectorAll('tr');
+            if(rows.length > 0) {
+                const firstNo = rows[0].querySelector('.part-no').value;
+                if(firstNo === '') emptyRow = rows[0];
+            }
+
+            let tr = emptyRow;
+            if(!tr) {
+                addPartRow();
+                tr = tbody.lastElementChild;
+            }
+            
+            tr.querySelector('.part-no').value = partNo;
+            tr.querySelector('.part-desc').value = partDesc;
+            tr.querySelector('.part-qty').value = 1;
+            tr.querySelector('.part-uom').value = partUom;
+            
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Part ditambahkan ke Form WO'
+            });
+        };
+      </script>
+
       <section id="page-list-wo" class="page pb-12">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
           <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-laptop-medical mr-3"></i> Service Monitoring</h2>
@@ -925,7 +925,6 @@
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                 <input type="text" id="filterMonitoring" onkeyup="resetPagination('monitoring'); renderWOTable()" class="w-full pl-12 pr-5 py-3 border border-slate-200 rounded-xl md:rounded-2xl outline-none focus:ring-2 focus:ring-theme-accent font-bold text-xs md:text-sm shadow-sm" placeholder="Cari WO / Unit...">
              </div>
-             <!-- ADDED STATUS FILTER -->
              <select id="filterStatusMonitoring" onchange="resetPagination('monitoring'); renderWOTable()" class="w-full md:w-auto px-4 py-3 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-slate-600 shadow-sm outline-none focus:ring-2 focus:ring-theme-accent bg-white cursor-pointer">
                  <option value="ALL">Semua Status</option>
                  <option value="OPEN">OPEN</option>
@@ -970,17 +969,13 @@
         </div>
       </section>
 
-      <!-- DATALISTS -->
       <datalist id="listEquip"></datalist>
       <datalist id="listParts"></datalist>
 
-      </div> <!-- End of Max-width Wrapper -->
-    </main>
+      </div> </main>
   </div>
 
-  <!-- PRINT AREA (STRICT 1 PAGE A4) -->
   <div id="printArea" class="hidden">
-     <!-- KOP DOKUMEN -->
      <div class="flex border-black">
         <div class="w-1/4 p-4 border-r border-black flex items-center justify-center font-black print-header-title company-display-name">BSS</div>
         <div class="w-1/2 p-4 border-r border-black flex items-center justify-center font-black text-xl uppercase tracking-[0.4em]">Work Order</div>
@@ -992,7 +987,6 @@
         </div>
      </div>
      
-     <!-- DETAIL WO -->
      <div class="grid grid-cols-4 border-x border-b border-black uppercase font-black">
         <div class="p-1 border-r border-black bg-gray-pdf print-label font-bold">Equip No</div><div class="p-1 border-r border-black print-value font-black" id="prn-equip">-</div>
         <div class="p-1 border-r border-black bg-gray-pdf print-label font-bold">Work Order No.</div><div class="p-1 print-value font-black" id="prn-wo">-</div>
@@ -1020,7 +1014,6 @@
         <div class="p-1 min-h-fail print-value font-black px-3" id="prn-failure">-</div>
      </div>
 
-     <!-- PARTS TABLE PRINT -->
      <div class="border-x border-b border-black">
         <table class="w-full text-left border-collapse" style="table-layout: fixed;">
           <thead>
@@ -1032,13 +1025,11 @@
         </table>
      </div>
 
-     <!-- DATE STAMP & TANDA TANGAN (NEW FORMAT) -->
      <div class="flex justify-end w-full border-x border-black bg-white px-4 pt-2 pb-1 font-black text-[9pt]">
         <span id="prn-print-date">Tengkapak &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -</span>
      </div>
      
      <div class="grid grid-cols-3 text-center border-x border-b border-black uppercase font-black text-[8.5pt] pt-2 pb-4">
-        <!-- R1 -->
         <div class="flex flex-col justify-between items-center h-[55pt]">
             <span>DI BUAT OLEH</span>
             <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
@@ -1057,9 +1048,7 @@
                 <span>[</span><span id="prn-sign-spv" class="tracking-widest">SPV PLANT</span><span>]</span>
             </div>
         </div>
-        <!-- Spacer Antar Baris -->
         <div class="col-span-3 h-8"></div>
-        <!-- R2 -->
         <div class="flex flex-col justify-between items-center h-[55pt]">
             <span>DI KETAHUI OLEH</span>
             <div class="flex justify-between w-10/12 border-b-2 border-dotted border-black px-1">
@@ -1081,7 +1070,6 @@
      </div>
   </div>
 
-  <!-- COPYRIGHT ATURAN WAJIB -->
   <div class="no-print" style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
     develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
   </div>
@@ -1090,6 +1078,38 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   
   <script>
+    // ==========================================
+    // PROTOKOL MOCKING API & PREVIEW MODE
+    // ==========================================
+    let isPreviewMode = false;
+    
+    if (typeof google === 'undefined') {
+        isPreviewMode = true;
+        console.warn("GAS Environment tidak terdeteksi. Sistem berjalan dalam MODE PREVIEW / MOCK API.");
+        
+        const badge = document.createElement('div');
+        badge.innerHTML = '<div style="position:fixed; bottom:15px; left:15px; background-color:#ef4444; color:white; padding:8px 12px; border-radius:8px; font-weight:900; z-index:9999; font-size:11px; animation: float 2s infinite ease-in-out; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"><i class="fas fa-plug-circle-xmark mr-2"></i> OFFLINE PREVIEW MODE</div>';
+        document.body.appendChild(badge);
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("Fatal Error (Preview Mode):", message, "at line:", lineno);
+            setTimeout(() => {
+                console.warn("Auto-Reloading to reset state...");
+                location.reload();
+            }, 1500);
+        };
+
+        window.mockDB = {
+            usersData: [
+                {username: 'planner', password: '123', nama: 'Mock Planner', role: 'SPV Planner'},
+                {username: 'mekanik', password: '123', nama: 'Mock Mekanik', role: 'Mekanik'}
+            ],
+            equip: [{equip_no: 'EX-01', brand: 'KOMATSU', unit_type: 'PC200-8'}],
+            parts: [{part_number: '101-PN', description: 'O-RING MOCK', uom: 'PC'}],
+            planAlat: [], dailyHM: [], components: [], mekanikList: [{nama_mekanik: 'Mock Mekanik'}], pelaporList: [{nama_pelapor:'Operator A'}], activities: [], wo: [], backlog: []
+        };
+    }
+
     // ==========================================
     // 1. FIREBASE CONFIGURATION
     // ==========================================
@@ -1109,11 +1129,27 @@
     const db = firebase.database(); 
 
     // ==========================================
-    // 2. GOOGLE APPS SCRIPT API
+    // 2. GOOGLE APPS SCRIPT API (HYBRID PROXY)
     // ==========================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
 
     async function fetchGAS(actionName, payloadData = {}) {
+      if (isPreviewMode) {
+          return new Promise((resolve) => {
+              setTimeout(() => {
+                  console.log(`[Mock API] Action: ${actionName}`, payloadData);
+                  if (actionName === 'login') {
+                      const user = window.mockDB.usersData.find(u => u.username === payloadData.username);
+                      resolve(user ? { success: true, user: user } : { success: false, message: 'Mock: Username salah' });
+                  } else if (actionName === 'getOptimizedData') {
+                      resolve({ success: true, ...window.mockDB });
+                  } else {
+                      resolve({ success: true, message: `Mock Success: ${actionName}` });
+                  }
+              }, 500);
+          });
+      }
+
       try {
         const response = await fetch(GAS_API_URL, {
           method: "POST",
@@ -1295,7 +1331,7 @@
     }
 
     function initFirebaseListeners() {
-      if(isFirebaseListening) return; 
+      if(isFirebaseListening || isPreviewMode) return; 
       isFirebaseListening = true;
 
       db.ref('work_orders').on('value', (snapshot) => {
@@ -1380,7 +1416,7 @@
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
     // ==========================================
-    // 7. DASHBOARD & KPI LOGIC 
+    // 7. DASHBOARD & KPI LOGIC (STRICT SHIFT BOUNDARIES)
     // ==========================================
     function getActualHM(equipNo) {
         if(!equipNo) return 0;
@@ -1395,8 +1431,15 @@
       
       if(!startDateStr || !endDateStr) { startDateStr = getFirstDateOfMonth(); endDateStr = getShiftDate(); }
 
-      const filterStart = new Date(startDateStr + 'T00:00:00');
-      const filterEnd = new Date(endDateStr + 'T23:59:59');
+      const filterStart = new Date(startDateStr + 'T07:00:00');
+      const edParts = endDateStr.split('-');
+      const edObj = new Date(edParts[0], edParts[1]-1, edParts[2]);
+      edObj.setDate(edObj.getDate() + 1);
+      const nextY = edObj.getFullYear();
+      const nextM = String(edObj.getMonth() + 1).padStart(2, '0');
+      const nextD = String(edObj.getDate()).padStart(2, '0');
+      const filterEnd = new Date(`${nextY}-${nextM}-${nextD}T06:59:59`);
+
       const now = new Date();
       const actualEndBoundary = new Date(Math.min(filterEnd.getTime(), now.getTime()));
       const msPerDay = 1000 * 60 * 60 * 24;
@@ -1451,35 +1494,33 @@
       }
 
       let downtimeUnsch = 0; let downtimeSch = 0; let countUnsch = 0; let countSch = 0;
-      let unitDowntime = {}; // Object untuk mentracking Downtime per Unit (Hours)
+      let unitDowntime = {}; 
 
       kpiData.forEach(wo => {
           try {
               if(!wo.tgl_rusak) return;
               const start = new Date(`${wo.tgl_rusak}T${wo.jam_rusak || '00:00'}`);
               if(isNaN(start.getTime())) return;
+              
               let end;
               if (wo.status === 'CLOSED' && wo.tgl_selesai) end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
               else end = actualEndBoundary;
 
               if (!isNaN(end.getTime()) && end > start) {
                   const actualStart = new Date(Math.max(start.getTime(), filterStart.getTime()));
-                  const actualEnd = new Date(Math.min(end.getTime(), filterEnd.getTime(), now.getTime()));
+                  const actualEnd = new Date(Math.min(end.getTime(), actualEndBoundary.getTime()));
+                  
                   if (actualStart < actualEnd) {
                       const diffHours = (actualEnd - actualStart) / (1000 * 60 * 60);
                       
-                      // General KPI Kalkulasi
                       if((wo.sch_unsch || '').toUpperCase() === 'UNSCH') { 
                           downtimeUnsch += diffHours; if(start >= filterStart && start <= filterEnd) countUnsch++; 
                       } else { 
                           downtimeSch += diffHours; if(start >= filterStart && start <= filterEnd) countSch++; 
                       }
                       
-                      // Akumulasi Jam Downtime per Unit untuk Top 5 Hours (Khusus yg ada di Plan Alat)
                       const eq = wo.equip_no ? wo.equip_no.toUpperCase() : '';
-                      if (eq && validEquipSet.has(eq)) {
-                          unitDowntime[eq] = (unitDowntime[eq] || 0) + diffHours;
-                      }
+                      unitDowntime[eq] = (unitDowntime[eq] || 0) + diffHours;
                   }
               }
           } catch(e) {}
@@ -1502,9 +1543,10 @@
       const openBacklogCount = (backlogCache || []).filter(b => b.status === 'OPEN').length;
       if(document.getElementById('kpi-pending-backlog')) document.getElementById('kpi-pending-backlog').innerText = openBacklogCount;
 
-      const filteredWOForCounts = data.filter(d => {
-          const dateVal = d.tgl_rusak || d.tgl_input;
-          return dateVal >= startDateStr && dateVal <= endDateStr;
+      const filteredWOForCounts = kpiData.filter(d => {
+          if(!d.tgl_rusak) return false;
+          const start = new Date(`${d.tgl_rusak}T${d.jam_rusak || '00:00'}`);
+          return start >= filterStart && start <= filterEnd;
       });
 
       const totalWO = filteredWOForCounts.length;
@@ -1530,7 +1572,7 @@
           serviceChartInstance = new Chart(ctxService.getContext('2d'), { type: 'pie', data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } } });
       }
 
-      // NEW: TOP 5 BREAKDOWN DOM PROGRESS BAR (2 TYPES: FREQ & HOURS)
+      // TOP 5 BREAKDOWN DOM PROGRESS BAR (2 TYPES: FREQ & HOURS)
       const topEquipFreqContainer = document.getElementById('topEquipFreqList');
       const topEquipHoursContainer = document.getElementById('topEquipHoursList');
       
@@ -1538,12 +1580,8 @@
           let equipFreq = {};
           
           filteredWOForCounts.forEach(d => { 
-              if(d.equip_no) { 
-                  const eq = d.equip_no.toUpperCase();
-                  if(validEquipSet.has(eq)) { // Constraint: Hanya yang terdaftar di Plan Alat
-                      equipFreq[eq] = (equipFreq[eq] || 0) + 1; 
-                  }
-              } 
+              const eq = d.equip_no.toUpperCase();
+              equipFreq[eq] = (equipFreq[eq] || 0) + 1; 
           });
 
           // 1. Render By Frequency
@@ -1596,11 +1634,20 @@
               let model = p.model ? p.model.toUpperCase() : 'OTHERS';
               if(!unitNo) return;
               if (!boardData[model]) boardData[model] = { rfu: [], bd: [] };
-              const wosAsOfEnd = data.filter(d => d.equip_no && d.equip_no.toUpperCase() === unitNo && d.tgl_rusak && d.tgl_rusak <= endDateStr);
+              
+              const wosAsOfEnd = kpiData.filter(d => {
+                  if(d.equip_no.toUpperCase() !== unitNo || !d.tgl_rusak) return false;
+                  const start = new Date(`${d.tgl_rusak}T${d.jam_rusak || '00:00'}`);
+                  return start <= filterEnd;
+              });
+
               let isBD = false;
               for(let w of wosAsOfEnd) {
-                  if (w.status !== 'CLOSED' || !w.tgl_selesai || w.tgl_selesai > endDateStr) {
+                  if (w.status !== 'CLOSED' || !w.tgl_selesai) {
                       isBD = true; break;
+                  } else {
+                      const end = new Date(`${w.tgl_selesai}T${w.jam_selesai || '00:00'}`);
+                      if (end > filterEnd) { isBD = true; break; }
                   }
               }
               if (isBD) { boardData[model].bd.push(unitNo); } else { boardData[model].rfu.push(unitNo); }
@@ -1652,8 +1699,20 @@
       if(currentPtPage > totalPages) currentPtPage = totalPages; if(currentPtPage < 1) currentPtPage = 1;
       const paged = filteredP.slice((currentPtPage - 1) * ITEMS_PER_PAGE, currentPtPage * ITEMS_PER_PAGE);
       if(document.getElementById('partPageInfo')) document.getElementById('partPageInfo').innerText = `${currentPtPage} / ${totalPages}`;
-      if(paged.length === 0) { pBody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
-      pBody.innerHTML = paged.map(pt => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black uppercase text-slate-800">${pt.part_number}</td><td class="p-4">${pt.description}</td><td class="p-4 font-black text-theme-accent uppercase">${pt.uom}</td></tr>`).join('');
+      if(paged.length === 0) { pBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold">Data kosong.</td></tr>'; return; }
+      pBody.innerHTML = paged.map(pt => {
+          const safeDesc = (pt.description || '').replace(/'/g, "\\'");
+          return `<tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-black uppercase text-slate-800">${pt.part_number}</td>
+                    <td class="p-4">${pt.description}</td>
+                    <td class="p-4 font-black text-theme-accent uppercase">${pt.uom}</td>
+                    <td class="p-4 text-right">
+                        <button type="button" onclick="addPartToWO('${pt.part_number}', '${safeDesc}', '${pt.uom}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors shadow-sm">
+                            <i class="fas fa-plus mr-1"></i> Ke WO
+                        </button>
+                    </td>
+                  </tr>`;
+      }).join('');
     }
 
     function renderMasterCompTable() {
@@ -2100,5 +2159,9 @@
        }
     }
   </script>
+  
+  <div style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
+    develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
+  </div>
 </body>
 </html>
