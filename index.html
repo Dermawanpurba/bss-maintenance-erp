@@ -854,12 +854,12 @@
               <div class="w-full md:w-1/2">
                   <label class="block text-[10px] font-black text-blue-800 mb-2 uppercase tracking-widest"><i class="fas fa-search mr-1"></i> Tarik / Update Data WO Lama</label>
                   <div class="flex gap-2">
-                    <input type="text" id="no_wo" class="flex-1 px-4 py-3 bg-white border border-blue-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" required placeholder="Ketik No WO (Ex: 12-0797)">
+                    <input type="text" id="no_wo" class="flex-1 px-4 py-3 bg-white border border-blue-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" placeholder="Ketik No WO (Ex: 12-0797)">
                     <button type="button" onclick="tarikDataWO()" class="px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90 font-black text-[11px] uppercase tracking-widest flex items-center justify-center whitespace-nowrap"><i class="fas fa-cloud-download-alt mr-2"></i> Tarik Data</button>
                   </div>
               </div>
               <div class="w-full md:w-1/2 text-[10px] md:text-xs font-bold text-blue-600/70 border-l-0 md:border-l-2 border-blue-200 pl-0 md:pl-4">
-                  * Masukkan Nomor WO lalu klik tombol tarik data untuk memuat form secara otomatis. Biarkan kosong jika ingin membuat WO baru.
+                  * Masukkan Nomor WO lalu klik tombol tarik data untuk memuat form secara otomatis. <b class="text-blue-800">Biarkan kosong jika ingin membuat WO baru (Sistem akan membuat ID Otomatis)</b>.
               </div>
           </div>
           
@@ -1063,12 +1063,35 @@
   
   <script>
     // ==========================================
-    // PROTOKOL MOCKING API & PREVIEW MODE
+    // 1. FIREBASE CONFIGURATION & AUTH
     // ==========================================
-    const ENABLE_MOCK_MODE = false; 
+    const firebaseConfig = {
+      apiKey: "AIzaSyAyfvwSnamOx06PI9CehFjifKg00uBEKoE",
+      authDomain: "webapps-73d07.firebaseapp.com",
+      databaseURL: "https://webapps-73d07-default-rtdb.firebaseio.com",
+      projectId: "webapps-73d07",
+      storageBucket: "webapps-73d07.appspot.com",
+      messagingSenderId: "649461053263",
+      appId: "1:649461053263:web:3d53d8628245b189c8b73a"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database(); 
+    
+    // Otomatis login anonim (Jika diaktifkan di Firebase Console)
+    firebase.auth().signInAnonymously().catch((error) => {
+        console.warn("Firebase Anonymous Auth Disabled or Failed:", error.message);
+    });
+
+    // ==========================================
+    // 2. PROTOKOL MOCKING API & PREVIEW MODE (SOP #7)
+    // ==========================================
     let isPreviewMode = false;
     
-    if (typeof google === 'undefined' && ENABLE_MOCK_MODE) {
+    // Simulasi Proxy Chaining jika environment GAS (google) tidak ditemukan
+    if (typeof google === 'undefined') {
         isPreviewMode = true;
         console.warn("Sistem berjalan dalam MODE PREVIEW / MOCK API (Offline).");
         
@@ -1093,69 +1116,58 @@
             parts: [{part_number: '101-PN', description: 'O-RING MOCK', uom: 'PC'}],
             planAlat: [], dailyHM: [], components: [], mekanikList: [{nama_mekanik: 'Mock Mekanik'}], pelaporList: [{nama_pelapor:'Operator A'}], activities: [], wo: [], backlog: []
         };
+
+        // Arsitektur Proxy Object Chaining
+        window.google = {
+            script: {
+                run: {
+                    withSuccessHandler: function(onSuccess) {
+                        this.successCallback = onSuccess;
+                        return this;
+                    },
+                    withFailureHandler: function(onFailure) {
+                        this.failureCallback = onFailure;
+                        return this;
+                    },
+                    router: function(actionName, payloadData) {
+                        setTimeout(() => {
+                            console.log(`[Mock API Proxy] Action: ${actionName}`, payloadData);
+                            let result = { success: true, message: `Mock Success: ${actionName}` };
+                            if (actionName === 'login') {
+                                const user = window.mockDB.usersData.find(u => u.username === payloadData.username);
+                                result = user ? { success: true, user: user } : { success: false, message: 'Mock: Username salah' };
+                            } else if (actionName === 'getOptimizedData') {
+                                result = { success: true, ...window.mockDB };
+                            }
+                            // Mengembalikan data sebagai string JSON persis seperti backend GAS sesungguhnya
+                            if (this.successCallback) this.successCallback(JSON.stringify(result));
+                        }, 500);
+                    }
+                }
+            }
+        };
     }
 
     // ==========================================
-    // 1. FIREBASE CONFIGURATION & AUTH
+    // 3. GOOGLE APPS SCRIPT API (HYBRID PROXY CALLER)
+    // Perbaikan Bug: Membungkus google.script.run yang bebas CORS, bukan fetch!
     // ==========================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyAyfvwSnamOx06PI9CehFjifKg00uBEKoE",
-      authDomain: "webapps-73d07.firebaseapp.com",
-      databaseURL: "https://webapps-73d07-default-rtdb.firebaseio.com",
-      projectId: "webapps-73d07",
-      storageBucket: "webapps-73d07.appspot.com",
-      messagingSenderId: "649461053263",
-      appId: "1:649461053263:web:3d53d8628245b189c8b73a"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database(); 
-    
-    // Otomatis login anonim (Jika diaktifkan di Firebase Console)
-    firebase.auth().signInAnonymously().catch((error) => {
-        console.warn("Firebase Anonymous Auth Disabled or Failed:", error.message);
-    });
-
-    // ==========================================
-    // 2. GOOGLE APPS SCRIPT API (HYBRID PROXY)
-    // ==========================================
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
-
     async function fetchGAS(actionName, payloadData = {}) {
-      if (isPreviewMode) {
-          return new Promise((resolve) => {
-              setTimeout(() => {
-                  console.log(`[Mock API] Action: ${actionName}`, payloadData);
-                  if (actionName === 'login') {
-                      const user = window.mockDB.usersData.find(u => u.username === payloadData.username);
-                      resolve(user ? { success: true, user: user } : { success: false, message: 'Mock: Username salah' });
-                  } else if (actionName === 'getOptimizedData') {
-                      resolve({ success: true, ...window.mockDB });
-                  } else {
-                      resolve({ success: true, message: `Mock Success: ${actionName}` });
+      return new Promise((resolve, reject) => {
+          google.script.run
+              .withSuccessHandler(res => {
+                  try { 
+                      resolve(JSON.parse(res)); 
+                  } catch(e) { 
+                      resolve(res); 
                   }
-              }, 500);
-          });
-      }
-
-      try {
-        const response = await fetch(GAS_API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: actionName, data: payloadData })
-        });
-        const textRes = await response.text();
-        try {
-            return JSON.parse(textRes);
-        } catch (e) {
-            Swal.fire('Akses Ditolak', 'Google Script meminta login atau URL salah.', 'error');
-            throw new Error("Format JSON gagal");
-        }
-      } catch (error) {
-        Swal.fire('Koneksi Terputus', 'Gagal menghubungi server GAS.', 'error');
-        throw error;
-      }
+              })
+              .withFailureHandler(err => {
+                  Swal.fire('Koneksi Terputus', 'Gagal menghubungi server GAS.', 'error');
+                  reject(err);
+              })
+              .router(actionName, payloadData); // Merujuk pada fungsi "router" di Code.gs
+      });
     }
 
     // ==========================================
@@ -1186,7 +1198,7 @@
     }
 
     // ==========================================
-    // 3. GLOBAL VARIABLES & STATE
+    // GLOBAL VARIABLES & STATE
     // ==========================================
     let currentUser = null;
     let woDataCache = [];
@@ -1201,7 +1213,7 @@
     let isFirebaseListening = false; 
 
     // ==========================================
-    // 4. INITIALIZATION & AUTH
+    // INITIALIZATION & AUTH
     // ==========================================
     window.onload = () => {
       loadSettings();
@@ -1290,7 +1302,7 @@
     function handleLogout() { localStorage.removeItem('bss_session_v18'); location.reload(); }
 
     // ==========================================
-    // 5. HYBRID DATA SYNC
+    // HYBRID DATA SYNC
     // ==========================================
     function globalDataSync() {
       startLoading("OPTIMIZED SYNC...");
@@ -1381,7 +1393,7 @@
     }
 
     // ==========================================
-    // 6. UI & NAVIGATION FUNCTIONS
+    // UI & NAVIGATION FUNCTIONS
     // ==========================================
     function navigate(id, preventReset = false) {
       if(window.innerWidth < 768) { 
@@ -1420,7 +1432,7 @@
     function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
     // ==========================================
-    // 7. DASHBOARD & KPI LOGIC (STRICT SHIFT BOUNDARIES)
+    // DASHBOARD & KPI LOGIC (STRICT SHIFT BOUNDARIES)
     // ==========================================
     function getActualHM(equipNo) {
         if(!equipNo) return 0;
@@ -1429,7 +1441,6 @@
         return Math.max(...hms.map(h => parseFloat(h.hm_akhir) || 0));
     }
 
-    // FUNCTION FOR KPI AUDIT MODAL (WITH DOWNLOAD CSV)
     window.showKPIAudit = function(type) {
         if (!window.kpiAuditRawData) return;
         
@@ -1501,7 +1512,6 @@
       let totalPlanHours = 0; let targetPAWeight = 0; 
       let countAman = 0, countMendekati = 0, countOverdue = 0, countWaiting = 0;
       
-      // Initialize Raw Data Object for Audit Download
       window.kpiAuditRawData = { pa: [], wo: [], summary: {} };
 
       if (masterCache.planAlat && masterCache.planAlat.length > 0) {
@@ -1587,7 +1597,6 @@
                       const eq = wo.equip_no ? wo.equip_no.toUpperCase() : '';
                       unitDowntime[eq] = (unitDowntime[eq] || 0) + diffHours;
 
-                      // Save to Raw Data for Audit CSV
                       window.kpiAuditRawData.wo.push({
                           WO_No: wo.no_wo,
                           Equip_No: eq,
@@ -1602,11 +1611,12 @@
           } catch(e) {}
       });
 
-      // Update PA Array with precise downtime
       if(window.kpiAuditRawData && window.kpiAuditRawData.pa) {
           window.kpiAuditRawData.pa.forEach(item => {
               item.Downtime_Hours = (unitDowntime[item.Equip_No] || 0).toFixed(2);
-              item.Actual_PA = (((item.Plan_Hours - item.Downtime_Hours) / item.Plan_Hours) * 100).toFixed(2) + '%';
+              let tempPa = (((item.Plan_Hours - item.Downtime_Hours) / item.Plan_Hours) * 100).toFixed(2);
+              if (isNaN(tempPa) || !isFinite(tempPa)) tempPa = 100;
+              item.Actual_PA = tempPa + '%';
           });
       }
 
@@ -1620,7 +1630,6 @@
       if(totalPlanHours > 0) pa = (((totalPlanHours - totalDowntime) / totalPlanHours) * 100).toFixed(1);
       if(pa > 100) pa = 100; if(pa < 0 || isNaN(pa)) pa = 0;
 
-      // Save KPI Summary values for Audit Modal display
       window.kpiAuditRawData.summary = {
          pa: { planHours: totalPlanHours.toFixed(1), downtime: totalDowntime.toFixed(1) },
          mttr: { downtime: totalDowntime.toFixed(1), breakdowns: totalBreakdowns },
@@ -1663,7 +1672,6 @@
           serviceChartInstance = new Chart(ctxService.getContext('2d'), { type: 'pie', data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } } });
       }
 
-      // TOP 5 BREAKDOWN DOM PROGRESS BAR (2 TYPES: FREQ & HOURS)
       const topEquipFreqContainer = document.getElementById('topEquipFreqList');
       const topEquipHoursContainer = document.getElementById('topEquipHoursList');
       
@@ -1675,7 +1683,6 @@
               equipFreq[eq] = (equipFreq[eq] || 0) + 1; 
           });
 
-          // 1. Render By Frequency
           let sortedFreq = Object.entries(equipFreq).sort((a,b) => b[1] - a[1]).slice(0, 5);
           if(sortedFreq.length === 0) {
               topEquipFreqContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data breakdown</div>';
@@ -1695,7 +1702,6 @@
               }).join('');
           }
 
-          // 2. Render By Hours (Downtime Durasi)
           let sortedHours = Object.entries(unitDowntime).sort((a,b) => b[1] - a[1]).slice(0, 5);
           if(sortedHours.length === 0) {
               topEquipHoursContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data downtime</div>';
@@ -1716,7 +1722,6 @@
           }
       }
 
-      // 4. PAPAN CATUR RFU/BD (STATUS TERAKHIR BERDASARKAN "AS OF" END DATE)
       const detailBody = document.getElementById('detailBoardBody');
       if (masterCache.planAlat) {
           const boardData = {}; 
@@ -1760,7 +1765,7 @@
     }
 
     // ==========================================
-    // 8. RENDER TABLES
+    // RENDER TABLES
     // ==========================================
     function changeEqPage(dir) { currentEqPage += dir; renderMasterEquipTable(); }
     function changePtPage(dir) { currentPtPage += dir; renderMasterPartsTable(); }
@@ -1880,7 +1885,6 @@
       }).join('');
     }
 
-    // FIX: Render tabel aktifitas aman dari tanda petik (') yang dikirim oleh backend
     function renderActivityTable() {
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
@@ -1892,11 +1896,13 @@
         tbody.innerHTML = acts.map(a => {
             const safeJamMulai = (a.jam_mulai || '').replace(/'/g, '');
             const safeJamSelesai = (a.jam_selesai || '').replace(/'/g, '');
-            
+            let safeMekanik = String(a.mekanik || '');
+            if(safeMekanik.includes('[Ljava.lang.Object')) safeMekanik = '<span class="text-red-500 italic">Data Lama Error (Abaikan)</span>';
+
             return `<tr class="border-b hover:bg-slate-50">
                       <td class="p-4 font-bold text-slate-500 text-xs">${a.tanggal}</td>
                       <td class="p-4 font-black uppercase text-theme-accent">${a.no_wo}</td>
-                      <td class="p-4 font-bold text-slate-800"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs break-words">${a.mekanik}</span></td>
+                      <td class="p-4 font-bold text-slate-800"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs break-words">${safeMekanik}</span></td>
                       <td class="p-4 text-sm text-slate-600">${a.aktifitas}</td>
                       <td class="p-4 text-center font-mono text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block">${safeJamMulai} - ${safeJamSelesai}</td>
                     </tr>`;
@@ -1906,39 +1912,51 @@
     function renderWOTable() {
       const tbody = document.getElementById('woTableBody');
       if(!tbody) return;
-      const q = document.getElementById('filterMonitoring') ? document.getElementById('filterMonitoring').value.toLowerCase() : '';
-      const statusFilter = document.getElementById('filterStatusMonitoring') ? document.getElementById('filterStatusMonitoring').value : 'ALL';
 
-      const isPlanner = currentUser.role.toUpperCase().includes('PLANNER');
-      const isPlant = currentUser.role === 'Admin Plant';
-      
-      let filtered = (woDataCache || []).filter(i => {
-          const matchQ = String(i.no_wo||'').toLowerCase().includes(q) || String(i.equip_no||'').toLowerCase().includes(q);
-          const matchS = statusFilter === 'ALL' || (i.status || 'OPEN') === statusFilter;
-          return matchQ && matchS;
+      const q = (document.getElementById('filterMonitoring')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('filterStatusMonitoring')?.value || 'ALL';
+
+      let filtered = (woDataCache || []).filter(w => {
+          const matchQuery = String(w.no_wo||'').toLowerCase().includes(q) || String(w.equip_no||'').toLowerCase().includes(q);
+          const matchStatus = statusFilter === 'ALL' || w.status === statusFilter || (!w.status && statusFilter === 'OPEN');
+          return matchQuery && matchStatus;
       });
-      
+
       const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
-      if(currentMonPage > totalPages) currentMonPage = totalPages; if(currentMonPage < 1) currentMonPage = 1;
+      if(currentMonPage > totalPages) currentMonPage = totalPages; 
+      if(currentMonPage < 1) currentMonPage = 1;
+
       const paged = filtered.slice((currentMonPage - 1) * ITEMS_PER_PAGE, currentMonPage * ITEMS_PER_PAGE);
-      
+
       if(document.getElementById('monPageInfo')) document.getElementById('monPageInfo').innerText = `${currentMonPage} / ${totalPages}`;
-      if (paged.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">WO Tidak ditemukan.</td></tr>'; return; }
+
+      if (paged.length === 0) { 
+          tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">WO Tidak ditemukan.</td></tr>'; 
+          return; 
+      }
+
+      const userRole = currentUser ? (currentUser.role || '').toUpperCase() : '';
+      const isPlanner = userRole.includes('PLANNER');
+      const isPlant = userRole.includes('PLANT');
 
       tbody.innerHTML = paged.map(i => {
         const unitNo = (i.equip_no || '').toUpperCase();
-        let actualHM = getActualHM(unitNo); if(actualHM === 0) actualHM = i.hm_km || "N/A";
+        let actualHM = getActualHM(unitNo); 
+        if(actualHM === 0) actualHM = i.hm_km || "N/A";
 
         const pendingBacklogs = (backlogCache || []).filter(b => (b.equip_no || '').toUpperCase() === unitNo && b.status === 'OPEN');
         let backlogBadge = '';
         if(pendingBacklogs.length > 0) backlogBadge = `<div class="mt-2 inline-block px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-lg text-[9px] font-black cursor-pointer shadow-sm animate-pulse hover:bg-amber-200" onclick="navigate('backlog'); document.getElementById('filterBacklog').value='${unitNo}'; renderBacklogTable();"><i class="fas fa-exclamation-triangle mr-1"></i> ${pendingBacklogs.length} Pending!</div>`;
 
         const stCol = i.status === 'PROGRESS' ? "bg-amber-50 text-amber-600 border border-amber-200" : (i.status === 'CLOSED' ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : (i.status === 'WAITING PART' ? "bg-red-50 text-red-600 border border-red-200" : "bg-blue-50 text-blue-600 border border-blue-200"));
-        let actionButtons = `<button onclick="printWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white" title="Cetak WO"><i class="fas fa-print text-xs"></i></button>`;
-        if (isPlanner || isPlant) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl" title="Update Status"><i class="fas fa-tasks text-xs"></i></button>`;
-        if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl" title="Hapus WO"><i class="fas fa-trash text-xs"></i></button>`;
         
-        return `<tr class="hover:bg-slate-50 border-b"><td class="p-4 font-black text-slate-900 text-sm">${i.no_wo}</td><td class="p-4"><div class="font-black text-lg text-theme-accent uppercase">${unitNo}</div><div class="text-[10px] font-bold text-slate-500 mt-1 uppercase">HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>${backlogBadge}</td><td class="p-4 text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px]"><i class="far fa-clock"></i> ${i.jam_rusak || '-'}</span></td><td class="p-4 text-center"><span class="px-3 py-1.5 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td><td class="p-4 text-right flex justify-end space-x-1">${actionButtons}</td></tr>`;
+        let actionButtons = `<button onclick="printWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white" title="Cetak WO"><i class="fas fa-print text-xs"></i></button>`;
+        if (isPlanner || isPlant) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-sm" title="Update Status"><i class="fas fa-tasks text-xs"></i></button>`;
+        if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl" title="Hapus WO"><i class="fas fa-trash text-xs"></i></button>`;
+
+        const safeJamR = (i.jam_rusak || '-').replace(/'/g, '');
+
+        return `<tr class="hover:bg-slate-50 border-b"><td class="p-4 font-black text-slate-900 text-sm">${i.no_wo}</td><td class="p-4"><div class="font-black text-lg text-theme-accent uppercase">${unitNo}</div><div class="text-[10px] font-bold text-slate-500 mt-1 uppercase">HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>${backlogBadge}</td><td class="p-4 text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px]"><i class="far fa-clock"></i> ${safeJamR}</span></td><td class="p-4 text-center"><span class="px-3 py-1.5 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td><td class="p-4 text-right flex justify-end space-x-1">${actionButtons}</td></tr>`;
       }).join('');
     }
 
@@ -1975,7 +1993,7 @@
     }
 
     // ==========================================
-    // 9. FORMS & DATA SUBMISSION LOGIC
+    // FORMS & DATA SUBMISSION LOGIC
     // ==========================================
     function initTimeSelectors() {
       const hh = ['jam_rusak_hh', 'jam_selesai_hh'];
@@ -2132,7 +2150,6 @@
         }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error'); });
     }
 
-    // FUNGSI MIGRASI FIREBASE
     async function migrateToFirebase() {
         if(!db) return Swal.fire('Error', 'Sistem Firebase tidak diinisialisasi dengan benar.', 'error');
         
@@ -2226,12 +2243,46 @@
           }
        });
 
+       // PERBAIKAN BUG: Jika WO Baru (Kosong), kirim empty string
+       const noWoInput = document.getElementById('no_wo');
+       const noWoVal = noWoInput ? noWoInput.value.trim().toUpperCase() : '';
+
        const payload = {
-         no_wo: document.getElementById('no_wo').value.toUpperCase(), equip_no: document.getElementById('equip_no').value.toUpperCase(), brand: document.getElementById('brand').value, unit_type: document.getElementById('unit_type').value, hm_km: document.getElementById('hm_km').value, pm_service: document.getElementById('pm_service').value, major_comp: document.getElementById('major_comp').value, minor_comp: document.getElementById('minor_comp').value, sch_unsch: document.getElementById('sch_unsch').value, pelanggan: document.getElementById('equip_no').value, tgl_rusak: document.getElementById('tgl_rusak').value, jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value, tgl_selesai: document.getElementById('tgl_selesai').value, jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '', kendala: document.getElementById('issue').value, failure_reason: document.getElementById('failure_reason').value, parts: partsData, tech: document.getElementById('tech').value, reported_by: document.getElementById('reported_by').value
+         no_wo: noWoVal, 
+         equip_no: document.getElementById('equip_no').value.toUpperCase(), 
+         brand: document.getElementById('brand').value, 
+         unit_type: document.getElementById('unit_type').value, 
+         hm_km: document.getElementById('hm_km').value, 
+         pm_service: document.getElementById('pm_service').value, 
+         major_comp: document.getElementById('major_comp').value, 
+         minor_comp: document.getElementById('minor_comp').value, 
+         sch_unsch: document.getElementById('sch_unsch').value, 
+         pelanggan: document.getElementById('equip_no').value, 
+         tgl_rusak: document.getElementById('tgl_rusak').value, 
+         jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value, 
+         tgl_selesai: document.getElementById('tgl_selesai').value, 
+         jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '', 
+         kendala: document.getElementById('issue').value, 
+         failure_reason: document.getElementById('failure_reason').value, 
+         parts: partsData, 
+         tech: document.getElementById('tech').value, 
+         reported_by: document.getElementById('reported_by').value
        };
 
        startLoading("SAVING WO...");
-       fetchGAS("saveWorkOrder", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); globalDataSync(); navigate('list-wo'); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
+       fetchGAS("saveWorkOrder", payload).then(res => { 
+           endLoading(); 
+           if(res.success) { 
+               Swal.fire('Sukses', res.message, 'success'); 
+               globalDataSync(); 
+               navigate('list-wo'); 
+           } else { 
+               Swal.fire('Error', res.message, 'error'); 
+           } 
+       }).catch(err => { 
+           endLoading(); 
+           Swal.fire('Error', err.toString(), 'error');
+       });
     }
 
     function handleSaveDailyHM(e) {
@@ -2289,69 +2340,169 @@
     function handleSaveComponent(e) { e.preventDefault(); const p = [document.getElementById('m_comp_major').value.toUpperCase(), document.getElementById('m_comp_minor').value.toUpperCase()]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'component', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
     function handleSavePlan(e) { e.preventDefault(); const p = [document.getElementById('m_plan_equip').value.toUpperCase(), document.getElementById('m_plan_model').value.toUpperCase(), document.getElementById('m_plan_hours').value, document.getElementById('m_plan_pa').value, document.getElementById('m_plan_last_date').value, document.getElementById('m_plan_last_hm').value]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'plan', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
 
-    // FIX 2: UI MODAL UPDATE STATUS
+    window.toggleClosedFields = function(statusVal) {
+        const closedFields = document.getElementById('swal-closed-fields');
+        if (closedFields) {
+            if (statusVal === 'CLOSED' || statusVal === 'READY') {
+                closedFields.style.display = 'block';
+            } else {
+                closedFields.style.display = 'none';
+            }
+        }
+    };
+
     async function updateStatus(noWo) {
       const existingWO = woDataCache.find(w => w.no_wo === noWo) || {};
       const currTgl = existingWO.tgl_selesai || getShiftDate();
       const currJam = existingWO.jam_selesai ? existingWO.jam_selesai.replace(/'/g, '') : '12:00';
+      const defProblem = existingWO.kendala || '';
+      
+      let mekOptions = '<option value="">Pilih Mekanik</option>';
+      if(masterCache.mekanikList) {
+          masterCache.mekanikList.forEach(m => {
+              mekOptions += `<option value="${m.nama_mekanik}">${m.nama_mekanik}</option>`;
+          });
+      }
 
       const { value: formValues } = await Swal.fire({
-        title: 'Update Status & Waktu WO',
+        title: 'Update Status Service',
+        width: '600px',
         html: `
-          <div class="text-left space-y-4 mt-4">
+          <div class="text-left space-y-4 mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div>
               <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status WO</label>
-              <select id="swal-status" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent text-sm bg-white cursor-pointer">
+              <select id="swal-status" onchange="toggleClosedFields(this.value)" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent text-sm bg-white cursor-pointer shadow-sm">
                 <option value="OPEN" ${existingWO.status === 'OPEN' ? 'selected' : ''}>OPEN</option>
                 <option value="PROGRESS" ${existingWO.status === 'PROGRESS' ? 'selected' : ''}>PROGRESS</option>
                 <option value="WAITING PART" ${existingWO.status === 'WAITING PART' ? 'selected' : ''}>WAITING PART</option>
-                <option value="CLOSED" ${existingWO.status === 'CLOSED' ? 'selected' : ''}>CLOSED</option>
+                <option value="CLOSED" ${existingWO.status === 'CLOSED' ? 'selected' : ''}>CLOSED / READY</option>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Tgl Ready</label>
-                  <input type="date" id="swal-tgl" value="${currTgl}" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent text-sm">
-                </div>
-                <div>
-                  <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Jam Ready</label>
-                  <input type="time" id="swal-jam" value="${currJam}" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent text-sm">
+            
+            <div id="swal-closed-fields" style="display: ${existingWO.status === 'CLOSED' ? 'block' : 'none'};">
+                <div class="border-t border-slate-200 pt-4 mt-2">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3"><i class="fas fa-check-circle mr-1"></i> Data Penyelesaian (Action Log)</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1">Tgl Ready *</label>
+                          <input type="date" id="swal-tgl" value="${currTgl}" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm">
+                        </div>
+                        <div>
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1">Jam Ready *</label>
+                          <input type="time" id="swal-jam" value="${currJam}" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Problem / Kendala *</label>
+                            <input type="text" id="swal-prob" value="${defProblem}" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm" placeholder="Contoh: AC Panas">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Action (Tindakan) *</label>
+                            <input type="text" id="swal-action" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm" placeholder="Contoh: Check AC, tambah freon">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Pilih Mekanik *</label>
+                            <select id="swal-mekanik" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm">${mekOptions}</select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Catatan</label>
+                            <input type="text" id="swal-cat" value="-" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm">
+                        </div>
+                    </div>
                 </div>
             </div>
-            <p class="text-[9px] text-amber-600 font-bold italic mt-2">* Jika status diubah menjadi CLOSED, sistem akan menimpa data master WorkOrder dengan Tgl dan Jam Ready yang Anda input di atas.</p>
           </div>
         `,
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonColor: '#0f172a',
+        confirmButtonColor: '#10b981', 
         cancelButtonColor: '#cbd5e1',
-        confirmButtonText: '<i class="fas fa-save mr-2"></i> Simpan Perubahan',
+        confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i> Simpan & Buat Laporan WA',
         cancelButtonText: 'Batal',
         preConfirm: () => {
           const st = document.getElementById('swal-status').value;
           const tg = document.getElementById('swal-tgl').value;
           const jm = document.getElementById('swal-jam').value;
+          const prob = document.getElementById('swal-prob').value;
+          const act = document.getElementById('swal-action').value;
+          const mek = document.getElementById('swal-mekanik').value;
+          const cat = document.getElementById('swal-cat').value;
           
-          if (st === 'CLOSED' && (!tg || !jm)) {
-            Swal.showValidationMessage('Tgl & Jam Ready WAJIB diisi jika unit sudah CLOSED!');
-            return false;
+          if (st === 'CLOSED') {
+              if(!tg || !jm || !prob || !act || !mek) {
+                  Swal.showValidationMessage('Semua kolom bertanda bintang (*) WAJIB diisi saat status CLOSED!');
+                  return false;
+              }
           }
-          return { status: st, tgl_selesai: tg, jam_selesai: jm };
+          
+          let actionLogJson = "";
+          if (st === 'CLOSED') {
+              actionLogJson = JSON.stringify({ problem: prob, action: act, mekanik: mek, catatan: cat });
+          }
+
+          return { 
+              status: st, 
+              tgl_selesai: tg, 
+              jam_selesai: jm, 
+              action_log: actionLogJson,
+              raw: { prob, act, mek, cat, unitNo: existingWO.equip_no }
+          };
         }
       });
 
       if (formValues) {
-        startLoading("UPDATING STATUS & TIME...");
-        fetchGAS("updateWOStatus", { 
+        startLoading("UPDATING STATUS...");
+        
+        const payload = {
             no_wo: noWo, 
             status: formValues.status,
-            tgl_selesai: formValues.tgl_selesai,
-            jam_selesai: formValues.jam_selesai
-        }).then(res => { 
+            tgl_selesai: formValues.status === 'CLOSED' ? formValues.tgl_selesai : '',
+            jam_selesai: formValues.status === 'CLOSED' ? formValues.jam_selesai : '',
+            action_log: formValues.action_log
+        };
+
+        fetchGAS("updateWOStatus", payload).then(res => { 
             endLoading(); 
             if(res.success) {
-                Swal.fire('Sukses', 'Status dan waktu berhasil diperbarui.', 'success'); 
                 globalDataSync(); 
+                
+                if(formValues.status === 'CLOSED') {
+                    const r = formValues.raw;
+                    const tParts = formValues.tgl_selesai.split('-');
+                    const formatTgl = `${tParts[2]}/${tParts[1]}/${tParts[0]}`;
+
+                    let waText = `*STATUS: READY*\n`;
+                    waText += `*NO ID:* ${r.unitNo}\n`;
+                    waText += `*WO:* ${noWo}\n`;
+                    waText += `*JAM:* ${formValues.jam_selesai}\n`;
+                    waText += `*TANGGAL:* ${formatTgl}\n`;
+                    waText += `*PROBLEM:* ${r.prob}\n`;
+                    waText += `*ACTION:* ${r.act}\n`;
+                    waText += `*MEKANIK:* ${r.mek}\n`;
+                    waText += `*CATATAN:* ${r.cat}`;
+
+                    Swal.fire({
+                        title: 'Tersimpan!',
+                        text: 'Laporan Ready berhasil dibuat.',
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonColor: '#25D366', // WA Green
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: '<i class="fab fa-whatsapp mr-2"></i> Kirim via WhatsApp',
+                        cancelButtonText: 'Tutup'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+                            window.open(waUrl, '_blank');
+                        }
+                    });
+                } else {
+                    Swal.fire('Sukses', 'Status WO berhasil diperbarui.', 'success'); 
+                }
+
             } else {
                 Swal.fire('Error', res.message, 'error');
             }
@@ -2410,8 +2561,8 @@
        }
     }
   </script>
-  
-  <div style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
+
+  <div class="no-print" style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
     develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
   </div>
 </body>
