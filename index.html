@@ -1086,12 +1086,12 @@
     });
 
     // ==========================================
-    // 2. PROTOKOL MOCKING API & PREVIEW MODE (SOP #7)
+    // 2. PROTOKOL MOCKING API & PREVIEW MODE
     // ==========================================
+    const ENABLE_MOCK_MODE = false; // Set ke true jika ingin menguji UI secara offline tanpa server
     let isPreviewMode = false;
     
-    // Simulasi Proxy Chaining jika environment GAS (google) tidak ditemukan
-    if (typeof google === 'undefined') {
+    if (typeof google === 'undefined' && ENABLE_MOCK_MODE) {
         isPreviewMode = true;
         console.warn("Sistem berjalan dalam MODE PREVIEW / MOCK API (Offline).");
         
@@ -1116,58 +1116,62 @@
             parts: [{part_number: '101-PN', description: 'O-RING MOCK', uom: 'PC'}],
             planAlat: [], dailyHM: [], components: [], mekanikList: [{nama_mekanik: 'Mock Mekanik'}], pelaporList: [{nama_pelapor:'Operator A'}], activities: [], wo: [], backlog: []
         };
-
-        // Arsitektur Proxy Object Chaining
-        window.google = {
-            script: {
-                run: {
-                    withSuccessHandler: function(onSuccess) {
-                        this.successCallback = onSuccess;
-                        return this;
-                    },
-                    withFailureHandler: function(onFailure) {
-                        this.failureCallback = onFailure;
-                        return this;
-                    },
-                    router: function(actionName, payloadData) {
-                        setTimeout(() => {
-                            console.log(`[Mock API Proxy] Action: ${actionName}`, payloadData);
-                            let result = { success: true, message: `Mock Success: ${actionName}` };
-                            if (actionName === 'login') {
-                                const user = window.mockDB.usersData.find(u => u.username === payloadData.username);
-                                result = user ? { success: true, user: user } : { success: false, message: 'Mock: Username salah' };
-                            } else if (actionName === 'getOptimizedData') {
-                                result = { success: true, ...window.mockDB };
-                            }
-                            // Mengembalikan data sebagai string JSON persis seperti backend GAS sesungguhnya
-                            if (this.successCallback) this.successCallback(JSON.stringify(result));
-                        }, 500);
-                    }
-                }
-            }
-        };
     }
 
     // ==========================================
-    // 3. GOOGLE APPS SCRIPT API (HYBRID PROXY CALLER)
-    // Perbaikan Bug: Membungkus google.script.run yang bebas CORS, bukan fetch!
+    // 3. GOOGLE APPS SCRIPT API (FETCH CLOUDFLARE/EXTERNAL HOSTING)
+    // Perbaikan Bug: Memungkinkan koneksi ke URL publik eksternal (anti-CORS offline lock)
     // ==========================================
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
+
     async function fetchGAS(actionName, payloadData = {}) {
-      return new Promise((resolve, reject) => {
-          google.script.run
-              .withSuccessHandler(res => {
-                  try { 
-                      resolve(JSON.parse(res)); 
-                  } catch(e) { 
-                      resolve(res); 
+      if (isPreviewMode) {
+          return new Promise((resolve) => {
+              setTimeout(() => {
+                  console.log(`[Mock API] Action: ${actionName}`, payloadData);
+                  if (actionName === 'login') {
+                      const user = window.mockDB.usersData.find(u => u.username === payloadData.username);
+                      resolve(user ? { success: true, user: user } : { success: false, message: 'Mock: Username salah' });
+                  } else if (actionName === 'getOptimizedData') {
+                      resolve({ success: true, ...window.mockDB });
+                  } else {
+                      resolve({ success: true, message: `Mock Success: ${actionName}` });
                   }
-              })
-              .withFailureHandler(err => {
-                  Swal.fire('Koneksi Terputus', 'Gagal menghubungi server GAS.', 'error');
-                  reject(err);
-              })
-              .router(actionName, payloadData); // Merujuk pada fungsi "router" di Code.gs
-      });
+              }, 500);
+          });
+      }
+
+      try {
+        // Cek jika berjalan native di dalam editor Google Apps Script
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+             return new Promise((resolve, reject) => {
+                 google.script.run
+                     .withSuccessHandler(res => { try { resolve(JSON.parse(res)); } catch(e) { resolve(res); } })
+                     .withFailureHandler(err => reject(err))
+                     .router(actionName, payloadData);
+             });
+        }
+        
+        // Jika berjalan di hosting eksternal (seperti Cloudflare, Github Pages, dll)
+        const response = await fetch(GAS_API_URL, {
+          method: "POST",
+          headers: {
+              "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({ action: actionName, data: payloadData })
+        });
+        
+        const textRes = await response.text();
+        try {
+            return JSON.parse(textRes);
+        } catch (e) {
+            console.error("Gagal parse JSON dari GAS:", textRes);
+            throw new Error("Format JSON gagal. Endpoint mungkin meminta login/otorisasi.");
+        }
+      } catch (error) {
+        Swal.fire('Koneksi Terputus', 'Gagal menghubungi server database GAS.', 'error');
+        throw error;
+      }
     }
 
     // ==========================================
