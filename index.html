@@ -20,7 +20,7 @@
     .text-theme-main { color: var(--theme-main) !important; }
     .border-theme-main { border-color: var(--theme-main) !important; }
 
-    /* Fix BUG Blank Page: Hapus penggunaan 'hidden' di section, gunakan logic CSS murni */
+    /* Fix BUG Blank Page */
     .page { display: none; }
     .page.active { display: block; animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     
@@ -230,8 +230,8 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 ml-2 gap-3">
             <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-tachometer-alt text-theme-accent mr-2"></i> Performance KPI</h3>
             <div class="md:hidden flex gap-2 w-full">
-                <input type="date" id="kpiStartDateMobile" onchange="document.getElementById('kpiStartDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
-                <input type="date" id="kpiEndDateMobile" onchange="document.getElementById('kpiEndDate').value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+                <input type="date" id="kpiStartDateMobile" onchange="let el_sd=document.getElementById('kpiStartDate'); if(el_sd) el_sd.value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
+                <input type="date" id="kpiEndDateMobile" onchange="let el_ed=document.getElementById('kpiEndDate'); if(el_ed) el_ed.value=this.value; calculateKPIFrontEnd();" class="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-3 font-bold text-xs text-slate-700 outline-none shadow-sm focus:ring-2 focus:ring-theme-accent">
             </div>
         </div>
 
@@ -386,7 +386,9 @@
                     <th class="p-4 md:p-5 w-40">WO NO</th>
                     <th class="p-4 md:p-5 w-32">MEKANIK</th>
                     <th class="p-4 md:p-5">DESKRIPSI AKTIFITAS</th>
-                    <th class="p-4 md:p-5 w-32 text-center">WAKTU</th>
+                    <th class="p-4 md:p-5 w-24 text-center">JAM MULAI</th>
+                    <th class="p-4 md:p-5 w-24 text-center">JAM SELESAI</th>
+                    <th class="p-4 md:p-5 w-16 text-center">AKSI</th>
                 </tr>
               </thead>
               <tbody id="activityTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
@@ -843,114 +845,6 @@
         </div>
       </section>
 
-      <section id="page-buat-wo" class="page pb-12">
-        <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-6 border-b pb-6">
-            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-file-contract mr-3"></i> Work Order Form</h2>
-            <div id="wo_status_display" class="px-4 py-2 bg-theme-main/10 text-theme-main rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest border border-theme-main/20">STATUS: NEW</div>
-          </div>
-          
-          <div class="bg-blue-50/50 p-4 md:p-6 rounded-2xl border border-blue-100 mb-8 flex flex-col md:flex-row items-end md:items-center gap-4">
-              <div class="w-full md:w-1/2">
-                  <label class="block text-[10px] font-black text-blue-800 mb-2 uppercase tracking-widest"><i class="fas fa-search mr-1"></i> Tarik / Update Data WO Lama</label>
-                  <div class="flex gap-2">
-                    <input type="text" id="no_wo" class="flex-1 px-4 py-3 bg-white border border-blue-200 rounded-xl font-black text-theme-main uppercase outline-none focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" placeholder="Ketik No WO (Ex: 12-0797)">
-                    <button type="button" onclick="tarikDataWO()" class="px-5 bg-theme-main text-white rounded-xl shadow-lg active:scale-95 transition-transform hover:opacity-90 font-black text-[11px] uppercase tracking-widest flex items-center justify-center whitespace-nowrap"><i class="fas fa-cloud-download-alt mr-2"></i> Tarik Data</button>
-                  </div>
-              </div>
-              <div class="w-full md:w-1/2 text-[10px] md:text-xs font-bold text-blue-600/70 border-l-0 md:border-l-2 border-blue-200 pl-0 md:pl-4">
-                  * Masukkan Nomor WO lalu klik tombol tarik data untuk memuat form secara otomatis. <b class="text-blue-800">Biarkan kosong jika ingin membuat WO baru (Sistem akan membuat ID Otomatis)</b>.
-              </div>
-          </div>
-          
-          <form id="woForm" class="space-y-6 md:space-y-8" onsubmit="handleSaveWO(event)">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Equip No</label><input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-black uppercase focus:ring-2 focus:ring-theme-accent text-sm shadow-sm" placeholder="Kode Unit" required></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Brand</label><input type="text" id="brand" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm shadow-sm" readonly></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Unit Type</label><input type="text" id="unit_type" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl outline-none font-bold bg-slate-50 text-slate-500 text-sm shadow-sm" readonly></div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">HM (Hour Meter)</label><input type="text" id="hm_km" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" required placeholder="Angka HM"></div>
-              <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">PM Service</label><input type="text" id="pm_service" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm" placeholder="Misal: PS-1"></div>
-              <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Major Component</label>
-                  <select id="major_comp" onchange="updateMinorComp()" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm cursor-pointer bg-white">
-                      <option value="">- Pilih Major -</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Minor Component</label>
-                  <select id="minor_comp" class="w-full px-4 py-3 md:py-3.5 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-theme-accent outline-none text-sm cursor-pointer bg-white">
-                      <option value="">- Pilih Minor -</option>
-                  </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 p-6 md:p-8 bg-slate-50/80 rounded-2xl md:rounded-[2.5rem] border border-slate-200 shadow-inner">
-              <div class="space-y-4">
-                <h3 class="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center"><i class="fas fa-calendar-times mr-2 text-red-500 text-base md:text-lg"></i> Breakdown Time</h3>
-                <div class="grid grid-cols-2 gap-3 md:gap-4">
-                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_rusak" class="w-full px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm text-xs md:text-sm" required></div>
-                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_rusak_hh" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select><select id="jam_rusak_mm" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select></div></div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <h3 class="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center"><i class="fas fa-calendar-check mr-2 text-emerald-500 text-base md:text-lg"></i> Completion Time</h3>
-                <div class="grid grid-cols-2 gap-3 md:gap-4">
-                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">TANGGAL</label><input type="date" id="tgl_selesai" class="w-full px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent bg-white shadow-sm text-xs md:text-sm"></div>
-                  <div><label class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">JAM</label><div class="flex gap-2"><select id="jam_selesai_hh" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select><select id="jam_selesai_mm" class="custom-select-time w-full h-10 md:h-12 shadow-sm rounded-xl border border-slate-200 px-2 outline-none focus:ring-2 focus:ring-theme-accent text-xs md:text-sm"></select></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-               <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">SCH / UNSCH</label>
-                  <select id="sch_unsch" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-black focus:ring-2 focus:ring-theme-accent shadow-sm text-theme-main bg-white text-sm">
-                    <option value="UNSCH">UNSCH (Unscheduled)</option>
-                    <option value="SCH">SCH (Scheduled)</option>
-                  </select>
-               </div>
-               <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Reported By</label>
-                  <select id="reported_by" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main text-sm cursor-pointer" required>
-                      <option value="">- Pilih Pelapor -</option>
-                  </select>
-               </div>
-               <div>
-                  <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-tighter">Lead Technician</label>
-                  <select id="tech" class="w-full px-4 py-3 md:py-4 border border-slate-200 rounded-xl outline-none font-bold focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-theme-main text-sm cursor-pointer">
-                      <option value="">- Pilih Teknisi Utama -</option>
-                  </select>
-               </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Failure Description</label><textarea id="issue" class="w-full px-4 py-4 md:px-5 md:py-5 border border-slate-200 rounded-2xl md:rounded-[2rem] h-24 md:h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-xs md:text-sm" required placeholder="Deskripsi detail kerusakan unit..."></textarea></div>
-               <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Analysis Reason</label><textarea id="failure_reason" class="w-full px-4 py-4 md:px-5 md:py-5 border border-slate-200 rounded-2xl md:rounded-[2rem] h-24 md:h-32 outline-none resize-none font-medium focus:ring-2 focus:ring-theme-accent shadow-sm bg-white text-xs md:text-sm" placeholder="Analisa penyebab kerusakan..."></textarea></div>
-            </div>
-
-            <div class="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border border-slate-200 shadow-inner">
-              <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xs md:text-sm font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-boxes text-theme-accent mr-2"></i> Parts Inquiry</h3>
-              </div>
-              <div class="overflow-x-auto bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-100">
-                <table class="w-full text-left min-w-[800px]">
-                  <thead class="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <tr><th class="p-3 md:p-4 w-10 md:w-12 text-center">NO</th><th class="p-3 md:p-4 w-48 md:w-72">Part No</th><th class="p-3 md:p-4">Description</th><th class="p-3 md:p-4 w-16 md:w-20 text-center">Qty</th><th class="p-3 md:p-4 w-20 md:w-24 text-center">UOM</th><th class="p-3 md:p-4 w-32 md:w-40">Remarks</th><th class="p-3 md:p-4 w-10 md:w-12 text-center"><i class="fas fa-cog"></i></th></tr>
-                  </thead>
-                  <tbody id="partTableBody" class="divide-y divide-slate-100"></tbody>
-                </table>
-              </div>
-              <button type="button" onclick="addPartRow()" class="mt-6 text-theme-main font-black text-[10px] md:text-xs uppercase tracking-widest border-2 border-slate-200 px-5 py-3 md:px-6 md:py-3.5 rounded-xl md:rounded-2xl hover:bg-theme-main hover:text-white hover:border-theme-main transition-all active:scale-95 shadow-sm"><i class="fas fa-plus-circle mr-2"></i> Add Part Row</button>
-            </div>
-            
-            <button type="submit" class="w-full bg-theme-main text-white font-black py-5 md:py-6 rounded-2xl md:rounded-[2.5rem] shadow-2xl shadow-theme-main/40 uppercase tracking-[0.3em] hover:opacity-90 transition-all active:scale-[0.98] mt-6 text-xs md:text-sm">SUBMIT WORK ORDER</button>
-          </form>
-        </div>
-      </section>
-
       <datalist id="listEquip"></datalist>
       <datalist id="listParts"></datalist>
 
@@ -1080,7 +974,7 @@
     }
     const db = firebase.database(); 
     
-    // Otomatis login anonim (Jika diaktifkan di Firebase Console)
+    // Otomatis login anonim
     firebase.auth().signInAnonymously().catch((error) => {
         console.warn("Firebase Anonymous Auth Disabled or Failed:", error.message);
     });
@@ -1088,7 +982,7 @@
     // ==========================================
     // 2. PROTOKOL MOCKING API & PREVIEW MODE
     // ==========================================
-    const ENABLE_MOCK_MODE = false; // Set ke true jika ingin menguji UI secara offline tanpa server
+    const ENABLE_MOCK_MODE = false; // Set ke true untuk uji UI tanpa server
     let isPreviewMode = false;
     
     if (typeof google === 'undefined' && ENABLE_MOCK_MODE) {
@@ -1104,7 +998,7 @@
             setTimeout(() => {
                 console.warn("Auto-Reloading to reset state...");
                 location.reload();
-            }, 1500);
+            }, 1500); // SOP 7.3: Auto-reload dalam 1.5 detik
         };
 
         window.mockDB = {
@@ -1119,8 +1013,7 @@
     }
 
     // ==========================================
-    // 3. GOOGLE APPS SCRIPT API (FETCH CLOUDFLARE/EXTERNAL HOSTING)
-    // Perbaikan Bug: Memungkinkan koneksi ke URL publik eksternal (anti-CORS offline lock)
+    // 3. GOOGLE APPS SCRIPT API (PROXY CHAINING)
     // ==========================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
 
@@ -1142,36 +1035,38 @@
       }
 
       try {
-        // Cek jika berjalan native di dalam editor Google Apps Script
         if (typeof google !== 'undefined' && google.script && google.script.run) {
              return new Promise((resolve, reject) => {
                  google.script.run
                      .withSuccessHandler(res => { try { resolve(JSON.parse(res)); } catch(e) { resolve(res); } })
                      .withFailureHandler(err => reject(err))
-                     .router(actionName, payloadData);
+                     .router(actionName, payloadData); // Menggunakan arsitektur routing standar backend
              });
         }
         
-        // Jika berjalan di hosting eksternal (seperti Cloudflare, Github Pages, dll)
         const response = await fetch(GAS_API_URL, {
           method: "POST",
-          headers: {
-              "Content-Type": "text/plain;charset=utf-8",
-          },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({ action: actionName, data: payloadData })
         });
         
         const textRes = await response.text();
-        try {
-            return JSON.parse(textRes);
-        } catch (e) {
-            console.error("Gagal parse JSON dari GAS:", textRes);
-            throw new Error("Format JSON gagal. Endpoint mungkin meminta login/otorisasi.");
-        }
+        try { return JSON.parse(textRes); } 
+        catch (e) { throw new Error("Format JSON gagal. Endpoint mungkin meminta login/otorisasi."); }
       } catch (error) {
         Swal.fire('Koneksi Terputus', 'Gagal menghubungi server database GAS.', 'error');
         throw error;
       }
+    }
+
+    // SOP 6.3: Helper DYNAMIC ICON SAFETY
+    function safeIconToggle(elementWrapperId, newIconClass) {
+        const el = document.getElementById(elementWrapperId);
+        if(!el) return;
+        const icon = el.querySelector('i, svg');
+        if(icon) {
+            icon.className = newIconClass;
+        }
     }
 
     // ==========================================
@@ -1179,9 +1074,7 @@
     // ==========================================
     function getShiftDate() {
         const now = new Date();
-        if (now.getHours() < 7) {
-            now.setDate(now.getDate() - 1);
-        }
+        if (now.getHours() < 7) now.setDate(now.getDate() - 1);
         return now.toISOString().split('T')[0];
     }
     function getFirstDateOfMonth() {
@@ -1221,19 +1114,22 @@
     // ==========================================
     window.onload = () => {
       loadSettings();
-      if(document.getElementById('kpiStartDate')) document.getElementById('kpiStartDate').value = getFirstDateOfMonth();
-      if(document.getElementById('kpiEndDate')) document.getElementById('kpiEndDate').value = getShiftDate();
-      if(document.getElementById('kpiStartDateMobile')) document.getElementById('kpiStartDateMobile').value = getFirstDateOfMonth();
-      if(document.getElementById('kpiEndDateMobile')) document.getElementById('kpiEndDateMobile').value = getShiftDate();
+      // Strict Null-Checking SOP 6.4
+      const d1 = document.getElementById('kpiStartDate'); if(d1) d1.value = getFirstDateOfMonth();
+      const d2 = document.getElementById('kpiEndDate'); if(d2) d2.value = getShiftDate();
+      const d3 = document.getElementById('kpiStartDateMobile'); if(d3) d3.value = getFirstDateOfMonth();
+      const d4 = document.getElementById('kpiEndDateMobile'); if(d4) d4.value = getShiftDate();
 
       const session = localStorage.getItem('bss_session_v18'); 
       if (session) {
         try { currentUser = JSON.parse(session); showApp(); } catch(e) { showLogin(); }
       } else { showLogin(); }
       
-      if(document.getElementById('conf_color')) {
-          document.getElementById('conf_color').addEventListener('input', e => {
-              document.getElementById('hexDisplay').innerText = e.target.value;
+      const confColor = document.getElementById('conf_color');
+      if(confColor) {
+          confColor.addEventListener('input', e => {
+              const hexDisp = document.getElementById('hexDisplay');
+              if(hexDisp) hexDisp.innerText = e.target.value;
           });
       }
     };
@@ -1255,36 +1151,34 @@
     }
 
     function showLogin() {
-      document.getElementById('authContainer')?.classList.remove('hidden');
-      document.getElementById('appContainer')?.classList.add('hidden');
+      const authCont = document.getElementById('authContainer'); if(authCont) authCont.classList.remove('hidden');
+      const appCont = document.getElementById('appContainer'); if(appCont) appCont.classList.add('hidden');
     }
 
     function showApp() {
-      document.getElementById('authContainer')?.classList.add('hidden');
-      document.getElementById('appContainer')?.classList.remove('hidden');
+      const authCont = document.getElementById('authContainer'); if(authCont) authCont.classList.add('hidden');
+      const appCont = document.getElementById('appContainer'); if(appCont) appCont.classList.remove('hidden');
       
-      if(document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').innerText = currentUser.nama;
-      if(document.getElementById('dashName')) document.getElementById('dashName').innerText = currentUser.nama.split(' ')[0];
-      if(document.getElementById('userRoleDisplay')) document.getElementById('userRoleDisplay').innerText = currentUser.role;
-      if(document.getElementById('userInitial')) document.getElementById('userInitial').innerText = currentUser.nama.charAt(0).toUpperCase();
+      const uND = document.getElementById('userNameDisplay'); if(uND) uND.innerText = currentUser.nama;
+      const dN = document.getElementById('dashName'); if(dN) dN.innerText = currentUser.nama.split(' ')[0];
+      const uRD = document.getElementById('userRoleDisplay'); if(uRD) uRD.innerText = currentUser.role;
+      const uI = document.getElementById('userInitial'); if(uI) uI.innerText = currentUser.nama.charAt(0).toUpperCase();
 
       const isMekanik = currentUser.role === 'Mekanik';
       const r = (currentUser.role || '').toUpperCase();
 
       if (isMekanik) {
-        if(document.getElementById('dashTitle')) document.getElementById('dashTitle').innerText = "Mechanic Area 👋";
-        if(document.getElementById('dashDesc')) document.getElementById('dashDesc').innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
-        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'none';
-        if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = 'none';
-        if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'none';
-        const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
-        if(btnBuatWo) btnBuatWo.style.display = 'none';
+        const dT = document.getElementById('dashTitle'); if(dT) dT.innerText = "Mechanic Area 👋";
+        const dD = document.getElementById('dashDesc'); if(dD) dD.innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
+        const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'none';
+        const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = 'none';
+        const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'none';
+        const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'none';
       } else {
-        if(document.getElementById('nav-database-section')) document.getElementById('nav-database-section').style.display = 'block';
-        if(document.getElementById('nav-admin-section')) document.getElementById('nav-admin-section').style.display = r.includes('PLANNER') ? 'block' : 'none';
-        if(document.getElementById('nav-daily-group')) document.getElementById('nav-daily-group').style.display = 'block';
-        const btnBuatWo = document.querySelector('[data-page="buat-wo"]');
-        if(btnBuatWo) btnBuatWo.style.display = 'flex';
+        const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'block';
+        const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = r.includes('PLANNER') ? 'block' : 'none';
+        const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'block';
+        const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'flex';
       }
 
       initTimeSelectors();
@@ -1292,17 +1186,21 @@
       navigate('dashboard');
     }
 
-    document.getElementById('loginForm').onsubmit = function(e) {
-      e.preventDefault();
-      const fd = { username: this.username.value, password: this.password.value };
-      startLoading("VERIFIKASI AKUN...");
-      fetchGAS("login", fd).then(res => {
-          endLoading(); 
-          if(res.success){ currentUser = res.user; localStorage.setItem('bss_session_v18', JSON.stringify(currentUser)); showApp(); } 
-          else { Swal.fire('Gagal', res.message, 'error'); } 
-      }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error'); });
-    };
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.onsubmit = function(e) {
+          e.preventDefault();
+          const fd = { username: this.username.value, password: this.password.value };
+          startLoading("VERIFIKASI AKUN...");
+          fetchGAS("login", fd).then(res => {
+              endLoading(); 
+              if(res.success){ currentUser = res.user; localStorage.setItem('bss_session_v18', JSON.stringify(currentUser)); showApp(); } 
+              else { Swal.fire('Gagal', res.message, 'error'); } 
+          }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error'); });
+        };
+    }
 
+    // SPA Soft Logout SOP 6.1
     function handleLogout() { localStorage.removeItem('bss_session_v18'); location.reload(); }
 
     // ==========================================
@@ -1335,9 +1233,11 @@
               
               populateDependentDropdowns();
               
-              if(document.getElementById('page-list-wo').classList.contains('active')) renderWOTable();
-              if(document.getElementById('page-dashboard').classList.contains('active')) calculateKPIFrontEnd();
+              const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
+              const pDb = document.getElementById('page-dashboard'); if(pDb && pDb.classList.contains('active')) calculateKPIFrontEnd();
+              
               renderMasterEquipTable(); renderMasterPartsTable(); renderMasterCompTable(); renderActivityTable(); prefillActivityForm();
+              
               if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
 
@@ -1363,7 +1263,7 @@
              else { woDataCache.unshift(fbData[key]); }
           });
           calculateKPIFrontEnd();
-          if(document.getElementById('page-list-wo').classList.contains('active')) renderWOTable();
+          const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
         }
       });
 
@@ -1375,8 +1275,8 @@
                if(idx > -1) backlogCache[idx] = { ...backlogCache[idx], ...fbData[key] };
                else backlogCache.unshift(fbData[key]);
            });
-           if(document.getElementById('page-backlog').classList.contains('active')) renderBacklogTable();
-           if(document.getElementById('page-list-wo').classList.contains('active')) renderWOTable();
+           const pBl = document.getElementById('page-backlog'); if(pBl && pBl.classList.contains('active')) renderBacklogTable();
+           const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
            calculateKPIFrontEnd();
         }
       });
@@ -1389,8 +1289,8 @@
                if(idx > -1) masterCache.dailyHM[idx] = { ...masterCache.dailyHM[idx], ...fbData[key] };
                else masterCache.dailyHM.unshift(fbData[key]);
            });
-           if(document.getElementById('page-daily-hm').classList.contains('active')) renderDailyHMTable();
-           if(document.getElementById('page-master-plan').classList.contains('active')) renderMasterPlanTable();
+           const pHm = document.getElementById('page-daily-hm'); if(pHm && pHm.classList.contains('active')) renderDailyHMTable();
+           const pMp = document.getElementById('page-master-plan'); if(pMp && pMp.classList.contains('active')) renderMasterPlanTable();
            calculateKPIFrontEnd(); 
         }
       });
@@ -1401,8 +1301,8 @@
     // ==========================================
     function navigate(id, preventReset = false) {
       if(window.innerWidth < 768) { 
-          document.getElementById('sidebar')?.classList.remove('open'); 
-          document.getElementById('sidebarOverlay')?.classList.remove('active'); 
+          const sb = document.getElementById('sidebar'); if(sb) sb.classList.remove('open'); 
+          const sbo = document.getElementById('sidebarOverlay'); if(sbo) sbo.classList.remove('active'); 
       }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const target = document.getElementById('page-' + id);
@@ -1418,7 +1318,7 @@
       if(id === 'aktifitas') { renderActivityTable(); prefillActivityForm(); }
       if(id === 'daily-hm') { 
           renderDailyHMTable(); 
-          if(document.getElementById('hm_tanggal')) document.getElementById('hm_tanggal').value = getShiftDate();
+          const hmTgl = document.getElementById('hm_tanggal'); if(hmTgl) hmTgl.value = getShiftDate();
       }
       if(id === 'master-equip') { currentEqPage=1; renderMasterEquipTable(); }
       if(id === 'master-parts') { currentPtPage=1; renderMasterPartsTable(); }
@@ -1428,12 +1328,17 @@
     }
 
     function toggleSidebar() {
-      document.getElementById('sidebar')?.classList.toggle('open');
-      document.getElementById('sidebarOverlay')?.classList.toggle('active');
+      const sb = document.getElementById('sidebar'); if(sb) sb.classList.toggle('open');
+      const sbo = document.getElementById('sidebarOverlay'); if(sbo) sbo.classList.toggle('active');
     }
 
-    function startLoading(t) { document.getElementById('loadingText').innerText = t || "Processing..."; document.getElementById('loadingOverlay').classList.remove('hidden'); }
-    function endLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+    function startLoading(t) { 
+        const lt = document.getElementById('loadingText'); if(lt) lt.innerText = t || "Processing..."; 
+        const lo = document.getElementById('loadingOverlay'); if(lo) lo.classList.remove('hidden'); 
+    }
+    function endLoading() { 
+        const lo = document.getElementById('loadingOverlay'); if(lo) lo.classList.add('hidden'); 
+    }
 
     // ==========================================
     // DASHBOARD & KPI LOGIC (STRICT SHIFT BOUNDARIES)
@@ -1727,7 +1632,7 @@
       }
 
       const detailBody = document.getElementById('detailBoardBody');
-      if (masterCache.planAlat) {
+      if (masterCache.planAlat && detailBody) {
           const boardData = {}; 
           masterCache.planAlat.forEach(p => {
               const unitNo = (p.equip_no || '').toUpperCase();
@@ -1889,26 +1794,72 @@
       }).join('');
     }
 
+    // Helper: Ekstraktor Waktu HH:mm Super Kuat
+    function formatTimeOnly(val) {
+        if (val === undefined || val === null || String(val).trim() === '' || String(val) === 'undefined') return '-';
+        
+        // Bersihkan tanda kutip dari string Google Sheets
+        let str = String(val).replace(/['"]/g, '').trim(); 
+        
+        // Tangkap format jam berapapun (termasuk 14:21 atau 02:21) menggunakan Regex
+        const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+            let h = timeMatch[1].padStart(2, '0');
+            let m = timeMatch[2];
+            return `${h}:${m}`;
+        }
+        
+        return '-';
+    }
+
+    // FUNGSI RENDER AKTIFITAS BEBAS DUPLIKASI
     function renderActivityTable() {
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
+        
         let acts = [...(masterCache.activities || [])].reverse(); 
-        if (currentUser && currentUser.role === 'Mekanik') acts = acts.filter(a => a.mekanik.toLowerCase().includes(currentUser.nama.toLowerCase()));
         
-        if(acts.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">Belum ada aktifitas.</td></tr>'; return; }
+        // Filter untuk mekanik agar hanya melihat aktivitasnya sendiri
+        if (currentUser && currentUser.role === 'Mekanik') {
+            acts = acts.filter(a => String(a.mekanik).toLowerCase().includes(String(currentUser.nama).toLowerCase()));
+        }
         
+        if(acts.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">Belum ada aktifitas.</td></tr>'; 
+            return; 
+        }
+        
+        const isPlanner = currentUser && currentUser.role && currentUser.role.toUpperCase().includes('PLANNER');
+
         tbody.innerHTML = acts.map(a => {
-            const safeJamMulai = (a.jam_mulai || '').replace(/'/g, '');
-            const safeJamSelesai = (a.jam_selesai || '').replace(/'/g, '');
-            let safeMekanik = String(a.mekanik || '');
-            if(safeMekanik.includes('[Ljava.lang.Object')) safeMekanik = '<span class="text-red-500 italic">Data Lama Error (Abaikan)</span>';
+            // Normalisasi Waktu Ketat (Pastikan String)
+            let rawMulai = String(a.jam_mulai || a.Jam_Mulai || '00:00').trim();
+            let rawSelesai = String(a.jam_selesai || a.Jam_Selesai || '00:00').trim();
+            
+            const safeJamMulai = formatTimeOnly(rawMulai);
+            const safeJamSelesai = formatTimeOnly(rawSelesai);
+            
+            let safeMekanik = String(a.mekanik || '-');
+            if(safeMekanik.includes('[Ljava.lang.Object')) {
+                safeMekanik = '<span class="text-red-500 italic">Data Lama Error</span>';
+            }
+
+            // Proteksi ID Aktifitas jika undefined
+            const safeId = a.id ? a.id : 'undefined';
+
+            let actionBtn = '-';
+            if (isPlanner) {
+                actionBtn = `<button onclick="deleteActivity('${safeId}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl mx-auto" title="Hapus Aktifitas"><i class="fas fa-trash text-[10px]"></i></button>`;
+            }
 
             return `<tr class="border-b hover:bg-slate-50">
-                      <td class="p-4 font-bold text-slate-500 text-xs">${a.tanggal}</td>
-                      <td class="p-4 font-black uppercase text-theme-accent">${a.no_wo}</td>
+                      <td class="p-4 font-bold text-slate-500 text-xs">${a.tanggal || '-'}</td>
+                      <td class="p-4 font-black uppercase text-theme-accent">${a.no_wo || '-'}</td>
                       <td class="p-4 font-bold text-slate-800"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs break-words">${safeMekanik}</span></td>
-                      <td class="p-4 text-sm text-slate-600">${a.aktifitas}</td>
-                      <td class="p-4 text-center font-mono text-sm text-slate-500 bg-slate-100 rounded-lg m-2 inline-block">${safeJamMulai} - ${safeJamSelesai}</td>
+                      <td class="p-4 text-sm text-slate-600">${a.aktifitas || '-'}</td>
+                      <td class="p-4 text-center"><span class="font-mono text-sm text-slate-500 bg-slate-100 rounded-lg px-3 py-1.5 shadow-sm">${safeJamMulai}</span></td>
+                      <td class="p-4 text-center"><span class="font-mono text-sm text-slate-500 bg-slate-100 rounded-lg px-3 py-1.5 shadow-sm">${safeJamSelesai}</span></td>
+                      <td class="p-4 text-center">${actionBtn}</td>
                     </tr>`;
         }).join('');
     }
@@ -2237,6 +2188,51 @@
         }
     }
 
+    async function handleSaveActivity(e) {
+        e.preventDefault();
+        const checkedMechanics = Array.from(document.querySelectorAll('input[name="mechanic_check"]:checked')).map(cb => cb.value);
+        if(checkedMechanics.length === 0) return Swal.fire('Perhatian', 'Harap pilih minimal 1 mekanik yang melakukan aktifitas.', 'warning');
+
+        let jStart = document.getElementById('act_start').value;
+        let jEnd = document.getElementById('act_end').value;
+
+        if(!jStart || jStart.trim() === "") jStart = "00:00";
+        if(!jEnd || jEnd.trim() === "") jEnd = "00:00";
+
+        startLoading("SAVING ACTIVITY...");
+        
+        const promises = checkedMechanics.map(mek => {
+            const payload = { 
+                tanggal: document.getElementById('act_tgl').value, 
+                no_wo: document.getElementById('act_wo').value, 
+                mekanik: mek, 
+                aktifitas: document.getElementById('act_desc').value, 
+                jam_mulai: jStart, 
+                jam_selesai: jEnd  
+            };
+            return fetchGAS("saveActivityLog", payload);
+        });
+
+        try {
+            const results = await Promise.all(promises);
+            const hasError = results.some(r => !r.success);
+            endLoading();
+            
+            if(!hasError) {
+                Swal.fire('Sukses', 'Laporan Aktifitas Disimpan!', 'success');
+                document.getElementById('activityForm').reset(); 
+                prefillActivityForm(); 
+                globalDataSync(); 
+            } else {
+                Swal.fire('Warning', 'Beberapa data gagal disimpan. Silakan periksa kembali.', 'warning');
+                globalDataSync();
+            }
+        } catch(err) {
+            endLoading();
+            Swal.fire('Error', err.toString(), 'error');
+        }
+    }
+
     function handleSaveWO(e) {
        e.preventDefault();
        const partsData = [];
@@ -2247,7 +2243,6 @@
           }
        });
 
-       // PERBAIKAN BUG: Jika WO Baru (Kosong), kirim empty string
        const noWoInput = document.getElementById('no_wo');
        const noWoVal = noWoInput ? noWoInput.value.trim().toUpperCase() : '';
 
@@ -2322,23 +2317,6 @@
         fetchGAS("saveBacklog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('backlogForm').reset(); document.getElementById('bl_tanggal').value = getShiftDate(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
     }
 
-    function handleSaveActivity(e) {
-        e.preventDefault();
-        const checkedMechanics = Array.from(document.querySelectorAll('input[name="mechanic_check"]:checked')).map(cb => cb.value);
-        if(checkedMechanics.length === 0) return Swal.fire('Perhatian', 'Harap pilih minimal 1 mekanik yang melakukan aktifitas.', 'warning');
-
-        const payload = { 
-            tanggal: document.getElementById('act_tgl').value, 
-            no_wo: document.getElementById('act_wo').value, 
-            mekanik: checkedMechanics, 
-            aktifitas: document.getElementById('act_desc').value, 
-            jam_mulai: document.getElementById('act_start').value, 
-            jam_selesai: document.getElementById('act_end').value 
-        };
-        startLoading("SAVING ACTIVITY...");
-        fetchGAS("saveActivityLog", payload).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('activityForm').reset(); prefillActivityForm(); globalDataSync(); } else { Swal.fire('Error', res.message, 'error'); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');});
-    }
-
     function handleSaveEquip(e) { e.preventDefault(); const p = [document.getElementById('m_equip_no').value.toUpperCase(), document.getElementById('m_brand').value.toUpperCase(), document.getElementById('m_equip_type').value.toUpperCase()]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'equip', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('equipForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
     function handleSavePart(e) { e.preventDefault(); const p = [document.getElementById('m_part_no').value.toUpperCase(), document.getElementById('m_part_desc').value, document.getElementById('m_part_uom').value.toUpperCase()]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'parts', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('partMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
     function handleSaveComponent(e) { e.preventDefault(); const p = [document.getElementById('m_comp_major').value.toUpperCase(), document.getElementById('m_comp_minor').value.toUpperCase()]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'component', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
@@ -2358,15 +2336,23 @@
     async function updateStatus(noWo) {
       const existingWO = woDataCache.find(w => w.no_wo === noWo) || {};
       const currTgl = existingWO.tgl_selesai || getShiftDate();
-      const currJam = existingWO.jam_selesai ? existingWO.jam_selesai.replace(/'/g, '') : '12:00';
+      
+      const currJamRaw = existingWO.jam_selesai ? existingWO.jam_selesai : '12:00';
+      const currJam = formatTimeOnly(currJamRaw) !== '-' ? formatTimeOnly(currJamRaw) : '12:00';
+      
       const defProblem = existingWO.kendala || '';
       
-      let mekOptions = '<option value="">Pilih Mekanik</option>';
+      let mekCheckboxes = '<div class="max-h-32 overflow-y-auto border border-slate-200 p-2 rounded-lg bg-white mt-1 space-y-1">';
       if(masterCache.mekanikList) {
           masterCache.mekanikList.forEach(m => {
-              mekOptions += `<option value="${m.nama_mekanik}">${m.nama_mekanik}</option>`;
+              mekCheckboxes += `
+              <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 cursor-pointer rounded">
+                  <input type="checkbox" name="swal_mech_check" value="${m.nama_mekanik}" class="rounded w-4 h-4 text-theme-accent focus:ring-theme-accent">
+                  <span class="text-[11px] font-bold text-slate-700">${m.nama_mekanik}</span>
+              </label>`;
           });
       }
+      mekCheckboxes += '</div>';
 
       const { value: formValues } = await Swal.fire({
         title: 'Update Status Service',
@@ -2409,7 +2395,7 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1">Pilih Mekanik *</label>
-                            <select id="swal-mekanik" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none text-sm bg-white shadow-sm">${mekOptions}</select>
+                            ${mekCheckboxes}
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1">Catatan</label>
@@ -2432,12 +2418,14 @@
           const jm = document.getElementById('swal-jam').value;
           const prob = document.getElementById('swal-prob').value;
           const act = document.getElementById('swal-action').value;
-          const mek = document.getElementById('swal-mekanik').value;
           const cat = document.getElementById('swal-cat').value;
+
+          const checkedMeks = Array.from(document.querySelectorAll('input[name="swal_mech_check"]:checked')).map(cb => cb.value);
+          const mek = checkedMeks.join(', ');
           
           if (st === 'CLOSED') {
-              if(!tg || !jm || !prob || !act || !mek) {
-                  Swal.showValidationMessage('Semua kolom bertanda bintang (*) WAJIB diisi saat status CLOSED!');
+              if(!tg || !jm || !prob || !act || checkedMeks.length === 0) {
+                  Swal.showValidationMessage('Semua kolom bertanda bintang (*) WAJIB diisi! Pilih minimal 1 Mekanik.');
                   return false;
               }
           }
@@ -2522,7 +2510,34 @@
         }
     }
 
-    function handleDeleteWO(noWo) { Swal.fire({ title: 'Hapus WO?', text: noWo, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); fetchGAS("deleteWO", { no_wo: noWo }).then(res => { endLoading(); globalDataSync(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); } }); }
+    // FIX: DELETE WO BERHASIL & MEMBERIKAN NOTIFIKASI
+    function handleDeleteWO(noWo) { 
+        Swal.fire({ 
+            title: 'Hapus WO?', 
+            text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
+            icon: 'warning', 
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus!'
+        }).then(r => { 
+            if(r.isConfirmed) { 
+                startLoading("DELETING..."); 
+                fetchGAS("deleteWO", { no_wo: String(noWo).trim() }).then(res => { 
+                    endLoading(); 
+                    if(res.success) {
+                        Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
+                        globalDataSync(); 
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                }).catch(err => { 
+                    endLoading(); 
+                    Swal.fire('Error', err.toString(), 'error');
+                }); 
+            } 
+        }); 
+    }
+
     function deleteBacklog(id) { Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); fetchGAS("deleteBacklog", { id: id }).then(res => { endLoading(); globalDataSync(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); } }); }
 
     // PRINT WO
@@ -2564,10 +2579,37 @@
            setTimeout(() => { window.print(); pa.classList.add('hidden'); }, 500);
        }
     }
-  </script>
 
-  <div class="no-print" style="text-align:center; font-size:12px; margin:20px 0; color:#888;">
-    develop by : dermawan.prb@gmail.com | <a href="https://www.linkedin.com/in/dermawan-purba-5b69241a9" target="_blank" style="color:#888; text-decoration:none;">LinkedIn</a>
-  </div>
+    function deleteActivity(id) {
+        if (!id || id === 'undefined' || id === 'null') {
+            return Swal.fire('Data Korup', 'ID Aktifitas ini tidak valid. Harap klik tombol [Optimized Sync] terlebih dahulu.', 'error');
+        }
+
+        Swal.fire({ title: 'Hapus Laporan Aktifitas?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { 
+            if(r.isConfirmed) { 
+                startLoading("DELETING ACTIVITY..."); 
+                fetchGAS("deleteActivity", { id: String(id).trim() }).then(res => { 
+                    endLoading(); 
+                    if(res.success) { Swal.fire('Terhapus', 'Laporan aktifitas dihapus.', 'success'); globalDataSync(); }
+                    else { Swal.fire('Error', res.message, 'error'); }
+                }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); 
+            } 
+        });
+    }
+
+    function deleteUserAccount(username) {
+        Swal.fire({ title: 'Hapus Akses User?', text: `User: ${username}`, icon: 'warning', showCancelButton: true }).then(r => { 
+            if(r.isConfirmed) { 
+                startLoading("DELETING USER..."); 
+                fetchGAS("deleteUser", { username: username }).then(res => { 
+                    endLoading(); 
+                    if(res.success) { Swal.fire('Terhapus', 'Akses user dicabut.', 'success'); loadUsers(); }
+                    else { Swal.fire('Error', res.message, 'error'); }
+                }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); 
+            } 
+        });
+    }
+
+  </script>
 </body>
 </html>
