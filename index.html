@@ -1434,30 +1434,32 @@
         const dT = document.getElementById('dashTitle'); if(dT) dT.innerText = "Mechanic Area 👋";
         const dD = document.getElementById('dashDesc'); if(dD) dD.innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
         
-        // --- PATCH: Tampilkan Database Section tapi filter isinya ---
         const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'block';
         const btnPlan = document.querySelector('[data-page="master-plan"]'); if(btnPlan) btnPlan.style.display = 'none';
         const btnParts = document.querySelector('[data-page="master-parts"]'); if(btnParts) btnParts.style.display = 'none';
         const btnComp = document.querySelector('[data-page="master-comp"]'); if(btnComp) btnComp.style.display = 'none';
-        const btnEquip = document.querySelector('[data-page="master-equip"]'); if(btnEquip) btnEquip.style.display = 'flex'; // Tetap muncul
-        // -------------------------------------------------------------
+        const btnEquip = document.querySelector('[data-page="master-equip"]'); if(btnEquip) btnEquip.style.display = 'flex';
 
         const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = 'none';
         const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'none';
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'none';
+        
+        // --- PATCH: Sembunyikan Input Service untuk Mekanik ---
+        const btnInputSvc = document.querySelector('[data-page="input-service"]'); if(btnInputSvc) btnInputSvc.style.display = 'none';
       } else {
         const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'block';
         
-        // --- PATCH: Kembalikan semua tombol untuk Planner/Admin ---
         const btnPlan = document.querySelector('[data-page="master-plan"]'); if(btnPlan) btnPlan.style.display = 'flex';
         const btnParts = document.querySelector('[data-page="master-parts"]'); if(btnParts) btnParts.style.display = 'flex';
         const btnComp = document.querySelector('[data-page="master-comp"]'); if(btnComp) btnComp.style.display = 'flex';
         const btnEquip = document.querySelector('[data-page="master-equip"]'); if(btnEquip) btnEquip.style.display = 'flex';
-        // -------------------------------------------------------------
 
         const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = r.includes('PLANNER') ? 'block' : 'none';
         const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'block';
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'flex';
+        
+        // --- PATCH: Tampilkan Input Service untuk Admin/Planner ---
+        const btnInputSvc = document.querySelector('[data-page="input-service"]'); if(btnInputSvc) btnInputSvc.style.display = 'flex';
       }
 
       initTimeSelectors();
@@ -2329,10 +2331,18 @@ db.ref('backlogs').on('value', (snapshot) => {
 
     function autoFillEquip(val) {
       if(!val) return;
-      const unit = (masterCache.equip || []).find(e => String(e.equip_no).trim().toUpperCase() === String(val).trim().toUpperCase());
+      const target = String(val).trim().toUpperCase();
+      const unit = (masterCache.equip || []).find(e => String(e.equip_no).trim().toUpperCase() === target);
+      
       if (unit) {
         if(document.getElementById('brand')) document.getElementById('brand').value = unit.brand || ''; 
         if(document.getElementById('unit_type')) document.getElementById('unit_type').value = unit.unit_type || '';
+      }
+      
+      // --- PATCH: Auto-Sync HM di Form Buat WO ---
+      const actualHM = getActualHM(target);
+      if(document.getElementById('hm_km') && actualHM > 0) {
+          document.getElementById('hm_km').value = actualHM;
       }
     }
 
@@ -2959,6 +2969,13 @@ db.ref('backlogs').on('value', (snapshot) => {
         if(plan) {
             // Tarik data Next Service HM sebagai Plan HM saat ini
             if(document.getElementById('svc_plan_hm')) document.getElementById('svc_plan_hm').value = plan.next_service_hm || '';
+        }
+
+        // --- PATCH: Auto-Sync Actual HM dari Daily HM Terakhir ---
+        const actualHM = getActualHM(target);
+        if(document.getElementById('svc_actual_hm')) {
+            // Jika ada riwayat HM, otomatis isi. Jika tidak, biarkan kosong.
+            document.getElementById('svc_actual_hm').value = actualHM > 0 ? actualHM : '';
         }
     }
 
