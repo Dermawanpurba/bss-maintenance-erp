@@ -1015,7 +1015,7 @@
     // ==========================================
     // 3. GOOGLE APPS SCRIPT API (PROXY CHAINING)
     // ==========================================
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwimRqFiDfe35MDdZ4Z-ttmb4AC_Wr65EbXaU1jZKilFA2b1QDazIpK_qkJp1orBJad/exec"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwL4Le6h1p-RdUdHrsmVhU0Jt9k0iZh9lniUkkva4BBJ7jGk2dbQ_Zb9sulxRBpKgW9/exec"; 
 
     async function fetchGAS(actionName, payloadData = {}) {
       if (isPreviewMode) {
@@ -1255,31 +1255,46 @@
       isFirebaseListening = true;
 
       db.ref('work_orders').on('value', (snapshot) => {
-        if (snapshot.exists()) {
-          const fbData = snapshot.val();
-          Object.keys(fbData).forEach(key => {
-             let idx = woDataCache.findIndex(w => w.no_wo === key);
-             if(idx > -1) { woDataCache[idx] = { ...woDataCache[idx], ...fbData[key] }; } 
-             else { woDataCache.unshift(fbData[key]); }
-          });
-          calculateKPIFrontEnd();
-          const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
-        }
-      });
+    if (snapshot.exists()) {
+        const fbData = snapshot.val();
+        // FIX: Hapus cache di frontend jika data di Firebase sudah tidak ada
+        woDataCache = woDataCache.filter(w => fbData[w.no_wo]);
+        
+        Object.keys(fbData).forEach(key => {
+            let idx = woDataCache.findIndex(w => w.no_wo === key);
+            if(idx > -1) { woDataCache[idx] = { ...woDataCache[idx], ...fbData[key] }; } 
+            else { woDataCache.unshift(fbData[key]); }
+        });
+        calculateKPIFrontEnd();
+        const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
+    } else {
+        // FIX: Render ulang jika semua data di Firebase dihapus
+        woDataCache = [];
+        calculateKPIFrontEnd();
+        const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
+    }
+});
 
-      db.ref('backlogs').on('value', (snapshot) => {
-        if (snapshot.exists()) {
-           const fbData = snapshot.val();
-           Object.keys(fbData).forEach(key => {
-               let idx = backlogCache.findIndex(b => b.id === key);
-               if(idx > -1) backlogCache[idx] = { ...backlogCache[idx], ...fbData[key] };
-               else backlogCache.unshift(fbData[key]);
-           });
-           const pBl = document.getElementById('page-backlog'); if(pBl && pBl.classList.contains('active')) renderBacklogTable();
-           const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
-           calculateKPIFrontEnd();
-        }
-      });
+db.ref('backlogs').on('value', (snapshot) => {
+    if (snapshot.exists()) {
+        const fbData = snapshot.val();
+        // FIX: Sinkronisasi pembersihan cache
+        backlogCache = backlogCache.filter(b => fbData[b.id]);
+
+        Object.keys(fbData).forEach(key => {
+            let idx = backlogCache.findIndex(b => b.id === key);
+            if(idx > -1) backlogCache[idx] = { ...backlogCache[idx], ...fbData[key] };
+            else backlogCache.unshift(fbData[key]);
+        });
+        const pBl = document.getElementById('page-backlog'); if(pBl && pBl.classList.contains('active')) renderBacklogTable();
+        const pLwo = document.getElementById('page-list-wo'); if(pLwo && pLwo.classList.contains('active')) renderWOTable();
+        calculateKPIFrontEnd();
+    } else {
+        // FIX: Kosongkan jika Firebase kosong
+        backlogCache = [];
+        const pBl = document.getElementById('page-backlog'); if(pBl && pBl.classList.contains('active')) renderBacklogTable();
+    }
+});
 
       db.ref('daily_hm').on('value', (snapshot) => {
         if (snapshot.exists()) {
@@ -1794,14 +1809,21 @@
       }).join('');
     }
 
-    // Helper: Ekstraktor Waktu HH:mm Super Kuat
+    // PERBAIKAN: Helper Ekstraktor Waktu (Kebal format Google Sheets desimal pecahan hari)
     function formatTimeOnly(val) {
         if (val === undefined || val === null || String(val).trim() === '' || String(val) === 'undefined') return '-';
         
-        // Bersihkan tanda kutip dari string Google Sheets
         let str = String(val).replace(/['"]/g, '').trim(); 
         
-        // Tangkap format jam berapapun (termasuk 14:21 atau 02:21) menggunakan Regex
+        // Perbaikan: Deteksi jika Sheets mengirimkan jam sebagai desimal (contoh: 0.604166 untuk 14:30)
+        if (!isNaN(str) && Number(str) > 0 && Number(str) < 1) {
+            let totalMinutes = Math.round(Number(str) * 24 * 60);
+            let h = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+            let m = (totalMinutes % 60).toString().padStart(2, '0');
+            return `${h}:${m}`;
+        }
+        
+        // Tangkap format jam normal teks (contoh: 14:30)
         const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
         if (timeMatch) {
             let h = timeMatch[1].padStart(2, '0');
@@ -1812,14 +1834,12 @@
         return '-';
     }
 
-    // FUNGSI RENDER AKTIFITAS BEBAS DUPLIKASI
     function renderActivityTable() {
         const tbody = document.getElementById('activityTableBody');
         if(!tbody) return;
         
         let acts = [...(masterCache.activities || [])].reverse(); 
         
-        // Filter untuk mekanik agar hanya melihat aktivitasnya sendiri
         if (currentUser && currentUser.role === 'Mekanik') {
             acts = acts.filter(a => String(a.mekanik).toLowerCase().includes(String(currentUser.nama).toLowerCase()));
         }
@@ -1832,19 +1852,36 @@
         const isPlanner = currentUser && currentUser.role && currentUser.role.toUpperCase().includes('PLANNER');
 
         tbody.innerHTML = acts.map(a => {
-            // Normalisasi Waktu Ketat (Pastikan String)
-            let rawMulai = String(a.jam_mulai || a.Jam_Mulai || '00:00').trim();
-            let rawSelesai = String(a.jam_selesai || a.Jam_Selesai || '00:00').trim();
+            // 1. Tarik data langsung dari key backend (Google Sheets mengubah Jam_Mulai menjadi jam_mulai)
+            let rawMulai = (a.jam_mulai !== undefined && a.jam_mulai !== "") ? a.jam_mulai : '-';
+            let rawSelesai = (a.jam_selesai !== undefined && a.jam_selesai !== "") ? a.jam_selesai : '-';
             
-            const safeJamMulai = formatTimeOnly(rawMulai);
-            const safeJamSelesai = formatTimeOnly(rawSelesai);
+            // 2. Bersihkan dari petik tunggal bawaan Google Sheets
+            let safeJamMulai = String(rawMulai).replace(/['"]/g, '').trim();
+            let safeJamSelesai = String(rawSelesai).replace(/['"]/g, '').trim();
+            
+            // 3. Konversi jika Sheets mengirimkan jam sebagai desimal pecahan hari (0.xxxx)
+            if (!isNaN(safeJamMulai) && Number(safeJamMulai) > 0 && Number(safeJamMulai) < 1) {
+                let m = Math.round(Number(safeJamMulai) * 24 * 60);
+                safeJamMulai = Math.floor(m/60).toString().padStart(2,'0') + ':' + (m%60).toString().padStart(2,'0');
+            }
+            if (!isNaN(safeJamSelesai) && Number(safeJamSelesai) > 0 && Number(safeJamSelesai) < 1) {
+                let m = Math.round(Number(safeJamSelesai) * 24 * 60);
+                safeJamSelesai = Math.floor(m/60).toString().padStart(2,'0') + ':' + (m%60).toString().padStart(2,'0');
+            }
+            
+            // 4. Cek format jam, JIKA BUKAN JAM, TAMPILKAN DATA ASLINYA!
+            let matchM = safeJamMulai.match(/(\d{1,2}):(\d{2})/);
+            safeJamMulai = matchM ? `${matchM[1].padStart(2,'0')}:${matchM[2]}` : safeJamMulai;
+            
+            let matchS = safeJamSelesai.match(/(\d{1,2}):(\d{2})/);
+            safeJamSelesai = matchS ? `${matchS[1].padStart(2,'0')}:${matchS[2]}` : safeJamSelesai;
             
             let safeMekanik = String(a.mekanik || '-');
             if(safeMekanik.includes('[Ljava.lang.Object')) {
                 safeMekanik = '<span class="text-red-500 italic">Data Lama Error</span>';
             }
 
-            // Proteksi ID Aktifitas jika undefined
             const safeId = a.id ? a.id : 'undefined';
 
             let actionBtn = '-';
@@ -2512,33 +2549,52 @@
 
     // FIX: DELETE WO BERHASIL & MEMBERIKAN NOTIFIKASI
     function handleDeleteWO(noWo) { 
-        Swal.fire({ 
-            title: 'Hapus WO?', 
-            text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
-            icon: 'warning', 
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            confirmButtonText: 'Ya, Hapus!'
-        }).then(r => { 
-            if(r.isConfirmed) { 
-                startLoading("DELETING..."); 
-                fetchGAS("deleteWO", { no_wo: String(noWo).trim() }).then(res => { 
-                    endLoading(); 
-                    if(res.success) {
-                        Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
-                        globalDataSync(); 
-                    } else {
-                        Swal.fire('Error', res.message, 'error');
-                    }
-                }).catch(err => { 
-                    endLoading(); 
-                    Swal.fire('Error', err.toString(), 'error');
-                }); 
-            } 
-        }); 
-    }
+    Swal.fire({ 
+        title: 'Hapus WO?', 
+        text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
+        icon: 'warning', 
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Hapus!'
+    }).then(r => { 
+        if(r.isConfirmed) { 
+            startLoading("DELETING..."); 
+            fetchGAS("deleteWO", { no_wo: String(noWo).trim() }).then(res => { 
+                endLoading(); 
+                if(res.success) {
+                    // FIX: Eksekusi hapus di Firebase
+                    db.ref('work_orders/' + String(noWo).trim()).remove();
+                    Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
+                    globalDataSync(); 
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            }).catch(err => { 
+                endLoading(); 
+                Swal.fire('Error', err.toString(), 'error');
+            }); 
+        } 
+    }); 
+}
 
-    function deleteBacklog(id) { Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { startLoading("DELETING..."); fetchGAS("deleteBacklog", { id: id }).then(res => { endLoading(); globalDataSync(); }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); } }); }
+    function deleteBacklog(id) { 
+    Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { 
+        if(r.isConfirmed) { 
+            startLoading("DELETING..."); 
+            fetchGAS("deleteBacklog", { id: id }).then(res => { 
+                endLoading(); 
+                if(res.success) {
+                    // FIX: Eksekusi hapus di Firebase
+                    db.ref('backlogs/' + id).remove();
+                    Swal.fire('Terhapus!', 'Backlog berhasil dihapus.', 'success');
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+                globalDataSync(); 
+            }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); 
+        } 
+    }); 
+}
 
     // PRINT WO
     function printWO(noWo) {
