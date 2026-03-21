@@ -145,6 +145,9 @@
             <button onclick="navigate('aktifitas')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="aktifitas">
                 <i class="fas fa-hard-hat w-8 group-hover:scale-110 transition-transform text-orange-400"></i> Laporan Aktifitas
             </button>
+            <button onclick="navigate('input-service')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="input-service">
+                <i class="fas fa-wrench w-8 group-hover:scale-110 transition-transform text-emerald-400"></i> Input Service (PM)
+            </button>
         </div>
         
         <button onclick="navigate('list-wo')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="list-wo">
@@ -484,7 +487,73 @@
           </form>
         </div>
       </section>
-      
+      <!-- INJEKSI PAGE INPUT SERVICE -->
+      <section id="page-input-service" class="page pb-12">
+        <div class="max-w-6xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-wrench mr-3 text-emerald-500"></i> Input Service Tracker</h2>
+          </div>
+          
+          <div class="bg-emerald-50 border border-emerald-200 p-4 md:p-5 rounded-2xl mb-8 text-emerald-800 text-[10px] md:text-xs font-medium leading-relaxed shadow-sm">
+              <i class="fas fa-sync text-emerald-500 mr-1 animate-spin-slow"></i> <b>Auto-Sync Aktif:</b> Data "Actual HM" dan "Actual Date" yang diinput di sini akan otomatis memperbarui tabel <b>Plan Alat & Service</b> untuk perhitungan jadwal servis (PM) berikutnya.
+          </div>
+
+          <form id="serviceInputForm" onsubmit="handleSaveServiceInput(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+            <div class="space-y-2 md:col-span-4">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Unit Code (Equip No)</label>
+                <input type="text" id="svc_equip_no" list="listEquip" onchange="autoFillPlanService(this.value)" class="w-full md:w-1/2 px-4 py-3 md:py-4 border border-slate-200 rounded-xl font-black uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm text-theme-main" placeholder="Ketik Kode Unit" required>
+            </div>
+
+            <!-- Box PLAN -->
+            <div class="md:col-span-2 bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-4">
+                <h3 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-200 pb-2"><i class="fas fa-calendar-alt mr-1"></i> Target / Plan Service</h3>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Plan HM (Target)</label>
+                    <input type="number" step="0.1" id="svc_plan_hm" class="w-full px-4 py-2 border border-slate-200 rounded-lg font-bold outline-none bg-white text-sm" placeholder="Auto-fill dari Master" required>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Plan Date (Estimasi)</label>
+                    <input type="date" id="svc_plan_date" class="w-full px-4 py-2 border border-slate-200 rounded-lg font-bold outline-none bg-white text-sm" required>
+                </div>
+            </div>
+
+            <!-- Box ACTUAL -->
+            <div class="md:col-span-2 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-4">
+                <h3 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest border-b border-emerald-200 pb-2"><i class="fas fa-check-circle mr-1"></i> Actual Eksekusi</h3>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Actual HM (Saat Service)</label>
+                    <input type="number" step="0.1" id="svc_actual_hm" class="w-full px-4 py-2 border border-emerald-300 rounded-lg font-black outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm text-emerald-700" placeholder="Ketik HM Aktual" required>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Actual Date (Selesai)</label>
+                    <input type="date" id="svc_actual_date" class="w-full px-4 py-2 border border-emerald-300 rounded-lg font-black outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm text-emerald-700" required>
+                </div>
+            </div>
+
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-emerald-600 text-white font-black py-4 md:py-5 rounded-xl md:rounded-2xl shadow-xl shadow-emerald-500/30 active:scale-95 transition-transform uppercase tracking-widest text-[11px] hover:bg-emerald-700">SIMPAN & SYNC KE MASTER PLAN</button>
+            </div>
+          </form>
+
+          <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-history mr-2"></i> Riwayat Input Service</h3>
+          <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
+            <table class="w-full text-left text-sm min-w-[800px]">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+                <tr>
+                    <th class="p-4 md:p-5 w-32">EQUIP NO</th>
+                    <th class="p-4 md:p-5 bg-blue-50/30 text-blue-600 text-center">PLAN HM</th>
+                    <th class="p-4 md:p-5 bg-blue-50/30 text-blue-600 text-center">PLAN DATE</th>
+                    <th class="p-4 md:p-5 bg-emerald-50/30 text-emerald-600 text-center">ACTUAL HM</th>
+                    <th class="p-4 md:p-5 bg-emerald-50/30 text-emerald-600 text-center">ACTUAL DATE</th>
+                    <th class="p-4 md:p-5 text-center w-24">DEVIASI HM</th>
+                </tr>
+              </thead>
+              <tbody id="serviceHistoryTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section id="page-aktifitas" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
@@ -1255,7 +1324,7 @@
     let currentUser = null;
     let woDataCache = [];
     let backlogCache = []; 
-    let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [], components: [], usersData: [], mekanikList: [], pelaporList: [], activities: [] };
+    let masterCache = { equip: [], parts: [], planAlat: [], dailyHM: [], components: [], usersData: [], mekanikList: [], pelaporList: [], activities: [], serviceHistory: [] };
     let partsDictCache = []; 
     let allUsersCache = [];
     
@@ -1375,6 +1444,7 @@
               masterCache.pelaporList = res.pelaporList || [];
               masterCache.activities = res.activities || [];
               masterCache.dailyHM = res.dailyHM || [];
+              masterCache.serviceHistory = res.serviceHistory || [];
               
               woDataCache = res.wo || [];
               backlogCache = res.backlog || [];
@@ -1392,7 +1462,7 @@
               const pDb = document.getElementById('page-dashboard'); if(pDb && pDb.classList.contains('active')) calculateKPIFrontEnd();
               
               renderMasterEquipTable(); renderMasterPartsTable(); renderMasterCompTable(); renderActivityTable(); prefillActivityForm();
-              
+              if(document.getElementById('serviceHistoryTableBody')) renderServiceHistoryTable();
               if(document.getElementById('userTableBody')) renderUserTable();
               if(document.getElementById('masterPlanBody')) renderMasterPlanTable();
 
@@ -1486,6 +1556,10 @@ db.ref('backlogs').on('value', (snapshot) => {
       if(id === 'buat-wo' && !preventReset) { prepareWOForm(); }
       if(id === 'backlog') { renderBacklogTable(); }
       if(id === 'aktifitas') { renderActivityTable(); prefillActivityForm(); }
+      if(id === 'input-service') { 
+          renderServiceHistoryTable(); 
+          if(document.getElementById('svc_actual_date')) document.getElementById('svc_actual_date').value = getShiftDate();
+      }
       if(id === 'daily-hm') { 
           renderDailyHMTable(); 
           const hmTgl = document.getElementById('hm_tanggal'); if(hmTgl) hmTgl.value = getShiftDate();
@@ -2819,6 +2893,74 @@ db.ref('backlogs').on('value', (snapshot) => {
                 }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); 
             } 
         });
+    }
+
+// --- LOGIKA INPUT SERVICE TRACKER ---
+    function autoFillPlanService(unitNo) {
+        if(!unitNo) return;
+        const target = unitNo.trim().toUpperCase();
+        const plan = (masterCache.planAlat || []).find(p => (p.equip_no || '').toUpperCase() === target);
+        
+        if(plan) {
+            // Tarik data Next Service HM sebagai Plan HM saat ini
+            if(document.getElementById('svc_plan_hm')) document.getElementById('svc_plan_hm').value = plan.next_service_hm || '';
+        }
+    }
+
+    function handleSaveServiceInput(e) {
+        e.preventDefault();
+        const payload = {
+            equip_no: document.getElementById('svc_equip_no').value.toUpperCase(),
+            plan_hm: document.getElementById('svc_plan_hm').value,
+            plan_date: document.getElementById('svc_plan_date').value,
+            actual_hm: document.getElementById('svc_actual_hm').value,
+            actual_date: document.getElementById('svc_actual_date').value
+        };
+
+        startLoading("MENYIMPAN & SINKRONISASI DATA...");
+        fetchGAS("saveServiceHistory", payload).then(res => {
+            endLoading();
+            if(res.success) {
+                Swal.fire('Berhasil!', res.message, 'success');
+                document.getElementById('serviceInputForm').reset();
+                document.getElementById('svc_actual_date').value = getShiftDate();
+                globalDataSync(); // Refresh seluruh data agar UI Plan Alat langsung berubah
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        }).catch(err => {
+            endLoading(); Swal.fire('Error', err.toString(), 'error');
+        });
+    }
+
+    function renderServiceHistoryTable() {
+        const tbody = document.getElementById('serviceHistoryTableBody');
+        if(!tbody) return;
+
+        let data = [...(masterCache.serviceHistory || [])].reverse(); // Urutkan dari yang terbaru
+        
+        if(data.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">Belum ada riwayat service terdaftar.</td></tr>'; 
+            return; 
+        }
+
+        tbody.innerHTML = data.map(d => {
+            let deviasiHM = parseFloat(d.actual_hm) - parseFloat(d.plan_hm);
+            let devBadge = '';
+            
+            if(isNaN(deviasiHM)) devBadge = '-';
+            else if(deviasiHM <= 0) devBadge = `<span class="text-emerald-500 font-black px-2 py-1 bg-emerald-50 rounded-lg text-[10px]">${deviasiHM} h</span>`;
+            else devBadge = `<span class="text-red-500 font-black px-2 py-1 bg-red-50 rounded-lg text-[10px] animate-pulse">+${deviasiHM} h</span>`;
+
+            return `<tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-black uppercase text-theme-accent">${d.equip_no || '-'}</td>
+                        <td class="p-4 text-center font-bold text-slate-600 bg-blue-50/10">${d.plan_hm || '-'}</td>
+                        <td class="p-4 text-center text-xs text-slate-500 bg-blue-50/10">${d.plan_date || '-'}</td>
+                        <td class="p-4 text-center font-black text-emerald-700 bg-emerald-50/10">${d.actual_hm || '-'}</td>
+                        <td class="p-4 text-center font-bold text-slate-800 bg-emerald-50/10 text-xs">${d.actual_date || '-'}</td>
+                        <td class="p-4 text-center">${devBadge}</td>
+                    </tr>`;
+        }).join('');
     }
 
   </script>
