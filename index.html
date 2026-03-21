@@ -1911,6 +1911,7 @@ db.ref('backlogs').on('value', (snapshot) => {
           });
 
           let sortedFreq = Object.entries(equipFreq).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          window.kpiAuditRawData.topFreq = sortedFreq; // <--- INJEKSI BARIS INI
           if(sortedFreq.length === 0) {
               topEquipFreqContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data breakdown</div>';
           } else {
@@ -1930,6 +1931,7 @@ db.ref('backlogs').on('value', (snapshot) => {
           }
 
           let sortedHours = Object.entries(unitDowntime).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          window.kpiAuditRawData.topHours = sortedHours; // <--- INJEKSI BARIS INI
           if(sortedHours.length === 0) {
               topEquipHoursContainer.innerHTML = '<div class="text-center text-slate-400 font-bold mt-10">Belum ada data downtime</div>';
           } else {
@@ -3097,29 +3099,64 @@ db.ref('backlogs').on('value', (snapshot) => {
         });
     };
 
-    // --- FITUR DOWNLOAD CSV UNTUK TOP 5 ---
+    // --- FITUR DOWNLOAD CSV UNTUK TOP 5 (DETAIL AUDIT TRAIL) ---
     window.downloadTop5CSV = function(type) {
         if (!window.kpiAuditRawData) return;
-        const data = type === 'freq' ? window.kpiAuditRawData.topFreq : window.kpiAuditRawData.topHours;
-        const unitLabel = type === 'freq' ? 'Kali_Rusak' : 'Total_Jam_Downtime';
 
-        if (!data || data.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
+        let csvContent = "";
 
-        let csvContent = `data:text/csv;charset=utf-8,Peringkat,Equip_No,${unitLabel}\n`;
-        data.forEach((item, index) => {
-            const val = type === 'freq' ? item[1] : item[1].toFixed(2);
-            csvContent += `${index + 1},"${item[0]}","${val}"\n`;
-        });
+        if (type === 'freq') {
+            // Untuk Frekuensi (Kali Rusak), format summary tetap digunakan
+            const data = window.kpiAuditRawData.topFreq;
+            if (!data || data.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
+            
+            csvContent = `data:text/csv;charset=utf-8,Peringkat,Equip_No,Kali_Rusak\n`;
+            data.forEach((item, index) => {
+                csvContent += `${index + 1},"${item[0]}","${item[1]}"\n`;
+            });
+        } else {
+            // UNTUK HOURS: TAMPILKAN PROSES DATABASE DARI MANA KE MANA (AUDIT DETAIL)
+            const topHoursData = window.kpiAuditRawData.topHours;
+            if (!topHoursData || topHoursData.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
+            
+            // 1. Ambil daftar Equip_No yang masuk peringkat Top 5
+            const topEquips = topHoursData.map(item => item[0]);
+            
+            // 2. Filter detail WO mentah khusus untuk unit-unit Top 5 tersebut
+            const detailWOs = window.kpiAuditRawData.wo.filter(w => topEquips.includes(w.Equip_No));
+            
+            // 3. Buat Header CSV dengan rincian lengkap
+            csvContent = `data:text/csv;charset=utf-8,Equip_No,WO_No,Status,Type,Argo_Mulai_(Filtered),Argo_Selesai_(Filtered),Durasi_(Jam)\n`;
+            
+            // 4. Masukkan baris data WO satu per satu
+            detailWOs.forEach(w => {
+                csvContent += `"${w.Equip_No}","${w.WO_No}","${w.Status}","${w.Type}","${w.Breakdown_Start}","${w.Breakdown_End}","${w.Downtime_Hours}"\n`;
+            });
+            
+            // 5. Tambahkan Tabel Summary Capper (Pembatas 24 Jam) di bagian bawah CSV
+            csvContent += `\n\nSUMMARY TOTAL & SISTEM PEMBATAS (CAPPER)\n`;
+            csvContent += `Equip_No,Total_Jam_Original,Total_Jam_Setelah_Capper (Final)\n`;
+            
+            topHoursData.forEach(item => {
+                const eq = item[0];
+                const cappedHours = item[1].toFixed(2);
+                // Hitung total jam murni sebelum dipotong oleh sistem Capper 24H
+                const originalHours = detailWOs.filter(w => w.Equip_No === eq).reduce((sum, w) => sum + parseFloat(w.Downtime_Hours), 0).toFixed(2);
+                
+                csvContent += `"${eq}","${originalHours}","${cappedHours}"\n`;
+            });
+        }
 
+        // Trigger Download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement('a');
         link.setAttribute('href', encodedUri);
-        link.setAttribute('download', `Audit_Top5_${type}_${new Date().getTime()}.csv`);
+        link.setAttribute('download', `Audit_Detail_Top5_${type}_${new Date().getTime()}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
-    
+
 // --- FITUR DETAIL BREAKDOWN DARI PAPAN CATUR ---
     window.showBreakdownDetail = function(equipNo) {
         if(!equipNo) return;
