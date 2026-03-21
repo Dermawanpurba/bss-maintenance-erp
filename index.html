@@ -320,13 +320,13 @@
             </div>
             
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Frekuensi)</h3>
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center flex justify-center items-center gap-2">Top 5 Breakdown (Frekuensi) <i class="fas fa-info-circle cursor-pointer hover:text-theme-accent text-sm transition-colors" onclick="showTop5Audit('freq')" title="Detail Frekuensi"></i></h3>
                 <div id="topEquipFreqList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
                 </div>
             </div>
             
             <div class="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100">
-                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center">Top 5 Breakdown (Hours)</h3>
+                <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-6 text-center flex justify-center items-center gap-2">Top 5 Breakdown (Hours) <i class="fas fa-info-circle cursor-pointer hover:text-red-500 text-sm transition-colors" onclick="showTop5Audit('hours')" title="Detail Hours"></i></h3>
                 <div id="topEquipHoursList" class="flex flex-col justify-start h-48 md:h-64 w-full overflow-y-auto pr-2">
                 </div>
             </div>
@@ -538,14 +538,14 @@
           <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-history mr-2"></i> Riwayat Input Service</h3>
           <div class="overflow-x-auto border border-slate-100 rounded-2xl shadow-sm">
             <table class="w-full text-left text-sm min-w-[800px]">
-              <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">
+              <thead class="bg-slate-50 border-b border-slate-100 text-[9px] md:text-[10px] uppercase font-black text-slate-500 tracking-widest">
                 <tr>
-                    <th class="p-4 md:p-5 w-32">EQUIP NO</th>
-                    <th class="p-4 md:p-5 bg-blue-50/30 text-blue-600 text-center">PLAN HM</th>
-                    <th class="p-4 md:p-5 bg-blue-50/30 text-blue-600 text-center">PLAN DATE</th>
-                    <th class="p-4 md:p-5 bg-emerald-50/30 text-emerald-600 text-center">ACTUAL HM</th>
-                    <th class="p-4 md:p-5 bg-emerald-50/30 text-emerald-600 text-center">ACTUAL DATE</th>
-                    <th class="p-4 md:p-5 text-center w-24">DEVIASI HM</th>
+                    <th class="p-4 md:p-6 w-24">WO NO</th>
+                    <th class="p-4 md:p-6 w-40">UNIT / HM / BACKLOG</th>
+                    <th class="p-4 md:p-6">KENDALA (PROBLEM)</th>
+                    <th class="p-4 md:p-6 w-32">BREAKDOWN DATE</th>
+                    <th class="p-4 md:p-6 text-center w-24">STATUS</th>
+                    <th class="p-4 md:p-6 text-right w-24">ACTIONS</th>
                 </tr>
               </thead>
               <tbody id="serviceHistoryTableBody" class="divide-y divide-slate-50 font-medium text-slate-700"></tbody>
@@ -1879,7 +1879,24 @@ db.ref('backlogs').on('value', (snapshot) => {
       const ctxService = document.getElementById('serviceChart');
       if(ctxService) {
           if(serviceChartInstance) serviceChartInstance.destroy();
-          serviceChartInstance = new Chart(ctxService.getContext('2d'), { type: 'pie', data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } } } });
+          serviceChartInstance = new Chart(ctxService.getContext('2d'), { 
+              type: 'pie', 
+              data: { labels: ['AMAN', 'MENDEKATI', 'OVERDUE', 'WAITING HM'], datasets: [{ data: [countAman, countMendekati, countOverdue, countWaiting], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] }, 
+              options: { 
+                  responsive: true, maintainAspectRatio: false, 
+                  plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9, family: 'Plus Jakarta Sans'} } } },
+                  onClick: (event, elements) => {
+                      if (elements.length > 0) {
+                          const idx = elements[0].index;
+                          const label = serviceChartInstance.data.labels[idx];
+                          showServiceChartDetail(label);
+                      }
+                  },
+                  onHover: (event, elements) => {
+                      event.native.target.style.cursor = elements[0] ? 'pointer' : 'default';
+                  }
+              } 
+          });
       }
 
       const topEquipFreqContainer = document.getElementById('topEquipFreqList');
@@ -2195,7 +2212,7 @@ db.ref('backlogs').on('value', (snapshot) => {
       const statusFilter = document.getElementById('filterStatusMonitoring')?.value || 'ALL';
 
       let filtered = (woDataCache || []).filter(w => {
-          const matchQuery = String(w.no_wo||'').toLowerCase().includes(q) || String(w.equip_no||'').toLowerCase().includes(q);
+          const matchQuery = String(w.no_wo||'').toLowerCase().includes(q) || String(w.equip_no||'').toLowerCase().includes(q) || String(w.kendala||'').toLowerCase().includes(q);
           const matchStatus = statusFilter === 'ALL' || w.status === statusFilter || (!w.status && statusFilter === 'OPEN');
           return matchQuery && matchStatus;
       });
@@ -2209,7 +2226,7 @@ db.ref('backlogs').on('value', (snapshot) => {
       if(document.getElementById('monPageInfo')) document.getElementById('monPageInfo').innerText = `${currentMonPage} / ${totalPages}`;
 
       if (paged.length === 0) { 
-          tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold">WO Tidak ditemukan.</td></tr>'; 
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-bold">WO Tidak ditemukan.</td></tr>'; 
           return; 
       }
 
@@ -2233,8 +2250,18 @@ db.ref('backlogs').on('value', (snapshot) => {
         if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl" title="Hapus WO"><i class="fas fa-trash text-xs"></i></button>`;
 
         const safeJamR = (i.jam_rusak || '-').replace(/'/g, '');
+        
+        // Data Kendala
+        const kendalaText = i.kendala || '<span class="italic opacity-50">Tidak ada deskripsi</span>';
 
-        return `<tr class="hover:bg-slate-50 border-b"><td class="p-4 font-black text-slate-900 text-sm">${i.no_wo}</td><td class="p-4"><div class="font-black text-lg text-theme-accent uppercase">${unitNo}</div><div class="text-[10px] font-bold text-slate-500 mt-1 uppercase">HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>${backlogBadge}</td><td class="p-4 text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[10px]"><i class="far fa-clock"></i> ${safeJamR}</span></td><td class="p-4 text-center"><span class="px-3 py-1.5 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td><td class="p-4 text-right flex justify-end space-x-1">${actionButtons}</td></tr>`;
+        return `<tr class="hover:bg-slate-50 border-b">
+                  <td class="p-4 font-black text-slate-900 text-xs md:text-sm">${i.no_wo}</td>
+                  <td class="p-4"><div class="font-black text-base md:text-lg text-theme-accent uppercase">${unitNo}</div><div class="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase">HM: ${actualHM} | Tipe: ${i.unit_type || '-'}</div>${backlogBadge}</td>
+                  <td class="p-4"><div class="text-xs font-medium text-red-800 bg-red-50/80 p-2.5 rounded-lg border border-red-100 line-clamp-2" title="${i.kendala || ''}">${kendalaText}</div></td>
+                  <td class="p-4 text-xs md:text-sm">${i.tgl_rusak||'-'} <br><span class="font-bold text-slate-500 text-[9px] md:text-[10px]"><i class="far fa-clock"></i> ${safeJamR}</span></td>
+                  <td class="p-4 text-center"><span class="px-3 py-1.5 rounded-xl text-[9px] font-black shadow-sm ${stCol}">${i.status || 'OPEN'}</span></td>
+                  <td class="p-4 text-right flex justify-end space-x-1">${actionButtons}</td>
+                </tr>`;
       }).join('');
     }
 
@@ -3034,7 +3061,65 @@ db.ref('backlogs').on('value', (snapshot) => {
                     </tr>`;
         }).join('');
     }
+// --- FITUR KLIK GRAFIK PREDIKSI SERVICE (SHORTCUT KE MASTER PLAN) ---
+    window.showServiceChartDetail = function(label) {
+        navigate('master-plan');
+        const filterSelect = document.getElementById('filterStatusPlan');
+        if (filterSelect) {
+            if (label === 'WAITING HM') filterSelect.value = 'WAITING';
+            else filterSelect.value = label;
+            renderMasterPlanTable();
+        }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Filter Aktif: ${label}`, text: 'Tabel Plan Alat otomatis difilter', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+    };
 
+    // --- FITUR POPUP AUDIT RUMUS TOP 5 BREAKDOWN ---
+    window.showTop5Audit = function(type) {
+        if (!window.kpiAuditRawData) return;
+        let html = ''; let title = '';
+
+        if (type === 'freq') {
+            title = 'Audit Formula: Top 5 Frekuensi';
+            html = `<div class="mb-3"><span class="font-black text-slate-700">Formula (Standard):</span><br><code class="text-xs bg-slate-200 px-2 py-1 rounded">Count(Unscheduled WO) per Equip_No</code></div>
+                    <div><span class="font-black text-slate-700">Keterangan:</span><br>Menghitung total frekuensi/jumlah kejadian kerusakan alat (hanya status UNSCHEDULED) selama rentang filter tanggal yang dipilih di Dashboard.</div>`;
+        } else {
+            title = 'Audit Formula: Top 5 Jam Downtime';
+            html = `<div class="mb-3"><span class="font-black text-slate-700">Formula (Standard):</span><br><code class="text-xs bg-slate-200 px-2 py-1 rounded">Sum(Jam Selesai - Jam Rusak) per Equip_No</code></div>
+                    <div><span class="font-black text-slate-700">Keterangan:</span><br>Menghitung akumulasi jam berhenti operasi (Downtime) dari semua status kerusakan per unit. Dilengkapi <b>Downtime Capper</b> (dibatasi logika rasional maksimal 24 Jam per hari).</div>`;
+        }
+        
+        html += `<button onclick="downloadTop5CSV('${type}')" class="mt-5 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg"><i class="fas fa-file-csv mr-2"></i> Download Rekap CSV</button>`;
+
+        Swal.fire({
+            title: `<span class="font-black text-xl tracking-tight">${title}</span>`,
+            html: `<div style="text-align:left; font-size:13px; background:#f8fafc; padding:15px; border-radius:10px; border: 1px solid #e2e8f0; line-height: 1.6;">${html}</div>`,
+            icon: 'info', showConfirmButton: false, showCloseButton: true
+        });
+    };
+
+    // --- FITUR DOWNLOAD CSV UNTUK TOP 5 ---
+    window.downloadTop5CSV = function(type) {
+        if (!window.kpiAuditRawData) return;
+        const data = type === 'freq' ? window.kpiAuditRawData.topFreq : window.kpiAuditRawData.topHours;
+        const unitLabel = type === 'freq' ? 'Kali_Rusak' : 'Total_Jam_Downtime';
+
+        if (!data || data.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
+
+        let csvContent = `data:text/csv;charset=utf-8,Peringkat,Equip_No,${unitLabel}\n`;
+        data.forEach((item, index) => {
+            const val = type === 'freq' ? item[1] : item[1].toFixed(2);
+            csvContent += `${index + 1},"${item[0]}","${val}"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `Audit_Top5_${type}_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
 // --- FITUR DETAIL BREAKDOWN DARI PAPAN CATUR ---
     window.showBreakdownDetail = function(equipNo) {
         if(!equipNo) return;
