@@ -1358,18 +1358,43 @@
       }
     };
 
-    function loadSettings() { }
-    
+    function loadSettings() { 
+        fetchGAS("getSettings").then(res => {
+            if (res && res.success && res.data) {
+                // 1. Terapkan UI (Logo, Nama PT, Tema)
+                applySettingsUI(res.data);
+                
+                // 2. Isi form Pengaturan agar tidak kosong saat menu dibuka
+                if(document.getElementById('conf_company')) document.getElementById('conf_company').value = res.data.CompanyName || '';
+                if(document.getElementById('conf_logo')) document.getElementById('conf_logo').value = res.data.CompanyLogo || '';
+                if(document.getElementById('conf_color')) {
+                    const themeCol = res.data.ThemeColor || '#0f172a';
+                    document.getElementById('conf_color').value = themeCol;
+                    if(document.getElementById('hexDisplay')) document.getElementById('hexDisplay').innerText = themeCol;
+                }
+            }
+        }).catch(err => console.warn("Load Settings Error:", err));
+    }
+
     function applySettingsUI(payload) {
-       document.documentElement.style.setProperty('--theme-main', payload.ThemeColor);
-       document.querySelectorAll('.company-display-name').forEach(el => el.innerText = payload.CompanyName);
+       if (payload.ThemeColor) document.documentElement.style.setProperty('--theme-main', payload.ThemeColor);
+       if (payload.CompanyName) document.querySelectorAll('.company-display-name').forEach(el => el.innerText = payload.CompanyName);
        
-       if(payload.CompanyLogo) {
+       if(payload.CompanyLogo && payload.CompanyLogo.trim() !== '') {
            const finalLogoUrl = formatDriveImgUrl(payload.CompanyLogo);
            document.querySelectorAll('.dynamic-logo-wrapper').forEach(el => {
                el.innerHTML = `<img src="${finalLogoUrl}" class="w-full h-full object-contain">`;
                el.classList.remove('p-1', 'p-1.5', 'p-2');
-               el.classList.add('bg-white');
+               el.classList.add('bg-white'); // Pakai background putih agar logo tidak menabrak warna tema
+           });
+       } else {
+           // Fallback: Kembali ke ikon pabrik jika URL Logo dikosongkan
+           document.querySelectorAll('.dynamic-logo-wrapper').forEach((el, index) => {
+               // Bedakan ukuran ikon untuk halaman login vs sidebar
+               const iconClass = index === 0 ? "text-3xl" : (index === 1 ? "text-sm" : "text-xl");
+               el.innerHTML = `<i class="fas fa-industry text-white ${iconClass} dynamic-logo-icon"></i>`;
+               el.classList.add('p-1.5');
+               el.classList.remove('bg-white');
            });
        }
     }
