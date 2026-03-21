@@ -329,7 +329,162 @@
             </div>
         </div>
       </section>
+<!-- INJEKSI FORM BUAT WO START -->
+      <section id="page-buat-wo" class="page pb-12">
+        <div class="max-w-6xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
+            <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-tools mr-3 text-blue-500"></i> Form Work Order</h2>
+            <div id="wo_status_display" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs border border-slate-200 uppercase tracking-widest shadow-sm">
+              STATUS: NEW
+            </div>
+          </div>
 
+          <form id="woForm" onsubmit="handleSaveWO(event)" class="space-y-8">
+            <!-- Header WO -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 bg-slate-50 p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-inner">
+              <div class="space-y-2 md:col-span-1 relative">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Work Order No</label>
+                <div class="flex gap-2">
+                  <input type="text" id="no_wo" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm" placeholder="Otomatis / Ketik WO">
+                  <button type="button" onclick="tarikDataWO()" class="bg-blue-100 text-blue-600 px-3 rounded-xl hover:bg-blue-200 transition-colors" title="Tarik Data WO Eksisting"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Equip No</label>
+                <input type="text" id="equip_no" list="listEquip" onchange="autoFillEquip(this.value)" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-black uppercase focus:ring-2 focus:ring-theme-accent outline-none shadow-sm text-sm text-theme-main" placeholder="Kode Unit" required>
+              </div>
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Brand</label>
+                <input type="text" id="brand" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold uppercase outline-none shadow-sm text-sm bg-slate-100" readonly placeholder="Auto">
+              </div>
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Unit Type</label>
+                <input type="text" id="unit_type" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold uppercase outline-none shadow-sm text-sm bg-slate-100" readonly placeholder="Auto">
+              </div>
+              
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">HM / KM</label>
+                <input type="number" step="0.1" id="hm_km" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm" placeholder="Nilai HM/KM" required>
+              </div>
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">PM Service</label>
+                <input type="text" id="pm_service" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm" placeholder="Misal: PS-2">
+              </div>
+              <div class="space-y-2 md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Tipe Service</label>
+                <select id="sch_unsch" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm bg-white cursor-pointer" required>
+                  <option value="UNSCH">UNSCHEDULED (Breakdown)</option>
+                  <option value="SCH">SCHEDULED (PM)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Detail Breakdown -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-red-50/30 p-6 rounded-2xl border border-red-100 shadow-sm">
+               <div class="space-y-4">
+                 <h3 class="text-[10px] font-black text-red-600 uppercase tracking-widest border-b border-red-200 pb-2"><i class="fas fa-clock mr-1"></i> Waktu Breakdown</h3>
+                 <div class="grid grid-cols-2 gap-3">
+                   <div>
+                     <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Tgl Rusak</label>
+                     <input type="date" id="tgl_rusak" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm" required>
+                   </div>
+                   <div>
+                     <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Jam Rusak</label>
+                     <div class="flex gap-2">
+                       <select id="jam_rusak_hh" class="w-1/2 px-2 py-2 border border-slate-200 rounded-lg font-bold outline-none bg-white text-sm" required></select>
+                       <select id="jam_rusak_mm" class="w-1/2 px-2 py-2 border border-slate-200 rounded-lg font-bold outline-none bg-white text-sm" required></select>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 <div class="grid grid-cols-2 gap-3 pt-2">
+                   <div>
+                     <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Major Component</label>
+                     <select id="major_comp" onchange="updateMinorComp()" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-xs bg-white cursor-pointer" required>
+                        <option value="">- Pilih Major -</option>
+                     </select>
+                   </div>
+                   <div>
+                     <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Minor Component</label>
+                     <select id="minor_comp" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-xs bg-white cursor-pointer" required>
+                        <option value="">- Pilih Minor -</option>
+                     </select>
+                   </div>
+                 </div>
+               </div>
+
+               <div class="space-y-4">
+                 <h3 class="text-[10px] font-black text-red-600 uppercase tracking-widest border-b border-red-200 pb-2"><i class="fas fa-exclamation-triangle mr-1"></i> Deskripsi Kendala</h3>
+                 <div>
+                    <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Problem / Issue (Laporan)</label>
+                    <textarea id="issue" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm resize-none h-16" placeholder="Deskripsikan kerusakan yang dilaporkan..." required></textarea>
+                 </div>
+                 <div>
+                    <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 block">Suspected Reason of Failure</label>
+                    <textarea id="failure_reason" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm resize-none h-16" placeholder="Diagnosa awal penyebab kerusakan..."></textarea>
+                 </div>
+               </div>
+            </div>
+
+            <!-- Tabel Parts -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
+              <div class="flex justify-between items-center p-4 bg-slate-50 border-b border-slate-200">
+                <h3 class="text-[10px] font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-cogs mr-1"></i> Spareparts Requisition</h3>
+                <button type="button" onclick="addPartRow()" class="px-3 py-1.5 bg-theme-main text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md hover:opacity-90 active:scale-95 transition-all"><i class="fas fa-plus mr-1"></i> Tambah Part</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left min-w-[800px]">
+                  <thead class="bg-slate-100 text-[9px] font-black uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th class="py-3 text-center w-12">No</th>
+                      <th class="py-3 px-2 w-48">Part Number</th>
+                      <th class="py-3 px-2 w-64">Description</th>
+                      <th class="py-3 px-2 w-20 text-center">Qty</th>
+                      <th class="py-3 px-2 w-24 text-center">UOM</th>
+                      <th class="py-3 px-2">Remarks / PR</th>
+                      <th class="py-3 w-12 text-right pr-4"><i class="fas fa-cog"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody id="partTableBody" class="divide-y divide-slate-100">
+                    <!-- JS Injected Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Bagian Tanda Tangan & Waktu Selesai -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner mt-6">
+               <div class="space-y-2">
+                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Dilaporkan Oleh</label>
+                 <select id="reported_by" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm bg-white cursor-pointer" required>
+                    <option value="">- Pilih Pelapor -</option>
+                 </select>
+               </div>
+               <div class="space-y-2">
+                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Lead Technician / Mekanik</label>
+                 <select id="tech" class="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-sm bg-white cursor-pointer" required>
+                    <option value="">- Pilih Teknisi -</option>
+                 </select>
+               </div>
+               <div class="space-y-2">
+                 <label class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Estimasi / Aktual Selesai (Opsional)</label>
+                 <div class="flex gap-2">
+                   <input type="date" id="tgl_selesai" class="w-1/2 px-3 py-3 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-theme-accent shadow-sm text-xs">
+                   <select id="jam_selesai_hh" class="w-1/4 px-2 py-3 border border-slate-200 rounded-xl font-bold outline-none bg-white text-xs"></select>
+                   <select id="jam_selesai_mm" class="w-1/4 px-2 py-3 border border-slate-200 rounded-xl font-bold outline-none bg-white text-xs"></select>
+                 </div>
+               </div>
+            </div>
+
+            <div class="pt-4 md:col-span-4 mt-2">
+                <button type="submit" class="w-full bg-theme-main text-white font-black py-4 md:py-5 rounded-xl md:rounded-2xl shadow-xl active:scale-95 transition-transform uppercase tracking-[0.2em] text-[11px] hover:bg-theme-main/90">
+                  <i class="fas fa-save mr-2"></i> SIMPAN WORK ORDER (WO)
+                </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      
       <section id="page-aktifitas" class="page pb-12">
         <div class="max-w-5xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
