@@ -1394,12 +1394,28 @@
       if (isMekanik) {
         const dT = document.getElementById('dashTitle'); if(dT) dT.innerText = "Mechanic Area 👋";
         const dD = document.getElementById('dashDesc'); if(dD) dD.innerText = "Pantau status Work Order, Backlog, Laporan Aktifitas, dan Monitoring.";
-        const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'none';
+        
+        // --- PATCH: Tampilkan Database Section tapi filter isinya ---
+        const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'block';
+        const btnPlan = document.querySelector('[data-page="master-plan"]'); if(btnPlan) btnPlan.style.display = 'none';
+        const btnParts = document.querySelector('[data-page="master-parts"]'); if(btnParts) btnParts.style.display = 'none';
+        const btnComp = document.querySelector('[data-page="master-comp"]'); if(btnComp) btnComp.style.display = 'none';
+        const btnEquip = document.querySelector('[data-page="master-equip"]'); if(btnEquip) btnEquip.style.display = 'flex'; // Tetap muncul
+        // -------------------------------------------------------------
+
         const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = 'none';
         const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'none';
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'none';
       } else {
         const nDb = document.getElementById('nav-database-section'); if(nDb) nDb.style.display = 'block';
+        
+        // --- PATCH: Kembalikan semua tombol untuk Planner/Admin ---
+        const btnPlan = document.querySelector('[data-page="master-plan"]'); if(btnPlan) btnPlan.style.display = 'flex';
+        const btnParts = document.querySelector('[data-page="master-parts"]'); if(btnParts) btnParts.style.display = 'flex';
+        const btnComp = document.querySelector('[data-page="master-comp"]'); if(btnComp) btnComp.style.display = 'flex';
+        const btnEquip = document.querySelector('[data-page="master-equip"]'); if(btnEquip) btnEquip.style.display = 'flex';
+        // -------------------------------------------------------------
+
         const nAd = document.getElementById('nav-admin-section'); if(nAd) nAd.style.display = r.includes('PLANNER') ? 'block' : 'none';
         const nDl = document.getElementById('nav-daily-group'); if(nDl) nDl.style.display = 'block';
         const btnBuatWo = document.querySelector('[data-page="buat-wo"]'); if(btnBuatWo) btnBuatWo.style.display = 'flex';
@@ -1908,7 +1924,7 @@ db.ref('backlogs').on('value', (snapshot) => {
               const rfuList = boardData[model].rfu.sort();
               const bdList = boardData[model].bd.sort();
               totalRFU += rfuList.length; totalBD += bdList.length;
-              detailHTML += `<div class="bg-slate-50 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow"><h4 class="font-black text-slate-700 uppercase tracking-widest text-xs md:text-sm mb-3 md:mb-4 border-b border-slate-200 pb-2">${model}</h4><div class="mb-3 md:mb-4"><div class="text-[9px] md:text-[10px] font-bold text-emerald-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Ready For Use</span> <span class="bg-emerald-100 px-2 py-0.5 rounded-md">${rfuList.length}</span></div><div class="flex flex-wrap gap-1.5">${rfuList.length > 0 ? rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div><div><div class="text-[9px] md:text-[10px] font-bold text-red-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Breakdown</span> <span class="bg-red-100 px-2 py-0.5 rounded-md">${bdList.length}</span></div><div class="flex flex-wrap gap-1.5">${bdList.length > 0 ? bdList.map(u => `<span class="px-2 py-1 bg-red-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold animate-pulse tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div></div>`;
+              detailHTML += `<div class="bg-slate-50 rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow"><h4 class="font-black text-slate-700 uppercase tracking-widest text-xs md:text-sm mb-3 md:mb-4 border-b border-slate-200 pb-2">${model}</h4><div class="mb-3 md:mb-4"><div class="text-[9px] md:text-[10px] font-bold text-emerald-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Ready For Use</span> <span class="bg-emerald-100 px-2 py-0.5 rounded-md">${rfuList.length}</span></div><div class="flex flex-wrap gap-1.5">${rfuList.length > 0 ? rfuList.map(u => `<span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold tracking-tight">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div><div><div class="text-[9px] md:text-[10px] font-bold text-red-600 mb-1.5 uppercase tracking-widest flex items-center justify-between"><span>Breakdown</span> <span class="bg-red-100 px-2 py-0.5 rounded-md">${bdList.length}</span></div><div class="flex flex-wrap gap-1.5">${bdList.length > 0 ? bdList.map(u => `<span class="px-2 py-1 bg-red-500 text-white rounded-lg text-[9px] md:text-[10px] shadow-sm font-bold animate-pulse tracking-tight cursor-pointer hover:scale-105 transition-transform" onclick="showBreakdownDetail('${u}')">${u}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic font-medium">- Kosong -</span>'}</div></div></div>`;
           });
           if (models.length === 0) detailHTML = `<div class="col-span-full p-6 text-center text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">Silakan daftarkan unit di Master Plan Alat.</div>`;
           if(document.getElementById('totalRfuCount')) document.getElementById('totalRfuCount').innerText = `${totalRFU} RFU`;
@@ -2963,6 +2979,83 @@ db.ref('backlogs').on('value', (snapshot) => {
         }).join('');
     }
 
+// --- FITUR DETAIL BREAKDOWN DARI PAPAN CATUR ---
+    window.showBreakdownDetail = function(equipNo) {
+        if(!equipNo) return;
+        
+        // 1. Cari WO yang masih OPEN/PROGRESS/WAITING PART untuk unit ini
+        const activeWOs = (woDataCache || []).filter(w => 
+            String(w.equip_no).toUpperCase() === equipNo.toUpperCase() && 
+            w.status !== 'CLOSED'
+        );
+
+        if(activeWOs.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: equipNo,
+                text: 'Unit tercatat breakdown, tetapi tidak ada dokumen Work Order (WO) yang terbuka. Silakan hubungi Planner.'
+            });
+            return;
+        }
+
+        // 2. Ambil WO terbaru (asumsi ada lebih dari satu, ambil index 0)
+        // Sortir descending berdasarkan Tgl_Rusak
+        activeWOs.sort((a, b) => new Date(b.tgl_rusak) - new Date(a.tgl_rusak));
+        const wo = activeWOs[0];
+
+        // 3. Cari Backlog yang masih OPEN untuk unit ini
+        const pendingBacklogs = (backlogCache || []).filter(b => 
+            String(b.equip_no).toUpperCase() === equipNo.toUpperCase() && 
+            b.status === 'OPEN'
+        );
+
+        // 4. Siapkan UI SweetAlert HTML
+        let htmlContent = `
+            <div class="text-left bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">No WO:</span><span class="font-black text-slate-700">${wo.no_wo || '-'}</span></div>
+                    <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">Status:</span><span class="font-black text-amber-600">${wo.status || 'OPEN'}</span></div>
+                    <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">Tgl Rusak:</span><span class="font-bold text-slate-700">${wo.tgl_rusak || '-'} ${wo.jam_rusak || ''}</span></div>
+                    <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">Mekanik:</span><span class="font-bold text-slate-700">${wo.tech || '-'}</span></div>
+                </div>
+                
+                <div class="border-t border-slate-200 pt-3">
+                    <span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block mb-1">Masalah / Laporan:</span>
+                    <p class="text-sm font-medium text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">${wo.kendala || 'Tidak ada deskripsi'}</p>
+                </div>
+                
+                <div>
+                    <span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block mb-1">Diagnosa / Reason of Failure:</span>
+                    <p class="text-sm font-medium text-slate-700 bg-white p-2 rounded-lg border border-slate-200">${wo.failure_reason || '-'}</p>
+                </div>
+        `;
+
+        if (pendingBacklogs.length > 0) {
+            htmlContent += `
+                <div class="border-t border-slate-200 pt-3">
+                    <span class="text-amber-500 font-black uppercase text-[10px] tracking-widest block mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> Terdapat ${pendingBacklogs.length} Backlog Open:</span>
+                    <ul class="list-disc pl-5 text-xs font-medium text-slate-600 space-y-1">
+            `;
+            pendingBacklogs.forEach(b => {
+                htmlContent += `<li>${b.deskripsi_backlog}</li>`;
+            });
+            htmlContent += `</ul></div>`;
+        }
+
+        htmlContent += `</div>`;
+
+        // 5. Tampilkan Modal
+        Swal.fire({
+            title: `<span class="text-theme-main font-black text-2xl">${equipNo}</span>`,
+            html: htmlContent,
+            width: '500px',
+            showCloseButton: true,
+            showConfirmButton: true,
+            confirmButtonText: 'Tutup',
+            confirmButtonColor: '#0f172a'
+        });
+    };
+    
   </script>
 </body>
 </html>
