@@ -1377,24 +1377,37 @@
     }
 
     function applySettingsUI(payload) {
+       // 1. Terapkan Warna Tema & Nama Perusahaan
        if (payload.ThemeColor) document.documentElement.style.setProperty('--theme-main', payload.ThemeColor);
        if (payload.CompanyName) document.querySelectorAll('.company-display-name').forEach(el => el.innerText = payload.CompanyName);
        
+       const wrappers = document.querySelectorAll('.dynamic-logo-wrapper');
+       
        if(payload.CompanyLogo && payload.CompanyLogo.trim() !== '') {
            const finalLogoUrl = formatDriveImgUrl(payload.CompanyLogo);
-           document.querySelectorAll('.dynamic-logo-wrapper').forEach(el => {
-               el.innerHTML = `<img src="${finalLogoUrl}" class="w-full h-full object-contain">`;
+           wrappers.forEach(el => {
+               // Hapus padding bawaan ikon pabrik
                el.classList.remove('p-1', 'p-1.5', 'p-2');
-               el.classList.add('bg-white'); // Pakai background putih agar logo tidak menabrak warna tema
+               
+               // Beri background putih & padding tipis agar logo tidak menabrak batas tepi
+               el.classList.add('bg-white', 'p-0.5'); 
+               
+               // KUNCI ADJUSTABLE: w-full h-full object-contain memastikan 256x256
+               // otomatis menyusut pas di tengah kotak ukuran berapapun (Login, Sidebar, Nav)
+               el.innerHTML = `<img src="${finalLogoUrl}" class="w-full h-full object-contain drop-shadow-sm" style="object-position: center;" alt="Logo">`;
            });
        } else {
-           // Fallback: Kembali ke ikon pabrik jika URL Logo dikosongkan
-           document.querySelectorAll('.dynamic-logo-wrapper').forEach((el, index) => {
-               // Bedakan ukuran ikon untuk halaman login vs sidebar
+           // 2. Fallback: Jika URL dikosongkan, kembalikan ke Ikon Pabrik Default
+           wrappers.forEach((el, index) => {
+               el.classList.remove('bg-white', 'p-0.5');
+               
+               // Kembalikan padding bawaan sesuai lokasinya
+               if(index === 0) el.classList.add('p-2');      // Login
+               if(index === 1) el.classList.add('p-1');      // Mobile Nav
+               if(index === 2) el.classList.add('p-1.5');    // Sidebar Desktop
+               
                const iconClass = index === 0 ? "text-3xl" : (index === 1 ? "text-sm" : "text-xl");
                el.innerHTML = `<i class="fas fa-industry text-white ${iconClass} dynamic-logo-icon"></i>`;
-               el.classList.add('p-1.5');
-               el.classList.remove('bg-white');
            });
        }
     }
