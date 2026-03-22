@@ -1865,18 +1865,37 @@ db.ref('backlogs').on('value', (snapshot) => {
                   }
               }
           } catch(e) {}
-      });
+});
 
-      if(window.kpiAuditRawData && window.kpiAuditRawData.pa) {
-          window.kpiAuditRawData.pa.forEach(item => {
-              item.Downtime_Hours = (unitDowntime[item.Equip_No] || 0).toFixed(2);
-              let tempPa = (((item.Plan_Hours - item.Downtime_Hours) / item.Plan_Hours) * 100).toFixed(2);
-              if (isNaN(tempPa) || !isFinite(tempPa)) tempPa = 100;
-              item.Actual_PA = tempPa + '%';
-          });
-      }
+// ====================================================================
+// ⚡ INJEKSI PATCH: SMART CAPPER ENGINE (PEMBATAS FISIK 24 JAM / HARI)
+// ====================================================================
+Object.keys(unitDowntime).forEach(eq => {
+    const maxPhysicalHours = daysInFilter * 24; 
+    if (unitDowntime[eq] > maxPhysicalHours) {
+        const excessHours = unitDowntime[eq] - maxPhysicalHours;
+        unitDowntime[eq] = maxPhysicalHours; 
+        if (downtimeUnsch >= excessHours) {
+            downtimeUnsch -= excessHours;
+        } else {
+            const sisaExcess = excessHours - downtimeUnsch;
+            downtimeUnsch = 0;
+            downtimeSch = Math.max(0, downtimeSch - sisaExcess);
+        }
+    }
+});
+// ====================================================================
 
-      const totalDowntime = downtimeUnsch + downtimeSch;
+if(window.kpiAuditRawData && window.kpiAuditRawData.pa) {
+    window.kpiAuditRawData.pa.forEach(item => {
+        item.Downtime_Hours = (unitDowntime[item.Equip_No] || 0).toFixed(2);
+        let tempPa = (((item.Plan_Hours - item.Downtime_Hours) / item.Plan_Hours) * 100).toFixed(2);
+        if (isNaN(tempPa) || !isFinite(tempPa)) tempPa = 100;
+        item.Actual_PA = tempPa + '%';
+    });
+}
+
+const totalDowntime = downtimeUnsch + downtimeSch;
       const totalBreakdowns = countUnsch + countSch;
       const uptimeHours = actualOperatingHours > 0 ? actualOperatingHours : Math.max(0, totalPlanHours - totalDowntime);
       const mttr = totalBreakdowns > 0 ? (totalDowntime / totalBreakdowns).toFixed(1) : 0;
