@@ -2715,6 +2715,21 @@ db.ref('backlogs').on('value', (snapshot) => {
     function handleSaveComponent(e) { e.preventDefault(); const p = [document.getElementById('m_comp_major').value.toUpperCase(), document.getElementById('m_comp_minor').value.toUpperCase()]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'component', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('compMasterForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
     function handleSavePlan(e) { e.preventDefault(); const p = [document.getElementById('m_plan_equip').value.toUpperCase(), document.getElementById('m_plan_model').value.toUpperCase(), document.getElementById('m_plan_hours').value, document.getElementById('m_plan_pa').value, document.getElementById('m_plan_last_date').value, document.getElementById('m_plan_last_hm').value]; startLoading("SAVING..."); fetchGAS("saveMaster", { type: 'plan', payload: p }).then(res => { endLoading(); if(res.success) { Swal.fire('Sukses', res.message, 'success'); document.getElementById('planForm').reset(); globalDataSync(); } }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); }
 
+    // --- FITUR PENCARIAN MEKANIK DI DALAM POPUP UPDATE STATUS ---
+    window.filterSwalMekanik = function() {
+        const keyword = document.getElementById('swal-search-mekanik').value.toLowerCase();
+        const items = document.querySelectorAll('.swal-mech-item');
+        
+        items.forEach(item => {
+            const name = item.querySelector('.swal-mech-name').innerText.toLowerCase();
+            if (name.includes(keyword)) {
+                item.style.display = 'flex'; // Tampilkan kembali jika cocok
+            } else {
+                item.style.display = 'none'; // Sembunyikan jika tidak cocok
+            }
+        });
+    };
+
     window.toggleClosedFields = function(statusVal) {
         const closedFields = document.getElementById('swal-closed-fields');
         if (closedFields) {
@@ -2735,13 +2750,19 @@ db.ref('backlogs').on('value', (snapshot) => {
       
       const defProblem = existingWO.kendala || '';
       
-      let mekCheckboxes = '<div class="max-h-32 overflow-y-auto border border-slate-200 p-2 rounded-lg bg-white mt-1 space-y-1">';
+      let mekCheckboxes = `
+      <div class="relative mb-2 mt-1">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+          <input type="text" id="swal-search-mekanik" onkeyup="filterSwalMekanik()" class="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg outline-none text-[10px] bg-white shadow-sm focus:ring-2 focus:ring-theme-accent" placeholder="Ketik nama mekanik...">
+      </div>
+      <div class="max-h-32 overflow-y-auto border border-slate-200 p-2 rounded-lg bg-slate-50 space-y-1">`;
+      
       if(masterCache.mekanikList) {
           masterCache.mekanikList.forEach(m => {
               mekCheckboxes += `
-              <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 cursor-pointer rounded">
+              <label class="swal-mech-item flex items-center space-x-2 p-1.5 hover:bg-slate-200 bg-white border border-slate-100 cursor-pointer rounded transition-colors">
                   <input type="checkbox" name="swal_mech_check" value="${m.nama_mekanik}" class="rounded w-4 h-4 text-theme-accent focus:ring-theme-accent">
-                  <span class="text-[11px] font-bold text-slate-700">${m.nama_mekanik}</span>
+                  <span class="swal-mech-name text-[10px] font-black text-slate-700 uppercase tracking-tight">${m.nama_mekanik}</span>
               </label>`;
           });
       }
