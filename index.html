@@ -2797,37 +2797,43 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     }
 
     async function handleSaveWO(e) {
-        e.preventDefault();
-        const partsData = [];
-        document.querySelectorAll('#partTableBody tr').forEach(tr => {
-           const noInput = tr.querySelector('.part-no');
-           if(noInput && noInput.value.trim() !== '') {
-              partsData.push({ no: noInput.value.trim().toUpperCase(), desc: tr.querySelector('.part-desc')?.value||'', qty: tr.querySelector('.part-qty')?.value||'', uom: tr.querySelector('.part-uom')?.value||'', rem: tr.querySelector('.part-rem')?.value||'' });
-           }
-        });
+        e.preventDefault();
+        const partsData = [];
+        document.querySelectorAll('#partTableBody tr').forEach(tr => {
+           const noInput = tr.querySelector('.part-no');
+           if(noInput && noInput.value.trim() !== '') {
+              partsData.push({ no: noInput.value.trim().toUpperCase(), desc: tr.querySelector('.part-desc')?.value||'', qty: tr.querySelector('.part-qty')?.value||'', uom: tr.querySelector('.part-uom')?.value||'', rem: tr.querySelector('.part-rem')?.value||'' });
+           }
+        });
 
-        const payload = {
-          no_wo: document.getElementById('no_wo').value.trim().toUpperCase(), 
-          equip_no: document.getElementById('equip_no').value.toUpperCase(), 
-          brand: document.getElementById('brand').value, 
-          unit_type: document.getElementById('unit_type').value, 
-          hm_km: document.getElementById('hm_km').value, 
-          pm_service: document.getElementById('pm_service').value, 
-          major_comp: document.getElementById('major_comp').value, 
-          minor_comp: document.getElementById('minor_comp').value, 
-          sch_unsch: document.getElementById('sch_unsch').value, 
-          pelanggan: document.getElementById('equip_no').value, 
-          tgl_rusak: document.getElementById('tgl_rusak').value, 
-          jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value, 
-          tgl_selesai: document.getElementById('tgl_selesai').value, 
-          jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '', 
-          kendala: document.getElementById('issue').value, 
-          failure_reason: document.getElementById('failure_reason').value, 
-          parts: partsData, 
-          tech: document.getElementById('tech').value, 
-          reported_by: document.getElementById('reported_by').value,
-          status: 'OPEN'
-        };
+        // Tarik data action_log jika sedang mode edit WO yang sudah CLOSED
+        const noWoInput = document.getElementById('no_wo').value.trim().toUpperCase();
+        const existingWO = woDataCache.find(w => w.no_wo === noWoInput) || {};
+        const actionLogData = existingWO.action_log || "";
+
+        const payload = {
+          no_wo: noWoInput, 
+          equip_no: document.getElementById('equip_no').value.toUpperCase(), 
+          brand: document.getElementById('brand').value, 
+          unit_type: document.getElementById('unit_type').value, 
+          hm_km: document.getElementById('hm_km').value, 
+          pm_service: document.getElementById('pm_service').value, 
+          major_comp: document.getElementById('major_comp').value, 
+          minor_comp: document.getElementById('minor_comp').value, 
+          sch_unsch: document.getElementById('sch_unsch').value, 
+          pelanggan: document.getElementById('equip_no').value, 
+          tgl_rusak: document.getElementById('tgl_rusak').value, 
+          jam_rusak: document.getElementById('jam_rusak_hh').value + ':' + document.getElementById('jam_rusak_mm').value, 
+          tgl_selesai: document.getElementById('tgl_selesai').value, 
+          jam_selesai: (document.getElementById('jam_selesai_hh').value && document.getElementById('jam_selesai_mm').value) ? document.getElementById('jam_selesai_hh').value + ':' + document.getElementById('jam_selesai_mm').value : '', 
+          kendala: document.getElementById('issue').value, 
+          failure_reason: document.getElementById('failure_reason').value, 
+          parts: partsData, 
+          tech: document.getElementById('tech').value, 
+          reported_by: document.getElementById('reported_by').value,
+          status: existingWO.status || 'OPEN',
+          action_log: actionLogData
+        };
 
         startLoading("FULL SYNC TO FIREBASE...");
         try {
@@ -2967,8 +2973,15 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     };
 
     async function updateStatus(noWo) {
-      const existingWO = woDataCache.find(w => w.no_wo === noWo) || {};
-      const currTgl = existingWO.tgl_selesai || getShiftDate();
+      const existingWO = woDataCache.find(w => w.no_wo === noWo) || {};
+      
+      // Update data real-time dari Firebase sebelum buka modal agar akurat
+      if(!isPreviewMode) {
+          const snapshot = await db.ref('work_orders/' + noWo).once('value');
+          if(snapshot.exists()) Object.assign(existingWO, snapshot.val());
+      }
+
+      const currTgl = existingWO.tgl_selesai || getShiftDate();
       
       const currJamRaw = existingWO.jam_selesai ? existingWO.jam_selesai : '12:00';
       const currJam = formatTimeOnly(currJamRaw) !== '-' ? formatTimeOnly(currJamRaw) : '12:00';
@@ -3095,12 +3108,23 @@ const totalDowntime = downtimeUnsch + downtimeSch;
             action_log: formValues.action_log
         };
 
-        fetchGAS("updateWOStatus", payload).then(res => { 
-            endLoading(); 
-            if(res.success) {
-                globalDataSync(); 
-                
-                if(formValues.status === 'CLOSED') {
+        fetchGAS("updateWOStatus", payload).then(async res => { 
+            endLoading(); 
+            if(res.success) {
+                // Update Firebase agar Real-time Dashboard berubah
+                if(!isPreviewMode) {
+                    await db.ref('work_orders/' + noWo).update({
+                        status: payload.status,
+                        tgl_selesai: payload.tgl_selesai,
+                        jam_selesai: payload.jam_selesai,
+                        action_log: payload.action_log,
+                        last_sync: new Date().toISOString()
+                    });
+                }
+
+                globalDataSync(); 
+                
+                if(formValues.status === 'CLOSED') {
                     const r = formValues.raw;
                     const tParts = formValues.tgl_selesai.split('-');
                     const formatTgl = `${tParts[2]}/${tParts[1]}/${tParts[0]}`;
