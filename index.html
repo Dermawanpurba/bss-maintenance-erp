@@ -111,22 +111,22 @@
 
   <div id="appContainer" class="hidden flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-50 relative max-w-full">
     <div class="md:hidden bg-theme-main text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-      <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden p-1 dynamic-logo-wrapper">
-              <i class="fas fa-industry text-white text-sm dynamic-logo-icon"></i>
+      <div class="flex items-center space-x-3 w-[85%]">
+          <div class="w-10 h-10 flex-shrink-0 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden p-1 dynamic-logo-wrapper">
+              <i class="fas fa-industry text-white text-base dynamic-logo-icon"></i>
           </div>
-          <div class="font-black tracking-tighter text-sm uppercase company-display-name truncate max-w-[200px]">WOSys ERP</div>
+          <div class="font-black tracking-tight text-[11px] uppercase company-display-name leading-tight line-clamp-2 break-words">WOSys ERP</div>
       </div>
-      <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><i class="fas fa-bars"></i></button>
+      <button onclick="toggleSidebar()" class="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><i class="fas fa-bars"></i></button>
     </div>
     <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside id="sidebar" class="w-72 md:w-64 bg-theme-main text-white flex-shrink-0 flex flex-col no-print shadow-2xl z-40 relative h-screen sticky top-0">
       <div class="hidden md:flex p-6 border-b border-white/10 items-center space-x-4">
-        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-1.5 dynamic-logo-wrapper">
-            <i class="fas fa-industry text-white text-xl dynamic-logo-icon"></i>
+        <div class="w-12 h-12 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-1 dynamic-logo-wrapper shadow-sm">
+            <i class="fas fa-industry text-white text-2xl dynamic-logo-icon"></i>
         </div>
-        <div class="font-black text-white text-lg uppercase tracking-tighter company-display-name leading-tight line-clamp-2">WOSys ERP</div>
+        <div class="font-black text-white text-sm uppercase tracking-tight company-display-name leading-snug break-words">WOSys ERP</div>
       </div>
       
       <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
