@@ -3065,25 +3065,26 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     // FIX: DELETE WO BERHASIL & MEMBERIKAN NOTIFIKASI
     function handleDeleteWO(noWo) { 
         Swal.fire({ 
-            title: 'Hapus WO?', 
-            text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
+            title: 'Hapus Work Order?', 
+            text: `Data WO ${noWo} akan dihapus permanen dari sistem.`, 
             icon: 'warning', 
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             confirmButtonText: 'Ya, Hapus!'
         }).then(r => { 
             if(r.isConfirmed) { 
-                startLoading("DELETING..."); 
-                // Memastikan noWo dikirim dalam format yang konsisten (Uppercase) sesuai database
+                startLoading("DELETING FROM DATABASE..."); 
                 const cleanNoWo = String(noWo).trim().toUpperCase();
                 fetchGAS("deleteWO", { no_wo: cleanNoWo }).then(res => { 
-                    endLoading(); 
                     if(res.success) {
-                        db.ref('work_orders/' + cleanNoWo).remove();
-                        Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
+                        // Perintah hapus real-time ke Firebase
+                        if(!isPreviewMode) db.ref('work_orders/' + cleanNoWo).remove();
+                        endLoading();
+                        Swal.fire('Terhapus!', 'Work Order telah dibersihkan.', 'success');
                         globalDataSync(); 
                     } else {
-                        Swal.fire('Error', res.message, 'error');
+                        endLoading();
+                        Swal.fire('Gagal', res.message, 'error');
                     }
                 }).catch(err => { 
                     endLoading(); 
@@ -3094,23 +3095,35 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     }
 
     function deleteBacklog(id) { 
-    Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { 
-        if(r.isConfirmed) { 
-            startLoading("DELETING..."); 
-            fetchGAS("deleteBacklog", { id: id }).then(res => { 
-                endLoading(); 
-                if(res.success) {
-                    // FIX: Eksekusi hapus di Firebase
-                    db.ref('backlogs/' + id).remove();
-                    Swal.fire('Terhapus!', 'Backlog berhasil dihapus.', 'success');
-                } else {
-                    Swal.fire('Error', res.message, 'error');
-                }
-                globalDataSync(); 
-            }).catch(err => { endLoading(); Swal.fire('Error', err.toString(), 'error');}); 
-        } 
-    }); 
-}
+        Swal.fire({ 
+            title: 'Hapus Backlog?', 
+            text: `Yakin ingin menghapus Backlog ID: ${id}?`, 
+            icon: 'warning', 
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus!'
+        }).then(r => { 
+            if(r.isConfirmed) { 
+                startLoading("DELETING BACKLOG..."); 
+                const cleanId = String(id).trim().toUpperCase();
+                fetchGAS("deleteBacklog", { id: cleanId }).then(res => { 
+                    if(res.success) {
+                        // Perintah hapus real-time ke Firebase
+                        if(!isPreviewMode) db.ref('backlogs/' + cleanId).remove();
+                        endLoading();
+                        Swal.fire('Terhapus!', 'Data Backlog telah dibersihkan.', 'success');
+                        globalDataSync(); 
+                    } else {
+                        endLoading();
+                        Swal.fire('Gagal', res.message, 'error');
+                    }
+                }).catch(err => { 
+                    endLoading(); 
+                    Swal.fire('Error', err.toString(), 'error');
+                }); 
+            } 
+        }); 
+    }
 
     // PRINT WO
     function printWO(noWo) {
