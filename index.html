@@ -3064,33 +3064,34 @@ const totalDowntime = downtimeUnsch + downtimeSch;
 
     // FIX: DELETE WO BERHASIL & MEMBERIKAN NOTIFIKASI
     function handleDeleteWO(noWo) { 
-    Swal.fire({ 
-        title: 'Hapus WO?', 
-        text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
-        icon: 'warning', 
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        confirmButtonText: 'Ya, Hapus!'
-    }).then(r => { 
-        if(r.isConfirmed) { 
-            startLoading("DELETING..."); 
-            fetchGAS("deleteWO", { no_wo: String(noWo).trim() }).then(res => { 
-                endLoading(); 
-                if(res.success) {
-                    // FIX: Eksekusi hapus di Firebase
-                    db.ref('work_orders/' + String(noWo).trim()).remove();
-                    Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
-                    globalDataSync(); 
-                } else {
-                    Swal.fire('Error', res.message, 'error');
-                }
-            }).catch(err => { 
-                endLoading(); 
-                Swal.fire('Error', err.toString(), 'error');
-            }); 
-        } 
-    }); 
-}
+        Swal.fire({ 
+            title: 'Hapus WO?', 
+            text: `Anda yakin ingin menghapus WO: ${noWo}?`, 
+            icon: 'warning', 
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus!'
+        }).then(r => { 
+            if(r.isConfirmed) { 
+                startLoading("DELETING..."); 
+                // Memastikan noWo dikirim dalam format yang konsisten (Uppercase) sesuai database
+                const cleanNoWo = String(noWo).trim().toUpperCase();
+                fetchGAS("deleteWO", { no_wo: cleanNoWo }).then(res => { 
+                    endLoading(); 
+                    if(res.success) {
+                        db.ref('work_orders/' + cleanNoWo).remove();
+                        Swal.fire('Terhapus!', 'Work Order berhasil dihapus.', 'success');
+                        globalDataSync(); 
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                }).catch(err => { 
+                    endLoading(); 
+                    Swal.fire('Error', err.toString(), 'error');
+                }); 
+            } 
+        }); 
+    }
 
     function deleteBacklog(id) { 
     Swal.fire({ title: 'Hapus Backlog?', text: `ID: ${id}`, icon: 'warning', showCancelButton: true }).then(r => { 
