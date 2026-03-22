@@ -2086,8 +2086,13 @@ const totalDowntime = downtimeUnsch + downtimeSch;
             const filterEndReal = new Date(Math.min(filterEnd.getTime(), new Date().getTime()));
             const totalHoursInRange = Math.max(1, (filterEndReal - filterStart) / (1000 * 60 * 60));
             
-            const actPa = (((totalHoursInRange - downtime) / totalHoursInRange) * 100).toFixed(1);
-            const planPa = plan.plan_pa || 85;
+            let actPaCalc = ((totalHoursInRange - downtime) / totalHoursInRange) * 100;
+            
+            // PROTEKSI MINIMUM 0%: Mencegah angka negatif jika downtime > totalHoursInRange
+            if (actPaCalc < 0) actPaCalc = 0;
+            
+            const actPa = actPaCalc.toFixed(1);
+            const planPa = plan.plan_pa || 85;
             
             groups[type].push({
                 unitNo: unitNo,
