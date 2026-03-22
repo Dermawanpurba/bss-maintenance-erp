@@ -635,6 +635,9 @@
                  <option value="WAITING PART">WAITING PART</option>
                  <option value="CLOSED">CLOSED</option>
              </select>
+             <button onclick="toggleWOSort()" id="btnSortWO" class="w-full md:w-auto px-4 py-3 border border-slate-200 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-slate-600 shadow-sm outline-none hover:bg-slate-50 bg-white cursor-pointer flex items-center justify-center gap-2 transition-colors">
+                <i class="fas fa-sort-amount-down"></i> Terbaru
+             </button>
              <div class="flex gap-2 justify-between">
                  <div class="flex items-center space-x-1 md:space-x-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
                    <button onclick="changeMonPage(-1)" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 transition-all font-black"><i class="fas fa-chevron-left"></i></button>
@@ -2219,6 +2222,24 @@ db.ref('backlogs').on('value', (snapshot) => {
           return matchQuery && matchStatus;
       });
 
+      // --- PATCH SORTING: Urutkan data berdasarkan tanggal & jam ---
+      window.woSortOrder = window.woSortOrder || 'desc'; // Default: Terbaru di atas
+      filtered.sort((a, b) => {
+          // Bersihkan format jam dari petik dan pastikan formatnya HH:mm
+          let jamA = String(a.jam_rusak || '00:00').replace(/['"]/g,'').trim().padStart(5, '0');
+          let jamB = String(b.jam_rusak || '00:00').replace(/['"]/g,'').trim().padStart(5, '0');
+          
+          let dateA = new Date((a.tgl_rusak || '1970-01-01') + 'T' + jamA).getTime();
+          let dateB = new Date((b.tgl_rusak || '1970-01-01') + 'T' + jamB).getTime();
+          
+          if(isNaN(dateA)) dateA = 0;
+          if(isNaN(dateB)) dateB = 0;
+
+          // Jika 'asc' (Terlama), Date A - Date B. Jika 'desc' (Terbaru), Date B - Date A
+          return window.woSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+      // -------------------------------------------------------------
+
       const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
       if(currentMonPage > totalPages) currentMonPage = totalPages; 
       if(currentMonPage < 1) currentMonPage = 1;
@@ -2251,7 +2272,7 @@ db.ref('backlogs').on('value', (snapshot) => {
         if (isPlanner || isPlant) actionButtons += `<button onclick="updateStatus('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-sm" title="Update Status"><i class="fas fa-tasks text-xs"></i></button>`;
         if (isPlanner) actionButtons += `<button onclick="handleDeleteWO('${i.no_wo}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl" title="Hapus WO"><i class="fas fa-trash text-xs"></i></button>`;
 
-        const safeJamR = (i.jam_rusak || '-').replace(/'/g, '');
+        const safeJamR = String(i.jam_rusak || '-').replace(/'/g, '');
         
         // Data Kendala
         const kendalaText = i.kendala || '<span class="italic opacity-50">Tidak ada deskripsi</span>';
@@ -3212,6 +3233,7 @@ db.ref('backlogs').on('value', (snapshot) => {
     };
 
 // --- FITUR DETAIL BREAKDOWN DARI PAPAN CATUR ---
+    // --- FITUR DETAIL BREAKDOWN DARI PAPAN CATUR ---
     window.showBreakdownDetail = function(equipNo) {
         if(!equipNo) return;
         
@@ -3230,8 +3252,7 @@ db.ref('backlogs').on('value', (snapshot) => {
             return;
         }
 
-        // 2. Ambil WO terbaru (asumsi ada lebih dari satu, ambil index 0)
-        // Sortir descending berdasarkan Tgl_Rusak
+        // 2. Ambil WO terbaru
         activeWOs.sort((a, b) => new Date(b.tgl_rusak) - new Date(a.tgl_rusak));
         const wo = activeWOs[0];
 
@@ -3241,10 +3262,34 @@ db.ref('backlogs').on('value', (snapshot) => {
             b.status === 'OPEN'
         );
 
-        // 4. Siapkan UI SweetAlert HTML
+        // 4. Hitung Status Service / PM (NEW FEATURE)
+        const plan = (masterCache.planAlat || []).find(p => (p.equip_no || '').toUpperCase() === equipNo.toUpperCase());
+        let pmStatusHtml = '';
+        if (plan) {
+            const actualHM = getActualHM(equipNo);
+            const nextHM = parseFloat(plan.next_service_hm) || 0;
+            const remainingHM = nextHM - actualHM;
+            
+            if (actualHM === 0) {
+                pmStatusHtml = `<div class="bg-slate-100 border border-slate-300 text-slate-600 px-3 py-2 rounded-lg text-[10px] font-black uppercase flex justify-between items-center shadow-sm"><span><i class="fas fa-hourglass-half mr-1"></i> Menunggu HM Aktual</span> <span>Target: ${nextHM} HM</span></div>`;
+            } else if (remainingHM <= 0) {
+                pmStatusHtml = `<div class="bg-red-100 border border-red-300 text-red-700 px-3 py-2 rounded-lg text-[10px] font-black uppercase flex justify-between items-center shadow-sm animate-pulse"><span><i class="fas fa-exclamation-triangle mr-1"></i> OVERDUE SERVICE!</span> <span>Lewat: ${Math.abs(remainingHM).toFixed(1)} HM</span></div>`;
+            } else if (remainingHM <= 50) {
+                pmStatusHtml = `<div class="bg-amber-100 border border-amber-300 text-amber-700 px-3 py-2 rounded-lg text-[10px] font-black uppercase flex justify-between items-center shadow-sm"><span><i class="fas fa-clock mr-1"></i> Mendekati Service</span> <span>Sisa: ${remainingHM.toFixed(1)} HM</span></div>`;
+            } else {
+                pmStatusHtml = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-black uppercase flex justify-between items-center shadow-sm"><span><i class="fas fa-check-circle mr-1"></i> Jadwal Service Aman</span> <span>Sisa: ${remainingHM.toFixed(1)} HM</span></div>`;
+            }
+        } else {
+            pmStatusHtml = `<div class="bg-slate-100 border border-slate-200 text-slate-400 px-3 py-2 rounded-lg text-[10px] font-black uppercase flex items-center shadow-sm"><i class="fas fa-info-circle mr-2"></i> Belum terdaftar di Plan Alat</div>`;
+        }
+
+        // 5. Siapkan UI SweetAlert HTML
         let htmlContent = `
             <div class="text-left bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 space-y-4">
-                <div class="grid grid-cols-2 gap-2 text-xs">
+                
+                ${pmStatusHtml}
+
+                <div class="grid grid-cols-2 gap-2 text-xs pt-2">
                     <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">No WO:</span><span class="font-black text-slate-700">${wo.no_wo || '-'}</span></div>
                     <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">Status:</span><span class="font-black text-amber-600">${wo.status || 'OPEN'}</span></div>
                     <div><span class="text-slate-400 font-bold uppercase text-[9px] tracking-widest block">Tgl Rusak:</span><span class="font-bold text-slate-700">${wo.tgl_rusak || '-'} ${wo.jam_rusak || ''}</span></div>
@@ -3276,7 +3321,7 @@ db.ref('backlogs').on('value', (snapshot) => {
 
         htmlContent += `</div>`;
 
-        // 5. Tampilkan Modal
+        // 6. Tampilkan Modal
         Swal.fire({
             title: `<span class="text-theme-main font-black text-2xl">${equipNo}</span>`,
             html: htmlContent,
@@ -3288,6 +3333,71 @@ db.ref('backlogs').on('value', (snapshot) => {
         });
     };
     
+    // --- FITUR TAMBAH PART DARI MASTER KE FORM WO (TANPA RESET FORM) ---
+    window.addPartToWO = function(partNo, partDesc, partUom) {
+        // 1. Pindah ke halaman Buat WO dengan parameter "preventReset = true"
+        // Ini memastikan form yang sudah diisi sebelumnya TIDAK hilang/keriset.
+        navigate('buat-wo', true);
+
+        const tbody = document.getElementById('partTableBody');
+        if(!tbody) return;
+
+        // 2. Cek baris part terakhir di tabel Form WO
+        let lastRow = tbody.lastElementChild;
+        let noInput = lastRow ? lastRow.querySelector('.part-no') : null;
+
+        // 3. Jika baris terakhir sudah terisi part lain, buat baris baru secara otomatis
+        if (!lastRow || (noInput && noInput.value.trim() !== '')) {
+            addPartRow();
+            lastRow = tbody.lastElementChild;
+        }
+
+        // 4. Suntikkan data part ke dalam baris tersebut
+        if (lastRow) {
+            const iNo = lastRow.querySelector('.part-no');
+            const iDesc = lastRow.querySelector('.part-desc');
+            const iUom = lastRow.querySelector('.part-uom');
+            const iQty = lastRow.querySelector('.part-qty');
+
+            if (iNo) iNo.value = partNo;
+            if (iDesc) iDesc.value = partDesc;
+            if (iUom) iUom.value = partUom;
+            if (iQty) iQty.value = 1; // Default qty = 1
+        }
+
+        // 5. Tampilkan notifikasi kecil di sudut layar
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Part Berhasil Ditambahkan',
+            text: `${partNo} masuk ke Form WO`,
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
+    };
+
+// --- FITUR TOGGLE SORTING WO ---
+    window.toggleWOSort = function() {
+        // Balikkan urutan
+        window.woSortOrder = window.woSortOrder === 'desc' ? 'asc' : 'desc';
+        
+        // Ubah tampilan teks & ikon pada tombol
+        const btn = document.getElementById('btnSortWO');
+        if (btn) {
+            if (window.woSortOrder === 'desc') {
+                btn.innerHTML = '<i class="fas fa-sort-amount-down"></i> Terbaru';
+            } else {
+                btn.innerHTML = '<i class="fas fa-sort-amount-up"></i> Terlama';
+            }
+        }
+        
+        // Kembalikan ke halaman 1 dan render ulang tabel
+        resetPagination('monitoring');
+        renderWOTable();
+    };
+
   </script>
 </body>
 </html>
