@@ -279,19 +279,21 @@
            </div>
         </div>
 
-        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board (Plan Model Based)</h3>
+        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2 mt-8 md:mt-10"><i class="fas fa-th-large text-theme-accent mr-2"></i> Unit Status Board</h3>
         <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-                <div class="text-[10px] md:text-xs font-bold text-slate-500">Status "As Of" End Date: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> &bull; <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
+                <div class="text-[10px] md:text-xs font-bold text-slate-500">Status "As Of" End Date: <span class="text-emerald-600 font-black ml-1" id="totalRfuCount">0 RFU</span> • <span class="text-red-600 font-black" id="totalBdCount">0 B/D</span></div>
                 <div class="flex gap-3 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 py-2 px-4 rounded-xl border border-slate-100 w-full md:w-auto justify-center">
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> RFU</div>
                     <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500 shadow-sm animate-pulse"></span> BD</div>
                 </div>
             </div>
-            
-            <div id="detailBoardBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-            </div>
+            <div id="detailBoardBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full"></div>
         </div>
+
+        <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-table text-theme-accent mr-2"></i> Unit Performance Detail (By Group)</h3>
+        <div id="unitGroupTablesContainer" class="space-y-8 mb-8">
+            </div>
 
         <h3 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4 ml-2"><i class="fas fa-tasks text-slate-400 mr-2"></i> WO Status Overview (Inside Filter)</h3>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
@@ -2055,7 +2057,92 @@ const totalDowntime = downtimeUnsch + downtimeSch;
           if(document.getElementById('totalRfuCount')) document.getElementById('totalRfuCount').innerText = `${totalRFU} RFU`;
           if(document.getElementById('totalBdCount')) document.getElementById('totalBdCount').innerText = `${totalBD} B/D`;
           if(detailBody) detailBody.innerHTML = detailHTML;
+
+          // Panggil fungsi render tabel detail unit
+          renderUnitPerformanceTables(unitDowntime);
       }
+    }
+
+    // FUNGSI BARU: MENGHASILKAN TABEL PER TIPE ALAT
+    function renderUnitPerformanceTables(unitDowntimeMap) {
+        const container = document.getElementById('unitGroupTablesContainer');
+        if(!container) return;
+        
+        // 1. Kelompokkan unit berdasarkan Type Alat dari MasterEquip
+        let groups = {};
+        masterCache.planAlat.forEach(plan => {
+            const unitNo = plan.equip_no.toUpperCase();
+            const equipInfo = masterCache.equip.find(e => e.equip_no.toUpperCase() === unitNo) || {};
+            const type = (equipInfo.unit_type_category || equipInfo.brand || "OTHER").toUpperCase(); // Gunakan Brand sebagai kategori jika category tidak ada
+            
+            if(!groups[type]) groups[type] = [];
+            
+            // Hitung PA unit ini
+            const downtime = unitDowntimeMap[unitNo] || 0;
+            const startDateStr = document.getElementById('kpiStartDate').value;
+            const endDateStr = document.getElementById('kpiEndDate').value;
+            const filterStart = new Date(startDateStr + 'T07:00:00');
+            const filterEnd = new Date(endDateStr + 'T06:59:59');
+            const filterEndReal = new Date(Math.min(filterEnd.getTime(), new Date().getTime()));
+            const totalHoursInRange = Math.max(1, (filterEndReal - filterStart) / (1000 * 60 * 60));
+            
+            const actPa = (((totalHoursInRange - downtime) / totalHoursInRange) * 100).toFixed(1);
+            const planPa = plan.plan_pa || 85;
+            
+            groups[type].push({
+                unitNo: unitNo,
+                model: plan.model,
+                planPa: planPa,
+                actPa: actPa,
+                downtime: downtime.toFixed(1)
+            });
+        });
+
+        // 2. Render HTML Tabel
+        let html = '';
+        Object.keys(groups).sort().forEach(type => {
+            html += `
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-900 px-6 py-3 flex justify-between items-center">
+                    <h4 class="text-white font-black text-xs uppercase tracking-widest">${type} PERFORMANCE Detail</h4>
+                    <span class="text-blue-400 font-bold text-[10px]">${groups[type].length} UNITS</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Unit No</th>
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Model</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Plan PA</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Act PA</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Downtime</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            ${groups[type].map(u => {
+                                const isUnderPlan = parseFloat(u.actPa) < parseFloat(u.planPa);
+                                const colorClass = isUnderPlan ? 'bg-red-500' : 'bg-emerald-500';
+                                return `
+                                <tr>
+                                    <td class="p-4 font-black text-slate-700">${u.unitNo}</td>
+                                    <td class="p-4 text-slate-500 font-bold">${u.model}</td>
+                                    <td class="p-4 text-center font-bold text-slate-400">${u.planPa}%</td>
+                                    <td class="p-4 text-center">
+                                        <span class="${colorClass} text-white px-3 py-1 rounded-full text-[11px] font-black">${u.actPa}%</span>
+                                    </td>
+                                    <td class="p-4 text-center font-mono font-bold text-red-500">${u.downtime}h</td>
+                                    <td class="p-4 text-center">
+                                        <i class="fas ${isUnderPlan ? 'fa-arrow-down text-red-400' : 'fa-check-circle text-emerald-400'}"></i>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
     }
 
     // ==========================================
