@@ -136,7 +136,7 @@
         
         <div id="nav-service-group">
             <div class="text-[9px] text-white/50 font-black uppercase px-3 pt-6 pb-2 tracking-widest">Service Menu</div>
-            <button onclick="navigate('buat-wo')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="buat-wo">
+            <button onclick="navigate('buat-wo', true)" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="buat-wo">
                 <i class="fas fa-plus-circle w-8 group-hover:scale-110 transition-transform"></i> Buat WO
             </button>
             <button onclick="navigate('backlog')" class="nav-btn w-full flex items-center p-3.5 rounded-xl hover:bg-white/10 text-white/80 text-sm font-bold transition-all group" data-page="backlog">
@@ -221,7 +221,7 @@
                   </div>
               </div>
               <div class="flex flex-wrap gap-3 mt-6 md:mt-8">
-                 <button id="dash-btn-wo" onclick="navigate('buat-wo')" class="bg-white text-slate-900 px-5 md:px-6 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-plus mr-2"></i>Buat WO</button>
+                 <button id="dash-btn-wo" onclick="navigate('buat-wo', true)" class="bg-white text-slate-900 px-5 md:px-6 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-plus mr-2"></i>Buat WO</button>
                  <button onclick="globalDataSync()" class="bg-white/20 backdrop-blur-md border border-white/30 text-white px-5 md:px-6 py-3 rounded-xl font-black text-[10px] md:text-[11px] uppercase tracking-widest hover:bg-white/30 transition-all shadow-lg hover:-translate-y-1 active:scale-95"><i class="fas fa-sync-alt mr-2"></i>Optimized Sync</button>
               </div>
             </div>
@@ -337,8 +337,13 @@
         <div class="max-w-6xl mx-auto bg-white mobile-optim shadow-sm border border-slate-100">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-6 gap-4">
             <h2 class="text-xl md:text-2xl font-black text-theme-main uppercase tracking-tighter"><i class="fas fa-tools mr-3 text-blue-500"></i> Form Work Order</h2>
-            <div id="wo_status_display" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs border border-slate-200 uppercase tracking-widest shadow-sm">
-              STATUS: NEW
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <button type="button" onclick="prepareWOForm()" class="w-full sm:w-auto px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-xl font-black text-xs border border-red-200 uppercase tracking-widest shadow-sm transition-colors active:scale-95">
+                    <i class="fas fa-redo-alt mr-1"></i> Buat Baru (Reset)
+                </button>
+                <div id="wo_status_display" class="w-full sm:w-auto px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs border border-slate-200 uppercase tracking-widest shadow-sm text-center">
+                  STATUS: NEW
+                </div>
             </div>
           </div>
 
