@@ -2078,64 +2078,76 @@ const totalDowntime = downtimeUnsch + downtimeSch;
             if(!groups[type]) groups[type] = [];
             
             // Hitung PA unit ini
-            const downtime = unitDowntimeMap[unitNo] || 0;
-            const startDateStr = document.getElementById('kpiStartDate').value;
-            const endDateStr = document.getElementById('kpiEndDate').value;
-            const filterStart = new Date(startDateStr + 'T07:00:00');
-            const filterEnd = new Date(endDateStr + 'T06:59:59');
-            const filterEndReal = new Date(Math.min(filterEnd.getTime(), new Date().getTime()));
-            const totalHoursInRange = Math.max(1, (filterEndReal - filterStart) / (1000 * 60 * 60));
-            
-            let actPaCalc = ((totalHoursInRange - downtime) / totalHoursInRange) * 100;
-            
-            // PROTEKSI MINIMUM 0%: Mencegah angka negatif jika downtime > totalHoursInRange
-            if (actPaCalc < 0) actPaCalc = 0;
+            const downtime = unitDowntimeMap[unitNo] || 0;
+            const startDateStr = document.getElementById('kpiStartDate').value;
+            const endDateStr = document.getElementById('kpiEndDate').value;
+            const filterStart = new Date(startDateStr + 'T07:00:00');
+            const filterEnd = new Date(endDateStr + 'T06:59:59');
+            const filterEndReal = new Date(Math.min(filterEnd.getTime(), new Date().getTime()));
+            const totalHoursInRange = Math.max(1, (filterEndReal - filterStart) / (1000 * 60 * 60));
+            
+            let actPaCalc = ((totalHoursInRange - downtime) / totalHoursInRange) * 100;
+            if (actPaCalc < 0) actPaCalc = 0; // Proteksi limit 0%
             
             const actPa = actPaCalc.toFixed(1);
-            const planPa = plan.plan_pa || 85;
-            
-            groups[type].push({
-                unitNo: unitNo,
-                model: plan.model,
-                planPa: planPa,
-                actPa: actPa,
-                downtime: downtime.toFixed(1)
-            });
-        });
+            const planPaRaw = plan.plan_pa || 85;
+            // Konversi desimal 0.85 ke 85% jika perlu
+            const planPa = (parseFloat(planPaRaw) > 0 && parseFloat(planPaRaw) < 1) ? (parseFloat(planPaRaw) * 100).toFixed(0) : planPaRaw;
+            
+            groups[type].push({
+                unitNo: unitNo,
+                model: plan.model,
+                planPa: planPa,
+                actPa: actPa,
+                downtime: downtime.toFixed(1)
+            });
+        });
 
-        // 2. Render HTML Tabel
-        let html = '';
-        Object.keys(groups).sort().forEach(type => {
-            html += `
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="bg-slate-900 px-6 py-3 flex justify-between items-center">
-                    <h4 class="text-white font-black text-xs uppercase tracking-widest">${type} PERFORMANCE Detail</h4>
-                    <span class="text-blue-400 font-bold text-[10px]">${groups[type].length} UNITS</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-100">
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Unit No</th>
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Model</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Plan PA</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Act PA</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Downtime</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            ${groups[type].map(u => {
-                                const isUnderPlan = parseFloat(u.actPa) < parseFloat(u.planPa);
-                                const colorClass = isUnderPlan ? 'bg-red-500' : 'bg-emerald-500';
-                                return `
-                                <tr>
-                                    <td class="p-4 font-black text-slate-700">${u.unitNo}</td>
-                                    <td class="p-4 text-slate-500 font-bold">${u.model}</td>
-                                    <td class="p-4 text-center font-bold text-slate-400">${u.planPa}%</td>
-                                    <td class="p-4 text-center">
-                                        <span class="${colorClass} text-white px-3 py-1 rounded-full text-[11px] font-black">${u.actPa}%</span>
+        // 2. Render HTML Tabel
+        let html = '';
+        Object.keys(groups).sort().forEach(type => {
+            html += `
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-900 px-6 py-3 flex justify-between items-center">
+                    <h4 class="text-white font-black text-xs uppercase tracking-widest">${type} PERFORMANCE Detail</h4>
+                    <span class="text-blue-400 font-bold text-[10px]">${groups[type].length} UNITS</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Unit No</th>
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Model</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Plan PA</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Act PA</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Downtime</th>
+                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            ${groups[type].map(u => {
+                                // Helper warna: 50-69 Kuning, <50 Merah, >=70 Hijau
+                                const getColorClass = (val) => {
+                                    const v = parseFloat(val);
+                                    if (v >= 50 && v <= 69.9) return 'bg-amber-500';
+                                    if (v < 50) return 'bg-red-500';
+                                    return 'bg-emerald-500';
+                                };
+
+                                const isUnderPlan = parseFloat(u.actPa) < parseFloat(u.planPa);
+                                const actBadgeColor = isUnderPlan ? getColorClass(u.actPa) : 'bg-emerald-500';
+                                const planBadgeColor = getColorClass(u.planPa);
+
+                                return `
+                                <tr>
+                                    <td class="p-4 font-black text-slate-700">${u.unitNo}</td>
+                                    <td class="p-4 text-slate-500 font-bold">${u.model}</td>
+                                    <td class="p-4 text-center">
+                                        <span class="${planBadgeColor} text-white px-2 py-0.5 rounded-lg text-[10px] font-black">${u.planPa}%</span>
                                     </td>
+                                    <td class="p-4 text-center">
+                                        <span class="${actBadgeColor} text-white px-3 py-1 rounded-full text-[11px] font-black">${u.actPa}%</span>
+                                    </td>
                                     <td class="p-4 text-center font-mono font-bold text-red-500">${u.downtime}h</td>
                                     <td class="p-4 text-center">
                                         <i class="fas ${isUnderPlan ? 'fa-arrow-down text-red-400' : 'fa-check-circle text-emerald-400'}"></i>
