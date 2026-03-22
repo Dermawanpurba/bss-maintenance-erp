@@ -1304,14 +1304,22 @@
     // ==========================================
     // DATE LOGIC & GOOGLE DRIVE PARSER
     // ==========================================
+    function getLocalYYYYMMDD(d) {
+        const pad = n => (n < 10 ? '0'+n : n);
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+    
     function getShiftDate() {
         const now = new Date();
         if (now.getHours() < 7) now.setDate(now.getDate() - 1);
-        return now.toISOString().split('T')[0];
+        return getLocalYYYYMMDD(now); // <-- Aman dari shift UTC
     }
+    
     function getFirstDateOfMonth() {
-        const now = new Date(getShiftDate());
-        return new Date(now.getFullYear(), now.getMonth(), 2).toISOString().split('T')[0];
+        const now = new Date();
+        if (now.getHours() < 7) now.setDate(now.getDate() - 1);
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        return getLocalYYYYMMDD(firstDay); // <-- Aman dari shift UTC
     }
     
     function formatDriveImgUrl(url) {
@@ -1712,14 +1720,13 @@ db.ref('backlogs').on('value', (snapshot) => {
       
       if(!startDateStr || !endDateStr) { startDateStr = getFirstDateOfMonth(); endDateStr = getShiftDate(); }
 
-      const filterStart = new Date(startDateStr + 'T07:00:00');
-      const edParts = endDateStr.split('-');
+      const fsParts = startDateStr.split('-').map(Number);
+      const filterStart = new Date(fsParts[0], fsParts[1]-1, fsParts[2], 7, 0, 0);
+
+      const edParts = endDateStr.split('-').map(Number);
       const edObj = new Date(edParts[0], edParts[1]-1, edParts[2]);
       edObj.setDate(edObj.getDate() + 1);
-      const nextY = edObj.getFullYear();
-      const nextM = String(edObj.getMonth() + 1).padStart(2, '0');
-      const nextD = String(edObj.getDate()).padStart(2, '0');
-      const filterEnd = new Date(`${nextY}-${nextM}-${nextD}T06:59:59`);
+      const filterEnd = new Date(edObj.getFullYear(), edObj.getMonth(), edObj.getDate(), 6, 59, 59);
 
       const now = new Date();
       const actualEndBoundary = new Date(Math.min(filterEnd.getTime(), now.getTime()));
@@ -1791,13 +1798,42 @@ db.ref('backlogs').on('value', (snapshot) => {
 
       kpiData.forEach(wo => {
           try {
-              if(!wo.tgl_rusak) return;
-              const start = new Date(`${wo.tgl_rusak}T${wo.jam_rusak || '00:00'}`);
+              let tglR = wo.tgl_rusak || wo.tglrusak;
+              let jamR = wo.jam_rusak || wo.jamrusak || '00:00';
+              let tglS = wo.tgl_selesai || wo.tglselesai;
+              let jamS = wo.jam_selesai || wo.jamselesai || '00:00';
+
+              if(!tglR) return;
+              
+              // HELPER: Waktu Lokal (WITA/WIB) Kebal UTC Shift & Error Google Sheets
+              const buildSafeDate = (dRaw, tRaw) => {
+                  let dObj = new Date(dRaw);
+                  if (isNaN(dObj.getTime())) {
+                      let parts = String(dRaw).split('T')[0].split('-');
+                      if(parts.length === 3) dObj = new Date(parts[0], parts[1]-1, parts[2]);
+                      else return new Date(NaN);
+                  }
+                  let y = dObj.getFullYear(), m = dObj.getMonth(), d = dObj.getDate();
+                  let tStr = typeof formatTimeOnly === 'function' ? formatTimeOnly(tRaw) : String(tRaw).replace(/['"]/g,'').trim();
+                  if (tStr === '-') tStr = '00:00';
+                  let [hh, mm] = tStr.split(':').map(Number);
+                  return new Date(y, m, d, hh || 0, mm || 0, 0);
+              };
+
+              const start = buildSafeDate(tglR, jamR);
               if(isNaN(start.getTime())) return;
               
               let end;
-              if (wo.status === 'CLOSED' && wo.tgl_selesai) end = new Date(`${wo.tgl_selesai}T${wo.jam_selesai || '00:00'}`);
-              else end = actualEndBoundary;
+              let finalStatus = wo.status || 'OPEN';
+              let hasSelesai = (tglS && String(tglS).trim() !== '');
+
+              if (hasSelesai || String(finalStatus).toUpperCase() === 'CLOSED') {
+                  if(!hasSelesai) tglS = tglR; 
+                  end = buildSafeDate(tglS, jamS);
+                  finalStatus = 'CLOSED'; 
+              } else {
+                  end = actualEndBoundary;
+              }
 
               if (!isNaN(end.getTime()) && end > start) {
                   const actualStart = new Date(Math.max(start.getTime(), filterStart.getTime()));
@@ -1815,13 +1851,15 @@ db.ref('backlogs').on('value', (snapshot) => {
                       const eq = wo.equip_no ? wo.equip_no.toUpperCase() : '';
                       unitDowntime[eq] = (unitDowntime[eq] || 0) + diffHours;
 
+                      // Format kembalian ke CSV agar menggunakan jam lokal, bukan jam UTC
+                      const pad = n => (n < 10 ? '0'+n : n);
+                      const fmtStart = `${actualStart.getFullYear()}-${pad(actualStart.getMonth()+1)}-${pad(actualStart.getDate())} ${pad(actualStart.getHours())}:${pad(actualStart.getMinutes())}`;
+                      const fmtEnd = `${actualEnd.getFullYear()}-${pad(actualEnd.getMonth()+1)}-${pad(actualEnd.getDate())} ${pad(actualEnd.getHours())}:${pad(actualEnd.getMinutes())}`;
+
                       window.kpiAuditRawData.wo.push({
-                          WO_No: wo.no_wo,
-                          Equip_No: eq,
-                          Status: wo.status || 'OPEN',
+                          WO_No: wo.no_wo, Equip_No: eq, Status: finalStatus,
                           Type: (wo.sch_unsch || 'UNSCH').toUpperCase(),
-                          Breakdown_Start: actualStart.toISOString().slice(0,16).replace('T',' '),
-                          Breakdown_End: actualEnd.toISOString().slice(0,16).replace('T',' '),
+                          Breakdown_Start: fmtStart, Breakdown_End: fmtEnd,
                           Downtime_Hours: diffHours.toFixed(2)
                       });
                   }
