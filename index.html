@@ -2684,117 +2684,87 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     }
 
     async function migrateToFirebase() {
-        if(!db) return Swal.fire('Error', 'Sistem Firebase tidak diinisialisasi dengan benar.', 'error');
+        if(!db) return Swal.fire('Error', 'Firebase belum aktif.', 'error');
         
         const result = await Swal.fire({
-            title: 'Mulai Migrasi Seluruh Database?',
-            html: 'Seluruh riwayat data dari Google Sheets (WO, Backlog, HM, <b>Service History, Aktifitas Mekanik, & Plan Alat</b>) akan disalin utuh ke Firebase.<br><br><b class="text-red-500">Proses ini memakan waktu beberapa detik.</b>',
+            title: 'Mulai Migrasi Total?',
+            html: 'Menyalin data dari Sheets ke Firebase.<br><b class="text-emerald-500">Semua item (WO, Backlog, HM, Service, Aktifitas, Plan) akan dipindahkan.</b>',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#cbd5e1',
-            confirmButtonText: 'Ya, Migrasi Semua!'
+            confirmButtonText: 'Ya, Migrasi!'
         });
 
         if(!result.isConfirmed) return;
-
-        startLoading("MIGRASI DATA KE FIREBASE...");
+        startLoading("MIGRASI TOTAL...");
         
         try {
-            // 1. Migrasi Work Orders
-            let woUpdates = {};
-            if(woDataCache && woDataCache.length > 0) {
-                woDataCache.forEach(w => {
-                    if(!w.no_wo) return;
-                    woUpdates[w.no_wo] = {
-                        no_wo: w.no_wo, equip_no: w.equip_no || '', brand: w.brand || '', unit_type: w.unit_type || '',
-                        status: w.status || 'OPEN', last_sync: new Date().toISOString()
-                    };
-                });
-                await db.ref('work_orders').update(woUpdates);
-            }
+            // 1. Work Orders & 2. Backlogs & 3. Daily HM (Proses Cepat)
+            const woUpdates = {};
+            woDataCache.forEach(w => { if(w.no_wo) woUpdates[w.no_wo] = { ...w, last_sync: new Date().toISOString() }; });
+            if(Object.keys(woUpdates).length > 0) await db.ref('work_orders').update(woUpdates);
 
-            // 2. Migrasi Backlog
-            let blUpdates = {};
-            if(backlogCache && backlogCache.length > 0) {
-                backlogCache.forEach(b => {
-                    if(!b.id) return;
-                    blUpdates[b.id] = {
-                        id: b.id, tanggal: b.tanggal || '', equip_no: b.equip_no || '',
-                        deskripsi: b.deskripsi_backlog || '', status: b.status || 'OPEN',
-                        rencana_eksekusi: b.rencana_eksekusi || '-', last_sync: new Date().toISOString()
-                    };
-                });
-                await db.ref('backlogs').update(blUpdates);
-            }
+            const blUpdates = {};
+            backlogCache.forEach(b => { if(b.id) blUpdates[b.id] = { ...b, last_sync: new Date().toISOString() }; });
+            if(Object.keys(blUpdates).length > 0) await db.ref('backlogs').update(blUpdates);
 
-            // 3. Migrasi Daily HM
-            let hmUpdates = {};
-            if(masterCache.dailyHM && masterCache.dailyHM.length > 0) {
-                masterCache.dailyHM.forEach(h => {
-                    if(!h.id) return;
-                    hmUpdates[h.id] = {
-                        id: h.id, tanggal: h.tanggal || '', equip_no: h.equip_no || '',
-                        hm_awal: h.hm_awal || 0, hm_akhir: h.hm_akhir || 0, total_hm: h.total_hm || 0,
-                        last_sync: new Date().toISOString()
-                    };
-                });
-                await db.ref('daily_hm').update(hmUpdates);
-            }
-
-            // 4. Migrasi Service History
-            if(masterCache.serviceHistory && masterCache.serviceHistory.length > 0) {
-                let svcUpdates = {};
+            // 4. Service History (Logic perbaikan key GAS)
+            if(masterCache.serviceHistory.length > 0) {
+                let updates = {};
                 masterCache.serviceHistory.forEach((s, i) => {
-                    let id = s.id || ('SVC' + new Date().getTime() + i);
-                    svcUpdates[id] = {
-                        id: id, equip_no: String(s.equipno || s.equip_no || '').toUpperCase(), 
-                        plan_hm: s.planhm || s.plan_hm || 0, plan_date: s.plandate || s.plan_date || '', 
-                        actual_hm: s.actualhm || s.actual_hm || 0, actual_date: s.actualdate || s.actual_date || '', 
+                    const id = s.id || ('SVC' + new Date().getTime() + i);
+                    updates[id] = {
+                        id: id, 
+                        equip_no: String(s.equip_no || s.equipno || '').toUpperCase(),
+                        plan_hm: s.plan_hm || s.planhm || 0,
+                        plan_date: s.plan_date || s.plandate || '',
+                        actual_hm: s.actual_hm || s.actualhm || 0,
+                        actual_date: s.actual_date || s.actualdate || '',
                         timestamp: new Date().toISOString()
                     };
                 });
-                await db.ref('service_history').set(svcUpdates);
+                await db.ref('service_history').update(updates);
             }
 
-            // 5. Migrasi Aktifitas Mekanik
-            if(masterCache.activities && masterCache.activities.length > 0) {
-                let actUpdates = {};
+            // 5. Mechanic Activity
+            if(masterCache.activities.length > 0) {
+                let updates = {};
                 masterCache.activities.forEach((a, i) => {
-                    let id = a.id || ('ACT' + new Date().getTime() + i);
-                    actUpdates[id] = {
-                        id: id, tanggal: a.tanggal || '', no_wo: a.nowo || a.no_wo || '',
+                    const id = a.id || ('ACT' + new Date().getTime() + i);
+                    updates[id] = {
+                        id: id, tanggal: a.tanggal || '', 
+                        no_wo: a.no_wo || a.nowo || '',
                         mekanik: a.mekanik || '', aktifitas: a.aktifitas || '',
-                        jam_mulai: a.jammulai || a.jam_mulai || '', jam_selesai: a.jamselesai || a.jam_selesai || ''
+                        jam_mulai: a.jam_mulai || a.jammulai || '00:00',
+                        jam_selesai: a.jam_selesai || a.jamselesai || '00:00'
                     };
                 });
-                await db.ref('mechanic_activity').set(actUpdates);
+                await db.ref('mechanic_activity').update(updates);
             }
 
-            // 6. Migrasi Plan Alat (BARU)
-            let planUpdates = {};
-            if(masterCache.planAlat && masterCache.planAlat.length > 0) {
+            // 6. Plan Alat
+            if(masterCache.planAlat.length > 0) {
+                let updates = {};
                 masterCache.planAlat.forEach(p => {
-                    if(!p.equip_no) return;
-                    planUpdates[p.equip_no] = {
-                        equip_no: p.equip_no, model: p.model || '',
-                        plan_hours_per_month: p.plan_hours_per_month || 0, plan_pa: p.plan_pa || 0,
-                        last_service_date: p.last_service_date || '', last_service_hm: p.last_service_hm || 0,
-                        next_service_hm: p.next_service_hm || 0
+                    const eq = String(p.equip_no || p.equipno || '').toUpperCase();
+                    if(!eq) return;
+                    updates[eq] = {
+                        equip_no: eq, model: p.model || '',
+                        plan_hours_per_month: p.plan_hours_per_month || p.planhourspermonth || 720,
+                        plan_pa: p.plan_pa || p.planpa || 85,
+                        last_service_date: p.last_service_date || p.lastservicedate || '',
+                        last_service_hm: p.last_service_hm || p.lastservicehm || 0,
+                        next_service_hm: p.next_service_hm || p.nextservicehm || 0
                     };
                 });
-                await db.ref('plan_alat').update(planUpdates);
+                await db.ref('plan_alat').update(updates);
             }
 
             endLoading();
-            Swal.fire('Migrasi Total Sukses!', 'Seluruh riwayat data (WO, Backlog, HM, Service History, Aktifitas, & Plan Alat) dari Google Sheets berhasil disalin ke Firebase.', 'success');
+            Swal.fire('Sukses', 'Migrasi Selesai! Semua data Sheet sudah sinkron ke Firebase.', 'success');
+            globalDataSync();
         } catch(e) {
             endLoading();
-            let errorMsg = e.message;
-            if(errorMsg.toLowerCase().includes('permission denied')) {
-                errorMsg = "<b>PERMISSION DENIED!</b><br><br>Aturan keamanan Firebase Anda memblokir penulisan. Silakan buka Firebase Console > Realtime Database > Rules, lalu ubah menjadi:<br><pre style='background:#f1f5f9; padding:10px; margin-top:10px; text-align:left; font-size:12px; border-radius:8px;'>{\n  \"rules\": {\n    \".read\": true,\n    \".write\": true\n  }\n}</pre>";
-            }
-            Swal.fire({title: 'Migrasi Gagal', html: errorMsg, icon: 'error'});
+            Swal.fire('Gagal', e.message, 'error');
         }
     }
 
@@ -2859,11 +2829,11 @@ const totalDowntime = downtimeUnsch + downtimeSch;
         const actionLogData = existingWO.action_log || "";
 
         const payload = {
-          no_wo: noWoInput, 
-          equip_no: document.getElementById('equip_no').value.toUpperCase(), 
-          brand: document.getElementById('brand').value, 
-          unit_type: document.getElementById('unit_type').value, 
-          hm_km: document.getElementById('hm_km').value, 
+  no_wo: noWoInput, 
+  equip_no: document.getElementById('equip_no').value.toUpperCase(), 
+  brand: document.getElementById('brand').value, 
+  unit_type: document.getElementById('unit_type').value, 
+  hm_km: document.getElementById('hm_km').value, // Karakter '00000000' sudah dihapus 
           pm_service: document.getElementById('pm_service').value, 
           major_comp: document.getElementById('major_comp').value, 
           minor_comp: document.getElementById('minor_comp').value, 
