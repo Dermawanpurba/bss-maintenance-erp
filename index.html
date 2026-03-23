@@ -7,7 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
     :root {
@@ -2064,18 +2065,37 @@ const totalDowntime = downtimeUnsch + downtimeSch;
     }
 
     // FUNGSI BARU: MENGHASILKAN TABEL PER TIPE ALAT
-    function renderUnitPerformanceTables(unitDowntimeMap) {
-        const container = document.getElementById('unitGroupTablesContainer');
-        if(!container) return;
-        
-        // 1. Kelompokkan unit berdasarkan Type Alat dari MasterEquip
-        let groups = {};
-        masterCache.planAlat.forEach(plan => {
-            const unitNo = plan.equip_no.toUpperCase();
-            const equipInfo = masterCache.equip.find(e => e.equip_no.toUpperCase() === unitNo) || {};
-            const type = (equipInfo.unit_type_category || equipInfo.brand || "OTHER").toUpperCase(); // Gunakan Brand sebagai kategori jika category tidak ada
+    function renderUnitPerformanceTables(unitDowntimeMap) {
+        const container = document.getElementById('unitGroupTablesContainer');
+        if(!container) return;
+        
+        // Mapping Nama Kategori Lengkap berdasarkan Alias/Model
+        const typeMapping = {
+            'EXC': 'EXCAVATOR',
+            'DZR': 'BULLDOZER',
+            'GDR': 'MOTOR GRADER',
+            'DZ': 'DUMP TRUCK DONGFENG',
+            'BOMAG': 'COMPACTOR',
+            'HINO': 'DUMP TRUCK HINO',
+            'DF' :"DUMP TRUCK DONGFENG",
+            'MAN': 'DUMP TRUCK MAN',
+            'SITRAK': 'DUMP TRUCK SITRAK',
+            'WL': 'WHEEL LOADER',
+            'WP': 'WATER PUMP EBARA'
+        };
+
+        let groups = {};
+        masterCache.planAlat.forEach(plan => {
+            const unitNo = plan.equip_no.toUpperCase();
+            const modelAlias = (plan.model || "").toUpperCase();
             
-            if(!groups[type]) groups[type] = [];
+            // Logika identifikasi prefix DF/DZ untuk Dongfeng
+            let typeLabel = typeMapping[modelAlias] || modelAlias || "OTHER";
+            if (unitNo.startsWith('DF') || unitNo.startsWith('DZ')) {
+                typeLabel = "DUMP TRUCK DONGFENG";
+            }
+            
+            if(!groups[typeLabel]) groups[typeLabel] = [];
             
             // Hitung PA unit ini
             const downtime = unitDowntimeMap[unitNo] || 0;
@@ -2094,64 +2114,73 @@ const totalDowntime = downtimeUnsch + downtimeSch;
             // Konversi desimal 0.85 ke 85% jika perlu
             const planPa = (parseFloat(planPaRaw) > 0 && parseFloat(planPaRaw) < 1) ? (parseFloat(planPaRaw) * 100).toFixed(0) : planPaRaw;
             
-            groups[type].push({
+            // Hitung MTTR & MTBF per Unit
+            const unitWOs = woDataCache.filter(w => String(w.equip_no).toUpperCase() === unitNo);
+            const breakdownCount = unitWOs.length;
+            const mttrVal = breakdownCount > 0 ? (downtime / breakdownCount).toFixed(1) : "0";
+            
+            // MTBF Simple: (Uptime / Jumlah Breakdown)
+            const uptime = Math.max(0, totalHoursInRange - downtime);
+            const mtbfVal = breakdownCount > 0 ? (uptime / breakdownCount).toFixed(1) : uptime.toFixed(1);
+
+            groups[typeLabel].push({
                 unitNo: unitNo,
                 model: plan.model,
                 planPa: planPa,
                 actPa: actPa,
+                mttr: mttrVal,
+                mtbf: mtbfVal,
                 downtime: downtime.toFixed(1)
             });
         });
 
-        // 2. Render HTML Tabel
-        let html = '';
-        Object.keys(groups).sort().forEach(type => {
-            html += `
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="bg-slate-900 px-6 py-3 flex justify-between items-center">
-                    <h4 class="text-white font-black text-xs uppercase tracking-widest">${type} PERFORMANCE Detail</h4>
-                    <span class="text-blue-400 font-bold text-[10px]">${groups[type].length} UNITS</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-100">
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Unit No</th>
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Model</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Plan PA</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Act PA</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Downtime</th>
-                                <th class="p-4 text-center text-[10px] font-black text-slate-400 uppercase">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            ${groups[type].map(u => {
-                                // Helper warna: 50-69 Kuning, <50 Merah, >=70 Hijau
+        // 2. Render HTML Tabel (Compact Edition & Calculation Fix)
+        let html = '';
+        Object.keys(groups).sort().forEach(type => {
+            html += `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-900 px-4 py-2 flex justify-between items-center font-black">
+                    <h4 class="text-white text-[10px] uppercase tracking-widest">${type} PERFORMANCE DETAIL</h4>
+                    <span class="text-blue-400 text-[9px]">${groups[type].length} UNITS</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse table-fixed min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="p-2 w-20 text-[9px] font-black text-slate-400 uppercase">Unit No</th>
+                                <th class="p-2 w-16 text-[9px] font-black text-slate-400 uppercase">Model</th>
+                                <th class="p-2 w-16 text-center text-[9px] font-black text-slate-400 uppercase">Plan</th>
+                                <th class="p-2 w-20 text-center text-[9px] font-black text-slate-400 uppercase">Act PA</th>
+                                <th class="p-2 w-20 text-center text-[9px] font-black text-slate-400 uppercase text-red-500">MTTR</th>
+                                <th class="p-2 w-20 text-center text-[9px] font-black text-slate-400 uppercase text-blue-500">MTBF</th>
+                                <th class="p-2 w-20 text-center text-[9px] font-black text-slate-400 uppercase text-slate-600">Downtime</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${groups[type].map(u => {
                                 const getColorClass = (val) => {
                                     const v = parseFloat(val);
-                                    if (v >= 50 && v <= 69.9) return 'bg-amber-500';
-                                    if (v < 50) return 'bg-red-500';
+                                    if (v >= 70 && v < 85) return 'bg-amber-500';
+                                    if (v < 70) return 'bg-red-500';
                                     return 'bg-emerald-500';
                                 };
 
-                                const isUnderPlan = parseFloat(u.actPa) < parseFloat(u.planPa);
-                                const actBadgeColor = isUnderPlan ? getColorClass(u.actPa) : 'bg-emerald-500';
-                                const planBadgeColor = getColorClass(u.planPa);
+                                const isUnderPlan = parseFloat(u.actPa) < parseFloat(u.planPa);
+                                const actBadgeColor = getColorClass(u.actPa);
 
-                                return `
-                                <tr>
-                                    <td class="p-4 font-black text-slate-700">${u.unitNo}</td>
-                                    <td class="p-4 text-slate-500 font-bold">${u.model}</td>
-                                    <td class="p-4 text-center">
-                                        <span class="${planBadgeColor} text-white px-2 py-0.5 rounded-lg text-[10px] font-black">${u.planPa}%</span>
+                                return `
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 font-black text-slate-700 text-[11px]">${u.unitNo}</td>
+                                    <td class="p-2 text-slate-400 font-bold text-[10px] uppercase">${u.model}</td>
+                                    <td class="p-2 text-center">
+                                        <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-black text-[10px] border border-slate-200">${u.planPa}%</span>
                                     </td>
-                                    <td class="p-4 text-center">
-                                        <span class="${actBadgeColor} text-white px-3 py-1 rounded-full text-[11px] font-black">${u.actPa}%</span>
-                                    </td>
-                                    <td class="p-4 text-center font-mono font-bold text-red-500">${u.downtime}h</td>
-                                    <td class="p-4 text-center">
-                                        <i class="fas ${isUnderPlan ? 'fa-arrow-down text-red-400' : 'fa-check-circle text-emerald-400'}"></i>
+                                    <td class="p-2 text-center">
+                                        <span class="${actBadgeColor} text-white px-2 py-0.5 rounded-md text-[10px] font-black shadow-sm">${u.actPa}%</span>
                                     </td>
+                                    <td class="p-2 text-center font-mono font-bold text-[11px] text-red-600">${u.mttr}h</td>
+                                    <td class="p-2 text-center font-mono font-bold text-[11px] text-blue-600">${u.mtbf}h</td>
+                                    <td class="p-2 text-center font-mono font-bold text-[11px] text-slate-700 bg-slate-50/50">${u.downtime}h</td>
                                 </tr>`;
                             }).join('')}
                         </tbody>
@@ -2829,12 +2858,12 @@ const totalDowntime = downtimeUnsch + downtimeSch;
         const actionLogData = existingWO.action_log || "";
 
         const payload = {
-          no_wo: noWoInput, 
-          equip_no: document.getElementById('equip_no').value.toUpperCase(), 
-          brand: document.getElementById('brand').value, 
-          unit_type: document.getElementById('unit_type').value, 
-          hm_km: document.getElementById('hm_km').value, 
-          pm_service: document.getElementById('pm_service').value, 
+          no_wo: noWoInput, 
+          equip_no: document.getElementById('equip_no').value.toUpperCase(), 
+          brand: document.getElementById('brand').value, 
+          unit_type: document.getElementById('unit_type').value, 
+          hm_km: document.getElementById('hm_km').value, 
+          pm_service: document.getElementById('pm_service').value, 
           major_comp: document.getElementById('major_comp').value, 
           minor_comp: document.getElementById('minor_comp').value, 
           sch_unsch: document.getElementById('sch_unsch').value, 
@@ -3656,6 +3685,20 @@ const totalDowntime = downtimeUnsch + downtimeSch;
         resetPagination('monitoring');
         renderWOTable();
     };
+
+    // FITUR EXPORT EXCEL PER KATEGORI
+    window.exportTableToExcel = function(tableId, categoryName) {
+        const table = document.getElementById(tableId);
+        if (!table) return Swal.fire('Error', 'Tabel tidak ditemukan', 'error');
+        
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Performance" });
+        const fileName = `Performance_${categoryName.replace(/\s+/g, '_')}_${new Date().toLocaleDateString()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Export Berhasil!', showConfirmButton: false, timer: 2000 });
+    };
+
+  </script>
 
   </script>
 </body>
